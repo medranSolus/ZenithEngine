@@ -6,9 +6,11 @@ namespace ZE::Allocator
 {
 	// Allocator for objects of type T using a list of arrays to speed up allocation.
 	// Number of elements that can be allocated is not bounded because allocator can create multiple blocks
-	template<typename T>
+	template<typename T, bool USE_MUTEX = false>
 	class Pool final
 	{
+		using LockType = std::conditional_t<USE_MUTEX, std::shared_mutex, std::monostate>;
+
 		union Item
 		{
 			// UINT64_MAX means end of list
@@ -26,12 +28,16 @@ namespace ZE::Allocator
 		U64 firstBlockCapacity;
 		bool freeBlock = false;
 		std::vector<ItemBlock> itemBlocks;
+		LockType mutex;
 
 		ItemBlock& CreateNewBlock() noexcept;
+		void MoveFrom(Pool&& pool) noexcept;
 
 	public:
 		constexpr Pool(U64 firstBlockCapacity) noexcept : firstBlockCapacity(firstBlockCapacity) {}
-		ZE_CLASS_MOVE(Pool);
+		ZE_CLASS_NO_COPY(Pool);
+		Pool(Pool&& pool) noexcept { MoveFrom(std::move(pool)); }
+		Pool& operator=(Pool&& pool) noexcept { MoveFrom(std::move(pool)); return *this; }
 		~Pool() { Clear(); }
 
 		template<typename... Types>
@@ -42,8 +48,8 @@ namespace ZE::Allocator
 	};
 
 #pragma region Functions
-	template<typename T>
-	typename Pool<T>::ItemBlock& Pool<T>::CreateNewBlock() noexcept
+	template<typename T, bool USE_MUTEX>
+	typename Pool<T, USE_MUTEX>::ItemBlock& Pool<T, USE_MUTEX>::CreateNewBlock() noexcept
 	{
 		U64 newBlockCapacity = itemBlocks.size() ? itemBlocks.back().Capacity * 3 / 2 : firstBlockCapacity;
 		ItemBlock& newBlock = itemBlocks.emplace_back(std::make_unique<Item[]>(newBlockCapacity), newBlockCapacity, 0, 0);
@@ -58,45 +64,59 @@ namespace ZE::Allocator
 		return newBlock;
 	}
 
-	template<typename T> template<typename... Types>
-	T* Pool<T>::Alloc(Types&&... args) noexcept
+	template<typename T, bool USE_MUTEX>
+	void Pool<T, USE_MUTEX>::MoveFrom(Pool&& pool) noexcept
 	{
-		for (U64 i = itemBlocks.size(); i;)
+		firstBlockCapacity = pool.firstBlockCapacity;
+		freeBlock = pool.freeBlock;
+		itemBlocks = std::move(pool.itemBlocks);
+	}
+
+	template<typename T, bool USE_MUTEX> template<typename... Types>
+	T* Pool<T, USE_MUTEX>::Alloc(Types&&... args) noexcept
+	{
+		Item* item = nullptr;
 		{
-			ItemBlock& block = itemBlocks.at(--i);
-
-			// This block has some free items, use first one
-			if (block.FirstFreeIndex != UINT64_MAX)
+			LockGuardRW lock(USE_MUTEX ? reinterpret_cast<std::shared_mutex*>(&mutex) : nullptr, USE_MUTEX);
+			for (U64 i = itemBlocks.size(); i;)
 			{
-				ZE_ASSERT(block.FirstFreeIndex < block.Capacity, "Incorrect index!");
-				ZE_ASSERT(block.Allocated < block.Capacity, "Block is already full!");
-				if (block.Allocated++ == 0)
-					freeBlock = false;
+				ItemBlock& block = itemBlocks.at(--i);
 
-				Item* item = &block.Items[block.FirstFreeIndex];
-				block.FirstFreeIndex = item->NextFreeIndex;
+				// This block has some free items, use first one
+				if (block.FirstFreeIndex != UINT64_MAX)
+				{
+					ZE_ASSERT(block.FirstFreeIndex < block.Capacity, "Incorrect index!");
+					ZE_ASSERT(block.Allocated < block.Capacity, "Block is already full!");
+					if (block.Allocated++ == 0)
+						freeBlock = false;
 
-				T* result = reinterpret_cast<T*>(&item->Data);
-				new(result) T(std::forward<Types>(args)...);
-				return result;
+					item = &block.Items[block.FirstFreeIndex];
+					block.FirstFreeIndex = item->NextFreeIndex;
+				}
+			}
+
+			if (item == nullptr)
+			{
+				// No block has free item, create new one
+				ItemBlock& newBlock = CreateNewBlock();
+				item = &newBlock.Items[0];
+				newBlock.FirstFreeIndex = item->NextFreeIndex;
+				++newBlock.Allocated;
 			}
 		}
-
-		// No block has free item, create new one
-		ItemBlock& newBlock = CreateNewBlock();
-		Item* item = &newBlock.Items[0];
-		newBlock.FirstFreeIndex = item->NextFreeIndex;
-		++newBlock.Allocated;
 
 		T* result = reinterpret_cast<T*>(&item->Data);
 		new(result) T(std::forward<Types>(args)...);
 		return result;
 	}
 
-	template<typename T>
-	void Pool<T>::Free(T* ptr) noexcept
+	template<typename T, bool USE_MUTEX>
+	void Pool<T, USE_MUTEX>::Free(T* ptr) noexcept
 	{
 		ZE_ASSERT(ptr, "Invalid pointer!");
+		ptr->~T();
+
+		LockGuardRW lock(USE_MUTEX ? reinterpret_cast<std::shared_mutex*>(&mutex) : nullptr, USE_MUTEX);
 
 		Item* item = reinterpret_cast<Item*>(ptr);
 		// Search all memory blocks to find ptr
@@ -107,8 +127,6 @@ namespace ZE::Allocator
 			// Check if item is in address range of this block
 			if (item >= block.Items.get() && item < block.Items.get() + block.Capacity)
 			{
-				ptr->~T();
-
 				item->NextFreeIndex = block.FirstFreeIndex;
 				block.FirstFreeIndex = static_cast<U64>(item - block.Items.get());
 
@@ -126,9 +144,11 @@ namespace ZE::Allocator
 		ZE_FAIL("Pointer doesn't belong to this memory pool!");
 	}
 
-	template<typename T>
-	void Pool<T>::Clear(bool fastClear) noexcept
+	template<typename T, bool USE_MUTEX>
+	void Pool<T, USE_MUTEX>::Clear(bool fastClear) noexcept
 	{
+		LockGuardRW lock(USE_MUTEX ? reinterpret_cast<std::shared_mutex*>(&mutex) : nullptr, USE_MUTEX);
+
 		if (!fastClear)
 		{
 			for (auto& block : itemBlocks)

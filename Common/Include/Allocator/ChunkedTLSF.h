@@ -4,9 +4,9 @@
 #include <bitset>
 
 // Helper template header for ChunkedTLSF methods (Warning! Causes problems with auto formatters)
-#define ZE_CHUNKED_TLSF_TEMPLATE template<typename Memory, U8 SECOND_LEVEL_INDEX, U8 MEMORY_CLASS_SHIFT>
+#define ZE_CHUNKED_TLSF_TEMPLATE template<typename Memory, U8 SECOND_LEVEL_INDEX, U8 MEMORY_CLASS_SHIFT, bool USE_MUTEX>
 // Helper template type for ChunkedTLSF methods and inner types (Warning! Causes problems with auto formatters)
-#define ZE_CHUNKED_TLSF_TYPE ChunkedTLSF<Memory, SECOND_LEVEL_INDEX, MEMORY_CLASS_SHIFT>
+#define ZE_CHUNKED_TLSF_TYPE ChunkedTLSF<Memory, SECOND_LEVEL_INDEX, MEMORY_CLASS_SHIFT, USE_MUTEX>
 
 namespace ZE::Allocator
 {
@@ -29,9 +29,11 @@ namespace ZE::Allocator
 	// TLSF algorithm with distinction between regions of memory (chunk) that aren't continuous in adress space.
 	// According to original paper, SECOND_LEVEL_INDEX should be preferable 4 or 5.
 	// To avoid over-division of adress space, MEMORY_CLASS_SHIFT controls the max size that segregates memory region to first "memory class" (bucket for memory blocks)
-	template<typename Memory, U8 SECOND_LEVEL_INDEX = 5, U8 MEMORY_CLASS_SHIFT = 7>
+	template<typename Memory, U8 SECOND_LEVEL_INDEX = 5, U8 MEMORY_CLASS_SHIFT = 7, bool USE_MUTEX = false>
 	class ChunkedTLSF final
 	{
+		using LockType = std::conditional_t<USE_MUTEX, std::shared_mutex, std::monostate>;
+
 		// Algorithm source: M. Masmano, I. Ripoll, A. Crespo, and J. Real "TLSF: a New Dynamic Memory Allocator for Real-Time Systems"
 		// http://www.gii.upv.es/tlsf/files/ecrts04_tlsf.pdf
 		struct Block
@@ -51,8 +53,8 @@ namespace ZE::Allocator
 		};
 
 	public:
-		typedef Pool<Block> BlockAllocator;
-		typedef Pool<TLSFMemoryChunk<Memory>> ChunkAllocator;
+		typedef Pool<Block, USE_MUTEX> BlockAllocator;
+		typedef Pool<TLSFMemoryChunk<Memory>, USE_MUTEX> ChunkAllocator;
 
 	private:
 		static constexpr U16 SMALL_BUFFER_SIZE = 1 << (MEMORY_CLASS_SHIFT + 1);
@@ -78,6 +80,7 @@ namespace ZE::Allocator
 		// 1+: 0-(2^SLI-1) lists for normal blocks
 		std::unique_ptr<Block*[]> freeList;
 		Ptr<Block> nullBlock;
+		LockType mutex;
 
 		static U8 SizeToMemoryClass(U64 size) noexcept { return size > SMALL_BUFFER_SIZE ? Intrin::BitScanMSB(size) - MEMORY_CLASS_SHIFT : 0; }
 		static constexpr bool CheckBlock(Block& block, U64 allocSize, U64 alignment) noexcept;
@@ -90,6 +93,7 @@ namespace ZE::Allocator
 		constexpr void SetSingleChunk(bool val) noexcept { flags[1] = val; }
 		U32 GetListIndex(U64 size) const noexcept { const U8 memoryClass = SizeToMemoryClass(size); return GetListIndex(memoryClass, SizeToSecondIndex(size, memoryClass)); }
 
+		constexpr void MoveFrom(ChunkedTLSF&& tlsf) noexcept;
 		constexpr U32 GetListIndex(U8 memoryClass, U16 secondIndex) const noexcept;
 		constexpr U16 SizeToSecondIndex(U64 size, U8 memoryClass) const noexcept;
 
@@ -103,7 +107,9 @@ namespace ZE::Allocator
 	public:
 		constexpr ChunkedTLSF(std::shared_ptr<BlockAllocator> blockAllocator, std::shared_ptr<ChunkAllocator> chunkAllocator, bool singleChunk = false) noexcept
 			: blockAllocator(blockAllocator), chunkAllocator(chunkAllocator) { SetSingleChunk(singleChunk); }
-		ZE_CLASS_MOVE(ChunkedTLSF);
+		ZE_CLASS_NO_COPY(ChunkedTLSF);
+		constexpr ChunkedTLSF(ChunkedTLSF&& tlsf) noexcept { MoveFrom(std::move(tlsf)); }
+		constexpr ChunkedTLSF& operator=(ChunkedTLSF&& tlsf) noexcept { MoveFrom(std::move(tlsf)); return *this; }
 		constexpr ~ChunkedTLSF();
 
 		constexpr U64 GetOffset(AllocHandle alloc) const noexcept { ZE_ASSERT(alloc, "Invalid allocation!"); return alloc.Cast<Block>()->Offset * chunkSizeDivisor; }
@@ -133,28 +139,32 @@ namespace ZE::Allocator
 
 #pragma region Functions
 	ZE_CHUNKED_TLSF_TEMPLATE
-	constexpr Memory ZE_CHUNKED_TLSF_TYPE::GetMemory(AllocHandle alloc) const noexcept
-	{
-		// No need to pass handle when created with single chunk
-		if (IsSingleChunk())
-		{
-			ZE_ASSERT(nullBlock, "Null block not initialized!");
-			return nullBlock->ChunkHandle->MemChunk;
-		}
-		else
-		{
-			ZE_ASSERT(alloc, "Invalid allocation!");
-			return alloc.Cast<Block>()->ChunkHandle->MemChunk;
-		}
-	}
-
-	ZE_CHUNKED_TLSF_TEMPLATE
 	constexpr bool ZE_CHUNKED_TLSF_TYPE::CheckBlock(Block& block, U64 allocSize, U64 alignment) noexcept
 	{
 		ZE_ASSERT(block.IsFree(), "Block is already taken!");
 
 		const U64 alignedOffset = Math::AlignUp(block.Offset, alignment);
 		return block.Size >= allocSize + alignedOffset - block.Offset;
+	}
+
+	ZE_CHUNKED_TLSF_TEMPLATE
+	constexpr void ZE_CHUNKED_TLSF_TYPE::MoveFrom(ChunkedTLSF&& tlsf) noexcept
+	{
+		blockAllocator = std::move(tlsf.blockAllocator);
+		chunkAllocator = std::move(tlsf.chunkAllocator);
+		chunkSize = tlsf.chunkSize;
+		chunkSizeDivisor = tlsf.chunkSizeDivisor;
+		chunkFlags = tlsf.chunkFlags;
+		flags = tlsf.flags;
+		firstListSize = tlsf.firstListSize;
+		memoryClasses = tlsf.memoryClasses;
+		freeMemory = tlsf.freeMemory;
+		freeBlocks = tlsf.freeBlocks;
+		isFreeBitmap = tlsf.isFreeBitmap;
+		innerIsFreeBitmap = std::move(tlsf.innerIsFreeBitmap);
+		listsCount = tlsf.listsCount;
+		freeList = std::move(tlsf.freeList);
+		nullBlock = std::move(tlsf.nullBlock);
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
@@ -423,6 +433,22 @@ namespace ZE::Allocator
 	}
 
 	ZE_CHUNKED_TLSF_TEMPLATE
+	constexpr Memory ZE_CHUNKED_TLSF_TYPE::GetMemory(AllocHandle alloc) const noexcept
+	{
+		// No need to pass handle when created with single chunk
+		if (IsSingleChunk())
+		{
+			ZE_ASSERT(nullBlock, "Null block not initialized!");
+			return nullBlock->ChunkHandle->MemChunk;
+		}
+		else
+		{
+			ZE_ASSERT(alloc, "Invalid allocation!");
+			return alloc.Cast<Block>()->ChunkHandle->MemChunk;
+		}
+	}
+
+	ZE_CHUNKED_TLSF_TEMPLATE
 	Status ZE_CHUNKED_TLSF_TYPE::Init(TLSFMemoryChunkFlags memoryFlags, U64 initialChunkSize, U32 chunkSizeGranularity, U8 firstListSizePower, void* memoryUserData) noexcept
 	{
 		ZE_ASSERT(chunkSizeGranularity != 0, "Chunk granularity cannot be 0!");
@@ -470,6 +496,8 @@ namespace ZE::Allocator
 		allocSize = Math::DivideRoundUp(allocSize, static_cast<U64>(chunkSizeDivisor));
 		ZE_ASSERT(allocSize > 0, "Cannot allocate empty block!");
 		ZE_ASSERT(allocSize <= chunkSize, "Requested allocation too big for current chunk size!");
+
+		LockGuardRW lock(USE_MUTEX ? reinterpret_cast<std::shared_mutex*>(&mutex) : nullptr, USE_MUTEX);
 
 		if (!IsSingleChunk())
 		{
@@ -564,6 +592,8 @@ namespace ZE::Allocator
 		Ptr<Block> block = allocation.Cast<Block>();
 		ZE_ASSERT(!block->IsFree(), "Block is already free!");
 
+		LockGuardRW lock(USE_MUTEX ? reinterpret_cast<std::shared_mutex*>(&mutex) : nullptr, USE_MUTEX);
+
 		// Try merging
 		Ptr<Block> next = block->NextPhysical;
 		Ptr<Block> prev = block->PrevPhysical;
@@ -648,6 +678,8 @@ namespace ZE::Allocator
 	ZE_CHUNKED_TLSF_TEMPLATE
 	bool ZE_CHUNKED_TLSF_TYPE::ValidateIntegrity() noexcept
 	{
+		LockGuardRW lock(USE_MUTEX ? reinterpret_cast<std::shared_mutex*>(&mutex) : nullptr, USE_MUTEX);
+
 		Block* curr = nullBlock;
 		if (nullBlock && nullBlock->Offset + nullBlock->Size != chunkSize)
 		{
