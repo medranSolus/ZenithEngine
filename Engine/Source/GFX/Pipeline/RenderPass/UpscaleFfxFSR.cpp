@@ -254,7 +254,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFfxFSR
 		desc.reset = renderData.GraphData.FrameTemporalReset;
 		desc.cameraNear = FLT_MAX;
 		desc.cameraFar = renderData.DynamicData.NearClip;
-		desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
+		desc.cameraFovAngleVertical = Settings::DataBank.GetWorldData().get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
 		desc.viewSpaceToMetersFactor = 1.0f;
 		desc.flags = 0;
 		ZE_FFX_API_LOG_RET_FAILED_EXPECT(ffx->GetFunctions().Dispatch(&data.Ctx, &desc.header), "Error performing FFX-API FSR!");

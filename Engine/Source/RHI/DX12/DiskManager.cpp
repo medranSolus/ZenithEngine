@@ -1,5 +1,4 @@
 #include "RHI/DX12/DiskManager.h"
-#include "Data/ResourceLocation.h"
 #include "GFX/GFile.h"
 #include "IO/Compressor.h"
 ZE_WARNING_PUSH
@@ -67,7 +66,7 @@ namespace ZE::RHI::DX12
 		auto results = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_RESULT[]>(maxRequestCount);
 		auto decompresionTasks = std::make_unique<Task<Status>[]>(maxRequestCount);
 
-		while (decompressionData->CheckForDecompression)
+		while (decompressionData->CheckForDecompression && decompressionEvent)
 		{
 			// Check if any requests ready with timeout for checking of program end
 			switch (WaitForSingleObject(decompressionEvent, MAX_DECOMPRESSION_WAIT))
@@ -188,24 +187,13 @@ namespace ZE::RHI::DX12
 		}
 	}
 
-	void DiskManager::AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
+	void DiskManager::AddRequest(IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
 	{
-		if (resourceID != INVALID_EID || dest || src)
+		if (dest || src)
 		{
 			U64 fence = static_cast<U64>(currentFenceValue);
 			LockGuardRW lock(queueMutex);
-
-			if (resourceID != INVALID_EID)
-			{
-#if _ZE_MODE_DEBUG || _ZE_MODE_DEV
-				for (auto& entry : uploadQueue)
-				{
-					ZE_ASSERT(entry.ResID != resourceID, "Same resource EID added twice as request for DirectStorage upload!");
-				}
-#endif
-				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
-			}
-			uploadQueue.emplace_back(fence, resourceID, type, dest, src);
+			uploadQueue.emplace_back(fence, type, dest, src);
 		}
 	}
 
@@ -382,10 +370,6 @@ namespace ZE::RHI::DX12
 					{
 						++removeCount;
 
-						// Set all resources location to GPU
-						if (entry.ResID != INVALID_EID)
-							Settings::Data.get<Data::ResourceLocationAtom>(entry.ResID) = Data::ResourceLocation::GPU;
-
 						// Transition all textures to SRV and perform buffer barriers
 						if (entry.DestResource)
 						{
@@ -513,7 +497,7 @@ namespace ZE::RHI::DX12
 		return ZE_DX_ERROR(DX::Error::DSTORAGE_REQUEST_FAILURE);
 	}
 
-	void DiskManager::AddFileBufferRequest(EID resourceID, IResource* dest, GFX::GFile& file, U64 sourceOffset,
+	void DiskManager::AddFileBufferRequest(IResource* dest, GFX::GFile& file, U64 sourceOffset,
 		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
@@ -539,10 +523,10 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		fileQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, nullptr);
+		AddRequest(dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, nullptr);
 	}
 
-	void DiskManager::AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic,
+	void DiskManager::AddMemoryBufferRequest(IResource* dest, const void* srcStatic,
 		std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept
 	{
 		ZE_ASSERT(dest, "Empty destination resource!");
@@ -576,7 +560,7 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(resourceID, dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, srcCopy);
+		AddRequest(dest, isMesh ? ResourceType::Mesh : ResourceType::Buffer, srcCopy);
 	}
 
 	void DiskManager::AddFileTextureRequest(IResource* dest, GFX::GFile& file, U64 sourceOffset,
@@ -604,7 +588,7 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		fileQueue->EnqueueRequest(&request);
-		AddRequest(INVALID_EID, dest, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, nullptr);
+		AddRequest(dest, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, nullptr);
 	}
 
 	void DiskManager::AddMemoryTextureRequest(IResource* dest, std::shared_ptr<const U8[]> src, U32 bytes, bool copySrc) noexcept
@@ -630,7 +614,7 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(INVALID_EID, dest, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, src);
+		AddRequest(dest, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, src);
 	}
 
 	void DiskManager::AddMemoryTextureArrayRequest(IResource* dest, std::shared_ptr<const U8[]> src,
@@ -664,6 +648,6 @@ namespace ZE::RHI::DX12
 		request.CancellationTag = 0;
 
 		memoryQueue->EnqueueRequest(&request);
-		AddRequest(INVALID_EID, lastElement ? dest : nullptr, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, src);
+		AddRequest(lastElement ? dest : nullptr, copySrc ? ResourceType::TextureCopySrc : ResourceType::Texture, src);
 	}
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/Mesh.h"
 #include "ShadowMapCube.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight

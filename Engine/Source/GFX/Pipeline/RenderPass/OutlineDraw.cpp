@@ -1,6 +1,9 @@
 #include "GFX/Pipeline/RenderPass/OutlineDraw.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
+#include "GFX/Resource/Mesh.h"
+#include "GFX/TransformBuffer.h"
+#include "Data/Camera.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 {
@@ -48,7 +51,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawRender");
 		ZE_EXPECT_RET_FAILED(passData->StateRender, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
-		Settings::AssureEntityPools<InsideFrustum>();
+		Data::AssureEntityPools<InsideFrustum>(Settings::DataBank.GetWorldData());
 		return passData;
 	}
 
@@ -56,9 +59,8 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 	{
 		ZE_PERF_GUARD("Outline Draw");
 
-		auto group = Data::GetRenderGroup<Data::RenderOutline>();
-		U64 count = group.size();
-		if (count)
+		auto view = Settings::DataBank.GetWorldData().view<Data::RenderOutline, Data::TransformGlobal, Data::MaterialID, Data::MeshID>();
+		if (view.begin() != view.end())
 		{
 			ZE_PERF_GUARD("Outline Draw - outline present");
 			Resources ids = *reinterpret_cast<const Resources*>(passData.Resources.get());
@@ -70,14 +72,13 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			// Compute visibility of objects inside camera view and sort them front-back
 			ZE_PERF_START("Outline Draw - frustum culling");
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
-			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(group, frustum);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::DataBank.GetWorldData().get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(view, frustum);
 			ZE_PERF_STOP();
 
 			ZE_PERF_START("Outline Draw - view sort");
-			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderOutline, InsideFrustum>();
-			count = visibleGroup.size();
-			Utils::ViewSortAscending(visibleGroup, cameraPos);
+			auto visibleView = Settings::DataBank.GetWorldData().view<InsideFrustum, Data::RenderOutline, Data::TransformGlobal, Data::MaterialID, Data::MeshID>();
+			Utils::ViewSortAscending(visibleView, cameraPos);
 			ZE_PERF_STOP();
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
@@ -91,24 +92,23 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			data.StateStencil.SetStencilRef(cl, 0xFF);
 
 			ZE_PERF_START("Outline Draw Stencil - main loop");
-			for (U64 i = 0; i < count; ++i)
+			for (EID entity : visibleView)
 			{
 				ZE_PERF_GUARD("Outline Draw Stencil - single loop item");
-				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xC9, 0xBB, 0x8E));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(static_cast<U64>(entity))).c_str(), Pixel(0xC9, 0xBB, 0x8E));
 
-				EID entity = visibleGroup[i];
-				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
+				const auto& transform = visibleView.get<Data::TransformGlobal>(entity);
 
 				TransformBuffer transformBuffer = {};
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 
-				auto& transformInfo = visibleGroup.get<InsideFrustum>(entity);
+				auto& transformInfo = visibleView.get<InsideFrustum>(entity);
 				ZE_EXPECT_RET_FAILED(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
 				cbuffer.Bind(cl, ctx, transformInfo.Transform);
 				ctx.Reset();
 
-				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			renderData.Buffers.EndRaster(cl);
@@ -128,16 +128,15 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			ctx.Reset();
 
 			ZE_PERF_START("Outline Draw - main loop");
-			for (U64 i = 0; i < count; ++i)
+			for (EID entity : visibleView)
 			{
 				ZE_PERF_GUARD("Outline Draw - single loop item");
-				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xB9, 0xAB, 0x6E));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(static_cast<U64>(entity))).c_str(), Pixel(0xB9, 0xAB, 0x6E));
 
-				EID entity = visibleGroup[i];
-				cbuffer.Bind(cl, ctx, visibleGroup.get<InsideFrustum>(entity).Transform);
+				cbuffer.Bind(cl, ctx, visibleView.get<InsideFrustum>(entity).Transform);
 				ctx.Reset();
 
-				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			renderData.Buffers.EndRaster(cl);
@@ -146,9 +145,10 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 			// Remove current visibility
 			ZE_PERF_START("Outline Draw - visibility clear");
-			Settings::Data.clear<InsideFrustum>();
+			Settings::DataBank.GetWorldData().clear<InsideFrustum>();
 			ZE_PERF_STOP();
+			return true;
 		}
-		return count;
+		return false;
 	}
 }

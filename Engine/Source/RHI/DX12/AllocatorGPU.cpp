@@ -5,7 +5,7 @@ namespace ZE::RHI::DX12
 	Status AllocatorGPU::Memory::Init(Memory& chunk, HeapFlags flags, U64 size, void* userData) noexcept
 	{
 		ZE_ASSERT(chunk.Heap.Get() == nullptr, "Incorrect memory block!");
-		ZE_ASSERT(userData, "Cannot access GFX::API::DX12::Device for creating heap!");
+		ZE_ASSERT(userData, "Cannot access DX12 Device for creating heap!");
 
 		Device& dev = *reinterpret_cast<Device*>(userData);
 
@@ -110,6 +110,9 @@ namespace ZE::RHI::DX12
 		}
 
 		info.Handle = allocator.Alloc(bytes, alignment, &dev);
+#if _ZE_MODE_DEBUG
+		ZE_ASSERT(allocator.ValidateIntegrity(), "Allocator integrity check failed after allocation!");
+#endif
 		if (!info.Handle)
 		{
 			ZE_FAIL("Failed to allocate GPU memory!");
@@ -121,6 +124,9 @@ namespace ZE::RHI::DX12
 		if (!exp)
 		{
 			allocator.Free(info.Handle, &dev);
+#if _ZE_MODE_DEBUG
+			ZE_ASSERT(allocator.ValidateIntegrity(), "Allocator integrity check failed after deallocation!");
+#endif
 			return std::unexpected(exp.error());
 		}
 		info.Resource = std::move(*exp);
@@ -149,6 +155,9 @@ namespace ZE::RHI::DX12
 			return;
 		allocator.Free(resInfo.Handle, nullptr);
 		resInfo.Handle = 0;
+#if _ZE_MODE_DEBUG
+		ZE_ASSERT(allocator.ValidateIntegrity(), "Allocator integrity check failed after deallocation!");
+#endif
 	}
 
 	AllocatorGPU::AllocatorGPU() noexcept

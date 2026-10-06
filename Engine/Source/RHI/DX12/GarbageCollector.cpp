@@ -32,8 +32,16 @@ namespace ZE::RHI::DX12
 		}
 	}
 
+	void GarbageCollector::MarkActive(Device& dev, AllocHandle handle) noexcept
+	{
+		LockGuardRW lock(resMutex);
+		ZE_ASSERT(!activeDeviceResources.contains(handle), "Resource already registered in garbage collector!");
+		activeDeviceResources[handle] = dev.GetDevice();
+	}
+
 	IDevice* GarbageCollector::MarkInactive(AllocHandle handle) noexcept
 	{
+		LockGuardRW lock(resMutex);
 		ZE_ASSERT(activeDeviceResources.contains(handle), "Resource not yet registered in garbage collector!");
 
 		IDevice* dev = activeDeviceResources.at(handle);

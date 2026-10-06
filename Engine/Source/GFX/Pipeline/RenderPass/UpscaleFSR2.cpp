@@ -120,7 +120,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleFSR2
 		desc.reset = renderData.GraphData.FrameTemporalReset;
 		desc.cameraNear = FLT_MAX;
 		desc.cameraFar = renderData.DynamicData.NearClip;
-		desc.cameraFovAngleVertical = Settings::Data.get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
+		desc.cameraFovAngleVertical = Settings::DataBank.GetWorldData().get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection.FOV;
 		desc.viewSpaceToMetersFactor = 1.0f;
 		desc.enableAutoReactive = false;
 		desc.colorOpaqueOnly.resource = nullptr;

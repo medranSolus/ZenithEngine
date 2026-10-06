@@ -1,7 +1,6 @@
 #pragma once
 #include "GFX/CommandList.h"
 #include "IO/CompressionFormat.h"
-#include <latch>
 
 namespace ZE::GFX
 {
@@ -35,10 +34,9 @@ namespace ZE::RHI::DX11
 
 		// Gfx API Internal
 
-		void AddFileBufferRequest(EID resourceID, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
+		void AddFileBufferRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
-		void AddFileTextureRequest(std::latch* barrier, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
+		void AddFileTextureRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, U32 rowPitch, U32 depthPitch) noexcept;
-		void AddTexturePackID(EID resourceID, std::unique_ptr<std::latch> barrier) noexcept;
 	};
 }

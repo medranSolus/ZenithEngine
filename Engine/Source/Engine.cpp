@@ -130,7 +130,10 @@ namespace ZE
 					Logger::Error("Failed to wait for GPU flush during shutdown, GPU resources might not be properly released! Exception details: " + std::string(e.what()));
 				}
 			}
-			Settings::Data.clear();
+			Settings::GetThreadPool().Stop();
+			Settings::DataBank.GetWorldData().clear();
+			Settings::DataBank.GetAssetsData().clear();
+			Settings::DataBank.GetLoadingData().clear();
 		}
 	}
 
@@ -148,8 +151,11 @@ namespace ZE
 		renderGraph.UpdateFrameData(dev);
 		bool gpuWorkNeeded = false;
 		ZE_EXPECT_RET_FAILED_CODE(gpuWorkNeeded, graphBuilder.ExecuteStartupPasses(dev, mainList, renderGraph));
-		if (gpuWorkNeeded)
+		if (gpuWorkNeeded || *exp)
 			dev.ExecuteMain(mainList);
+
+		// In case there has been data loading before start
+		Settings::DataBank.MergeLoadedData();
 
 		// Frame 0 is special frame used only for any initialization of graph resources
 		Settings::AdvanceFrame();
@@ -415,14 +421,14 @@ namespace ZE
 		// Add or remove missing transform components
 		if (Settings::ComputeMotionVectors())
 		{
-			if (!Settings::Data.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
+			if (!worldData.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
 			{
-				for (EID id : Settings::Data.view<Data::TransformGlobal>())
-					Settings::Data.emplace_or_replace<Data::TransformPrevious>(id, Settings::Data.get<Data::TransformGlobal>(id));
+				for (EID id : worldData.view<Data::TransformGlobal>())
+					worldData.emplace_or_replace<Data::TransformPrevious>(id, worldData.get<Data::TransformGlobal>(id));
 			}
 		}
-		else if (Settings::Data.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
-			Settings::Data.clear<Data::TransformPrevious>();
+		else if (worldData.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
+			worldData.clear<Data::TransformPrevious>();
 
 		ZE_CODE_RET_FAILED(renderGraph.Execute(graphics));
 
@@ -435,9 +441,13 @@ namespace ZE
 		// Move all current transforms to previous state
 		if (Settings::ComputeMotionVectors())
 		{
-			for (EID id : Settings::Data.view<Data::TransformGlobal>())
-				static_cast<Data::TransformGlobal&>(Settings::Data.get<Data::TransformPrevious>(id)) = Settings::Data.get<Data::TransformGlobal>(id);
+			for (EID id : worldData.view<Data::TransformGlobal>())
+				static_cast<Data::TransformGlobal&>(worldData.get<Data::TransformPrevious>(id)) = worldData.get<Data::TransformGlobal>(id);
 		}
+
+		// Move all uploaded data from loading storage to proper storage
+		Settings::DataBank.MergeLoadedData();
+
 		ZE_CODE_RET_FAILED(graphics.Present());
 
 		// Frame marker

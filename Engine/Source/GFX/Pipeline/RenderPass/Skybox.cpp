@@ -36,7 +36,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 		const std::vector<U16> indices = Primitive::Cube::MakeSolidIndexInverted();
 		Resource::MeshData meshData =
 		{
-			INVALID_EID, nullptr,
+			nullptr,
 			Utils::SafeCast<U32>(vertices.size()),
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(Float3), 0

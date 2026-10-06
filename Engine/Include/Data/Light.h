@@ -51,17 +51,4 @@ namespace ZE::Data
 	struct DirectionalLightBuffer { GFX::Resource::CBuffer Buffer; };
 	struct SpotLightBuffer : public LightBuffer {};
 	struct PointLightBuffer : public LightBuffer {};
-
-	// Assure that all light components are registered as pools in data storage
-	constexpr void InitLightComponents() noexcept;
-
-#pragma region Functions
-	constexpr void InitLightComponents() noexcept
-	{
-		Settings::AssureEntityPools<LightBuffer,
-			DirectionalLight, Direction, DirectionalLightBuffer, 
-			SpotLight, SpotLightBuffer,
-			PointLight, PointLightBuffer>();
-	}
-#pragma endregion
 }

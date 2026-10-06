@@ -1,6 +1,5 @@
 #pragma once
 #include "GFX/Material.h"
-#include "Entity.h"
 
 namespace ZE::Data
 {
@@ -54,13 +53,10 @@ namespace ZE::Data
 	// Component containing graphics material data for meshes
 	typedef GFX::Material<MaterialPBR, MaterialPBR::TEX_SCHEMA_NAME> MaterialBuffersPBR;
 
-	// Assure that all PBR material components are registered as pools in data storage
-	constexpr void InitMaterialPBRComponents() noexcept { Settings::AssureEntityPools<PBRFlags, MaterialPBR, MaterialBuffersPBR>(); }
-
 #pragma region Functions
 	constexpr U8 MaterialPBR::GetPipelineStateNumber(PBRFlags flags) noexcept
 	{
-		// Remove UseSpecularPowerAlpha, as it's used in shader directly
+		// Remove all flags that are used in shader directly
 		//
 		// Ordering based on bitfield: Parallax|Transparent
 		return static_cast<U8>(flags.Flags & Flag::PermutationMask) >> 5;

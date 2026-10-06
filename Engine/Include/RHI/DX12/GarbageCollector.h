@@ -25,6 +25,7 @@ namespace ZE::RHI::DX12
 		std::map<AllocHandle, IDevice*> activeDeviceResources;
 		std::deque<FrameBucket> frames;
 		U64 lastFrameIndex = 0;
+		std::shared_mutex resMutex;
 
 		void CollectFrame(FrameBucket& frame, Device& dev) noexcept;
 
@@ -43,8 +44,7 @@ namespace ZE::RHI::DX12
 		void RegisterDynamicBuffer(IDevice* dev, ResourceInfo&& res) noexcept { frames.front().DevResources[dev].Resources.emplace_back(ResourceType::DynamicBuffer, std::move(res)); }
 		void RegisterTexture(IDevice* dev, ResourceInfo&& res) noexcept { frames.front().DevResources[dev].Resources.emplace_back(ResourceType::Texture, std::move(res)); }
 
-		void MarkActive(Device& dev, AllocHandle handle) noexcept { ZE_ASSERT(!activeDeviceResources.contains(handle), "Resource already registered in garbage collector!"); activeDeviceResources[handle] = dev.GetDevice(); }
-
+		void MarkActive(Device& dev, AllocHandle handle) noexcept;
 		IDevice* MarkInactive(AllocHandle handle) noexcept;
 		void AdvanceFrame(Device& dev) noexcept;
 		void Flush(Device& dev) noexcept;

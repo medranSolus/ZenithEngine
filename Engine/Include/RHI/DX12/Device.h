@@ -34,7 +34,7 @@ namespace ZE::RHI::DX12
 			static Status Init(DescHeap& chunk, Allocator::TLSFMemoryChunkFlags flags, U64 size, void* userData) noexcept;
 			static void Destroy(DescHeap& chunk, void* userData) noexcept { chunk.Heap = nullptr; }
 		};
-		typedef Allocator::ChunkedTLSF<DescHeap, 4, 2> DescriptorAllocator;
+		typedef Allocator::ChunkedTLSF<DescHeap, 4, 2, true> DescriptorAllocator;
 
 #if _ZE_DEBUG_GFX_API
 		DX::DebugInfoManager debugManager;

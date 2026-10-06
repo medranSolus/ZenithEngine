@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/Pipeline/PassDesc.h"
 #include "GFX/Resource/PipelineStateGfx.h"
+#include "GFX/Resource/Mesh.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Skybox
 {

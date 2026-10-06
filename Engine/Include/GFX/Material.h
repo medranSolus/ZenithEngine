@@ -4,7 +4,7 @@
 
 namespace ZE::GFX
 {
-	// Base class for creation of material types, EID of material is the same as the one from Texture::PackDesc
+	// Base class for creation of material types
 	//
 	// NOTE: When creating new material with initial data or updating it,
 	// source data must be static - it's content must be preserved for whole upload process
@@ -24,7 +24,7 @@ namespace ZE::GFX
 		static Expected<Material> Create(Device& dev, DiskManager& disk, const T& data, const Resource::Texture::PackDesc& desc) noexcept;
 		static Expected<Material> Create(Device& dev, DiskManager& disk, const Resource::CBufferFileData& data, const Resource::Texture::PackFileDesc& pack, GFile& file) noexcept;
 
-		constexpr Status UpdateData(Device& dev, DiskManager& disk, EID materialId, const T& data) const noexcept { ZE_VALID_EID(materialId); return buffer.Update(dev, disk, { materialId, &data, nullptr, sizeof(T) }); }
+		constexpr Status UpdateData(Device& dev, DiskManager& disk, const T& data) const noexcept { return buffer.Update(dev, disk, { &data, nullptr, sizeof(T) }); }
 		constexpr void BindBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
 		constexpr void BindTextures(CommandList& cl, Binding::Context& bindCtx) const noexcept { textures.Bind(cl, bindCtx); }
 	};
@@ -35,7 +35,7 @@ namespace ZE::GFX
 		const T& initData, const Resource::Texture::PackDesc& desc) noexcept
 	{
 		Material mat;
-		ZE_EXPECT_RET_FAILED(mat.buffer, Resource::CBuffer::Create(dev, disk, { INVALID_EID, &initData, nullptr, sizeof(T) }));
+		ZE_EXPECT_RET_FAILED(mat.buffer, Resource::CBuffer::Create(dev, disk, { &initData, nullptr, sizeof(T) }));
 		ZE_EXPECT_RET_FAILED(mat.textures, Resource::Texture::Pack::Create(dev, disk, desc));
 		return mat;
 	}

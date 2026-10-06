@@ -1,5 +1,6 @@
 #include "GFX/Pipeline/RenderPass/DirectionalLight.h"
 #include "GFX/Resource/Constant.h"
+#include "Data/Light.h"
 #include "Data/Tags.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
@@ -57,8 +58,8 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 	{
 		ZE_PERF_GUARD("Directional Light");
 
-		auto group = Data::GetDirectionalLightGroup();
-		if (group.size())
+		auto view = Settings::DataBank.GetWorldData().view<Data::LightDirectional, Data::DirectionalLight, Data::Direction, Data::DirectionalLightBuffer>();
+		if (view.begin() != view.end())
 		{
 			ZE_PERF_GUARD("Directional Light - light present");
 			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -84,13 +85,13 @@ namespace ZE::GFX::Pipeline::RenderPass::DirectionalLight
 			ctx.Reset();
 
 			ZE_PERF_START("Directional Light - main loop");
-			for (EID entity : group)
+			for (EID entity : view)
 			{
 				ZE_PERF_GUARD("Directional Light - single loop item");
 				Resource::Constant<Float3> direction;
-				ZE_EXPECT_RET_FAILED(direction, Resource::Constant<Float3>::Create(dev, group.get<Data::Direction>(entity).Dir));
+				ZE_EXPECT_RET_FAILED(direction, Resource::Constant<Float3>::Create(dev, view.get<Data::Direction>(entity).Dir));
 				direction.Bind(cl, ctx);
-				group.get<Data::DirectionalLightBuffer>(entity).Buffer.Bind(cl, ctx);
+				view.get<Data::DirectionalLightBuffer>(entity).Buffer.Bind(cl, ctx);
 				ctx.Reset();
 
 				cl.DrawFullscreen(dev);

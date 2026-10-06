@@ -23,7 +23,7 @@ namespace ZE::RHI::DX12
 			static Status Init(Memory& chunk, HeapFlags flags, U64 size, void* userData) noexcept;
 			static void Destroy(Memory& chunk, void* userData) noexcept { chunk.Heap = nullptr; }
 		};
-		typedef Allocator::ChunkedTLSF<Memory, 4, 2> HeapAllocator;
+		typedef Allocator::ChunkedTLSF<Memory, 4, 2, true> HeapAllocator;
 
 		static constexpr U32 TIGHT_CHUNK = D3D12_TIGHT_ALIGNMENT_MIN_PLACED_RESOURCE_ALIGNMENT; // 8 B
 		static constexpr U32 SMALL_CHUNK = D3D12_SMALL_RESOURCE_PLACEMENT_ALIGNMENT; // 4 KB

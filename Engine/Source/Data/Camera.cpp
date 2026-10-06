@@ -189,8 +189,8 @@ namespace ZE::Data
 	{
 		ZE_VALID_EID(camera);
 
-		Float3& position = Settings::Data.get<Transform>(camera).Position;
-		Float3 moveDir = Settings::Data.get<Camera>(camera).EyeDirection;
+		Float3& position = Settings::DataBank.GetWorldData().get<Transform>(camera).Position;
+		Float3 moveDir = Settings::DataBank.GetWorldData().get<Camera>(camera).EyeDirection;
 		moveDir.y = 0.0f;
 
 		Math::XMStoreFloat3(&position,
@@ -202,15 +202,15 @@ namespace ZE::Data
 	void MovePersonCameraY(EID camera, float dY) noexcept
 	{
 		ZE_VALID_EID(camera);
-		Settings::Data.get<Transform>(camera).Position.y += dY;
+		Settings::DataBank.GetWorldData().get<Transform>(camera).Position.y += dY;
 	}
 
 	void MovePersonCameraZ(EID camera, float dZ) noexcept
 	{
 		ZE_VALID_EID(camera);
 
-		Float3& position = Settings::Data.get<Transform>(camera).Position;
-		Float3 moveDir = Settings::Data.get<Camera>(camera).EyeDirection;
+		Float3& position = Settings::DataBank.GetWorldData().get<Transform>(camera).Position;
+		Float3 moveDir = Settings::DataBank.GetWorldData().get<Camera>(camera).EyeDirection;
 		moveDir.y = 0.0f;
 
 		Math::XMStoreFloat3(&position,
@@ -222,15 +222,15 @@ namespace ZE::Data
 	{
 		ZE_VALID_EID(camera);
 
-		Float3 moveDir = Settings::Data.get<Camera>(camera).EyeDirection;
+		Float3 moveDir = Settings::DataBank.GetWorldData().get<Camera>(camera).EyeDirection;
 		moveDir.y = 0.0f;
 
 		const Vector rotor = Math::XMQuaternionRotationNormal(Math::XMVector3Normalize(Math::XMLoadFloat3(&moveDir)), delta);
 
-		Float3& up = Settings::Data.get<Camera>(camera).UpVector;
+		Float3& up = Settings::DataBank.GetWorldData().get<Camera>(camera).UpVector;
 		Math::XMStoreFloat3(&up, Math::XMVector3Rotate(Math::XMLoadFloat3(&up), rotor));
 
-		Float4& rotation = Settings::Data.get<Transform>(camera).Rotation;
+		Float4& rotation = Settings::DataBank.GetWorldData().get<Transform>(camera).Rotation;
 		ZE_ASSERT_Q_UNIT(rotation);
 		Math::XMStoreFloat4(&rotation,
 			Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor)));
@@ -240,7 +240,7 @@ namespace ZE::Data
 	void RotatePersonCamera(EID camera, float angleDX, float angleDY) noexcept
 	{
 		ZE_VALID_EID(camera);
-		Camera& cam = Settings::Data.get<Camera>(camera);
+		Camera& cam = Settings::DataBank.GetWorldData().get<Camera>(camera);
 
 		if (abs(angleDX) < Camera::ROTATE_EPSILON)
 			angleDX = 0.0f;
@@ -281,7 +281,7 @@ namespace ZE::Data
 		// Unknown rotation when UP is strongly tilted, TODO: Perform some tests
 		Math::XMStoreFloat3(&cam.EyeDirection, Math::XMVector3Normalize(Math::XMVector3Rotate(eyeDirV, rotor)));
 
-		Float4& rotation = Settings::Data.get<Transform>(camera).Rotation;
+		Float4& rotation = Settings::DataBank.GetWorldData().get<Transform>(camera).Rotation;
 		ZE_ASSERT_Q_UNIT(rotation);
 		Math::XMStoreFloat4(&rotation,
 			Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor)));
@@ -292,8 +292,8 @@ namespace ZE::Data
 	{
 		ZE_VALID_EID(camera);
 
-		Float3& position = Settings::Data.get<Transform>(camera).Position;
-		const Camera& cam = Settings::Data.get<Camera>(camera);
+		Float3& position = Settings::DataBank.GetWorldData().get<Transform>(camera).Position;
+		const Camera& cam = Settings::DataBank.GetWorldData().get<Camera>(camera);
 
 		Math::XMStoreFloat3(&position,
 			Math::XMVectorAdd(Math::XMLoadFloat3(&position),
@@ -305,8 +305,8 @@ namespace ZE::Data
 	{
 		ZE_VALID_EID(camera);
 
-		Float3& position = Settings::Data.get<Transform>(camera).Position;
-		const Float3& up = Settings::Data.get<Camera>(camera).UpVector;
+		Float3& position = Settings::DataBank.GetWorldData().get<Transform>(camera).Position;
+		const Float3& up = Settings::DataBank.GetWorldData().get<Camera>(camera).UpVector;
 
 		Math::XMStoreFloat3(&position,
 			Math::XMVectorAdd(Math::XMLoadFloat3(&position),
@@ -317,8 +317,8 @@ namespace ZE::Data
 	{
 		ZE_VALID_EID(camera);
 
-		Float3& position = Settings::Data.get<Transform>(camera).Position;
-		const Float3& moveDir = Settings::Data.get<Camera>(camera).EyeDirection;
+		Float3& position = Settings::DataBank.GetWorldData().get<Transform>(camera).Position;
+		const Float3& moveDir = Settings::DataBank.GetWorldData().get<Camera>(camera).EyeDirection;
 
 		Math::XMStoreFloat3(&position,
 			Math::XMVectorAdd(Math::XMLoadFloat3(&position),
@@ -328,12 +328,12 @@ namespace ZE::Data
 	void RollFloatingCamera(EID camera, float delta) noexcept
 	{
 		ZE_VALID_EID(camera);
-		const Vector rotor = Math::XMQuaternionRotationNormal(Math::XMLoadFloat3(&Settings::Data.get<Camera>(camera).EyeDirection), delta);
+		const Vector rotor = Math::XMQuaternionRotationNormal(Math::XMLoadFloat3(&Settings::DataBank.GetWorldData().get<Camera>(camera).EyeDirection), delta);
 
-		Float3& up = Settings::Data.get<Camera>(camera).UpVector;
+		Float3& up = Settings::DataBank.GetWorldData().get<Camera>(camera).UpVector;
 		Math::XMStoreFloat3(&up, Math::XMVector3Rotate(Math::XMLoadFloat3(&up), rotor));
 
-		Float4& rotation = Settings::Data.get<Transform>(camera).Rotation;
+		Float4& rotation = Settings::DataBank.GetWorldData().get<Transform>(camera).Rotation;
 		ZE_ASSERT_Q_UNIT(rotation);
 		Math::XMStoreFloat4(&rotation,
 			Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor)));
@@ -343,7 +343,7 @@ namespace ZE::Data
 	void RotateFloatingCamera(EID camera, float angleDX, float angleDY) noexcept
 	{
 		ZE_VALID_EID(camera);
-		Camera& cam = Settings::Data.get<Camera>(camera);
+		Camera& cam = Settings::DataBank.GetWorldData().get<Camera>(camera);
 
 		if (abs(angleDX) < Camera::ROTATE_EPSILON)
 			angleDX = 0.0f;
@@ -370,7 +370,7 @@ namespace ZE::Data
 		Math::XMStoreFloat3(&cam.EyeDirection,
 			Math::XMVector3Normalize(Math::XMVector3Rotate(moveDirV, rotor)));
 
-		Float4& rotation = Settings::Data.get<Transform>(camera).Rotation;
+		Float4& rotation = Settings::DataBank.GetWorldData().get<Transform>(camera).Rotation;
 		ZE_ASSERT_Q_UNIT(rotation);
 		Math::XMStoreFloat4(&rotation,
 			Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&rotation), rotor)));

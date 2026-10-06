@@ -16,7 +16,7 @@ namespace ZE::RHI::DX11::Resource
 
 		static Expected<Constant> Create(GFX::Device& dev, const T& value) noexcept;
 
-		constexpr Status Set(GFX::Device& dev, const T& value) const { return buffer.Update(dev.Get().dx11, { INVALID_EID, &value, nullptr, sizeof(T) }); }
+		constexpr Status Set(GFX::Device& dev, const T& value) const { return buffer.Update(dev.Get().dx11, { &value, nullptr, sizeof(T) }); }
 
 		void Bind(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept { buffer.Bind(cl, bindCtx); }
 	};

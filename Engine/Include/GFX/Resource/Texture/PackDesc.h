@@ -40,7 +40,6 @@ namespace ZE::GFX::Resource::Texture
 	// Describes set of textures to create pack with
 	struct PackDesc
 	{
-		EID ResourceID = INVALID_EID;
 		PackOptions Options = 0;
 		std::vector<Desc> Textures;
 #if _ZE_DEBUG_GFX_NAMES
@@ -55,7 +54,6 @@ namespace ZE::GFX::Resource::Texture
 	// Set of textures description from file source
 	struct PackFileDesc
 	{
-		EID ResourceID = INVALID_EID;
 		PackOptions Options = 0;
 		std::vector<FileDesc> Textures;
 

@@ -68,9 +68,6 @@ namespace ZE::RHI::DX11::Resource
 	{
 		CBuffer cbuff = {};
 		ZE_EXPECT_RET_FAILED(cbuff.impl, CBufferInternal<false>::Create(dev.Get().dx11, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes));
-
-		if (data.ResourceID != INVALID_EID)
-			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
 		return cbuff;
 	}
 
@@ -81,7 +78,7 @@ namespace ZE::RHI::DX11::Resource
 
 		CBuffer cbuff = {};
 		cbuff.impl.SetBuffer(std::move(buffer));
-		disk.Get().dx11.AddFileBufferRequest(data.ResourceID, cbuff.impl.GetResource(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
+		disk.Get().dx11.AddFileBufferRequest(cbuff.impl.GetResource(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 		return cbuff;
 	}
 }

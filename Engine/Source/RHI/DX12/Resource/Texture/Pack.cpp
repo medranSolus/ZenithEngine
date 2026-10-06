@@ -104,7 +104,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				*mipLevels = startSurface.GetMipCount();
 
 				ZE_EXPECT_RET_FAILED(resInfo, device.CreateTexture(texDesc));
-				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + "_ID_" + std::to_string(static_cast<U64>(desc.ResourceID)) + (desc.DebugName.size() ? "_" + desc.DebugName : ""));
+				ZE_DX_SET_ID(resInfo.Resource, "Texture_" + std::to_string(i) + (desc.DebugName.size() ? "_" + desc.DebugName : ""));
 
 				const bool copySrc = desc.Options & GFX::Resource::Texture::PackOption::CopySource;
 				if (surfaces > 1)
@@ -129,7 +129,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
 			ZE_DX_RET_FAILED_DEBUG_EXPECT(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
-		diskManager.AddTexturePackID(desc.ResourceID);
 		return pack;
 	}
 
@@ -230,7 +229,7 @@ namespace ZE::RHI::DX12::Resource::Texture
 				*mipLevels = tex.MipLevels;
 
 				ZE_EXPECT_RET_FAILED(resInfo, device.CreateTexture(texDesc));
-				ZE_DX_SET_ID(resInfo.Resource, "Texture_from_file_" + std::to_string(i) + "_" + std::to_string(static_cast<U64>(desc.ResourceID)));
+				ZE_DX_SET_ID(resInfo.Resource, "Texture_from_file_" + std::to_string(i));
 
 				diskManager.AddFileTextureRequest(resInfo.Resource.Get(), file, tex.DataOffset, tex.SourceBytes, tex.Compression, tex.UncompressedSize, desc.Options & GFX::Resource::Texture::PackOption::CopySource);
 			}
@@ -244,7 +243,6 @@ namespace ZE::RHI::DX12::Resource::Texture
 			handle.ptr += Utils::SafeCast<U64>(i++) * device.GetDescriptorSize();
 			ZE_DX_RET_FAILED_DEBUG_EXPECT(device.GetDevice()->CreateShaderResourceView(resInfo.Resource.Get(), &srv, handle));
 		}
-		diskManager.AddTexturePackID(desc.ResourceID);
 		return pack;
 	}
 

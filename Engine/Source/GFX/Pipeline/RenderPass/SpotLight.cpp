@@ -1,7 +1,9 @@
 #include "GFX/Pipeline/RenderPass/SpotLight.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
+#include "GFX/TransformBuffer.h"
 #include "GFX/Primitive.h"
+#include "Data/Light.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 {
@@ -60,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 		const auto volume = Primitive::Cone::MakeSolid(8);
 		Resource::MeshData meshData =
 		{
-			INVALID_EID, nullptr,
+			nullptr,
 			ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
 			ZE::Utils::SafeCast<U32>(volume.Indices.size()),
 			sizeof(Float3), 0
@@ -73,9 +75,8 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		auto group = Data::GetSpotLightGroup();
-		const U64 count = group.size();
-		if (count)
+		auto view = Settings::DataBank.GetWorldData().view<Data::LightSpot, Data::SpotLight, Data::SpotLightBuffer, Data::TransformGlobal>();
+		if (view.begin() != view.end())
 		{
 			ZE_PERF_GUARD("Spot Light - present");
 			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -86,19 +87,18 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
 
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
-			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::DataBank.GetWorldData().get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			auto& cbuffer = *renderData.DynamicBuffer;
 			ZE_PERF_START("Spot Light - main loop");
-			for (U64 i = 0; i < count; ++i)
+			for (EID entity : view)
 			{
 				ZE_PERF_GUARD("Spot Light - single loop item");
-				EID entity = group[i];
-				const auto& transform = group.get<Data::TransformGlobal>(entity);
-				const auto& lightData = group.get<Data::SpotLight>(entity);
-				const auto& light = group.get<Data::SpotLightBuffer>(entity);
+				const auto& transform = view.get<Data::TransformGlobal>(entity);
+				const auto& lightData = view.get<Data::SpotLight>(entity);
+				const auto& light = view.get<Data::SpotLightBuffer>(entity);
 
 				// Check if light will be visible in current view
 				Math::BoundingFrustum lightFrustum = Data::GetFrustum(lightProjections, light.Volume);
@@ -117,7 +117,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 				ZE_PERF_STOP();
 
 				ZE_PERF_START("Spot Light - after shadow map");
-				ZE_DRAW_TAG_BEGIN(dev, cl, ("Spot Light nr_" + std::to_string(i)).c_str(), Pixel(0xFB, 0xE1, 0x06));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Spot Light nr_" + std::to_string(static_cast<U64>(entity))).c_str(), Pixel(0xFB, 0xE1, 0x06));
 				renderData.Buffers.BeginRaster(cl, ids.Lighting);
 				renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ShadowMap, TextureLayout::RenderTarget, TextureLayout::ShaderResource,
 					Base(ResourceAccess::RenderTarget), Base(ResourceAccess::ShaderResource), Base(StageSync::RenderTarget), Base(StageSync::PixelShading) });

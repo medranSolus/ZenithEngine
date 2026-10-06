@@ -1,6 +1,5 @@
 #pragma once
 #include "Entity.h"
-#include "Settings.h"
 
 namespace ZE::Data
 {
@@ -36,9 +35,6 @@ namespace ZE::Data
 	};
 
 #pragma region Functions
-	// Assure that all camera components are registered as pools in data storage
-	constexpr void InitCameraComponents() noexcept { Settings::AssureEntityPools<Camera>(); }
-
 	// Convert projection space jitter into unit pixel space (range [-0.5,0.5]) in X axis
 	constexpr float GetUnitPixelJitterX(float jitterX, U32 renderWidth) noexcept { return 0.5f * jitterX * Utils::SafeCast<float>(renderWidth); }
 	// Convert projection space jitter into unit pixel space (range [-0.5,0.5]) in Y axis

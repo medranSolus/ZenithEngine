@@ -33,7 +33,6 @@ namespace ZE::RHI::DX12
 		struct UploadEntry
 		{
 			U64 CurrentFence = 0;
-			EID ResID = INVALID_EID;
 			ResourceType Type = ResourceType::Buffer;
 			IResource* DestResource = nullptr;
 			std::shared_ptr<const U8[]> SrcMemory;
@@ -65,7 +64,7 @@ namespace ZE::RHI::DX12
 		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;
 		void DecompressAssets(Device& dev) const noexcept;
-		void AddRequest(EID resourceID, IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept;
+		void AddRequest(IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept;
 
 		void MoveFrom(DiskManager&& disk) noexcept;
 
@@ -86,12 +85,11 @@ namespace ZE::RHI::DX12
 		// Gfx API Internal
 
 		IStorageFactory* GetFactory() const noexcept { return factory.Get(); }
-		void AddTexturePackID(EID resourceID) noexcept { AddRequest(resourceID, nullptr, ResourceType::Texture, nullptr); }
 
-		void AddFileBufferRequest(EID resourceID, IResource* dest, GFX::GFile& file, U64 sourceOffset,
+		void AddFileBufferRequest(IResource* dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool isMesh) noexcept;
 		// Use srcStatic when data ref don't have to be taken, otherwise when life of buffer ends before finishing the upload, use srcCopy
-		void AddMemoryBufferRequest(EID resourceID, IResource* dest, const void* srcStatic, std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept;
+		void AddMemoryBufferRequest(IResource* dest, const void* srcStatic, std::shared_ptr<const U8[]> srcCopy, U32 bytes, bool isMesh) noexcept;
 
 		void AddFileTextureRequest(IResource* dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, bool copySrc) noexcept;

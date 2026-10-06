@@ -1,4 +1,5 @@
 #pragma once
+#include "GFX/Resource/Mesh.h"
 #include "ShadowMap.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::SpotLight

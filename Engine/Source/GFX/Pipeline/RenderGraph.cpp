@@ -187,15 +187,15 @@ namespace ZE::GFX::Pipeline
 	void RenderGraph::UpdateFrameData(Device& dev) noexcept
 	{
 		ZE_VALID_EID(execData.GraphData.CurrentCamera);
-		ZE_ASSERT((Settings::Data.all_of<Data::TransformGlobal, Data::Camera>(execData.GraphData.CurrentCamera)),
+		ZE_ASSERT((Settings::DataBank.GetWorldData().all_of<Data::TransformGlobal, Data::Camera>(execData.GraphData.CurrentCamera)),
 			"Current camera does not have all required components!");
 
 		// Copy previous camera info
 		execData.GraphData.PrevViewTps = execData.DynamicData.ViewTps;
 		execData.GraphData.PrevProjection = execData.GraphData.Projection;
 
-		auto& currentCamera = Settings::Data.get<Data::Camera>(execData.GraphData.CurrentCamera);
-		const auto& transform = Settings::Data.get<Data::Transform>(execData.GraphData.CurrentCamera); // TODO: Change into TransformGlobal later
+		auto& currentCamera = Settings::DataBank.GetWorldData().get<Data::Camera>(execData.GraphData.CurrentCamera);
+		const auto& transform = Settings::DataBank.GetWorldData().get<Data::Transform>(execData.GraphData.CurrentCamera); // TODO: Change into TransformGlobal later
 
 		// Setup shader dynamic data
 		execData.DynamicData.CameraPos = transform.Position;

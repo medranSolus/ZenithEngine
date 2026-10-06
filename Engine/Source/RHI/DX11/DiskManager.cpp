@@ -1,5 +1,4 @@
 #include "RHI/DX11/DiskManager.h"
-#include "Data/ResourceLocation.h"
 #include "GFX/GFile.h"
 #include "IO/Compressor.h"
 
@@ -52,17 +51,14 @@ namespace ZE::RHI::DX11
 		return {};
 	}
 
-	void DiskManager::AddFileBufferRequest(EID resourceID, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
+	void DiskManager::AddFileBufferRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
 		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
 	{
-		if (resourceID != INVALID_EID)
-			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
-
 		LockGuardRW lock(bucketMutex);
 		ZE_ASSERT(statusBuckets.size() > 0, "There should always be at least one bucket!");
 
 		statusBuckets.back().emplace_back(Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression, EID resourceID) noexcept -> Status
+			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression) noexcept -> Status
 			{
 				const void* decompressedBuff = nullptr;
 				std::unique_ptr<U8[]> decompressedData;
@@ -88,21 +84,19 @@ namespace ZE::RHI::DX11
 				dev->GetImmediateContext(&ctx);
 				ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(dst.Get(), 0, nullptr, decompressedBuff, 0, 0), "There were debug messages during buffer upload!");
 				
-				if (resourceID != INVALID_EID)
-					Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::GPU;
 				return {};
 			},
-			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression, resourceID));
+			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression));
 	}
 
-	void DiskManager::AddFileTextureRequest(std::latch* barrier, DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
+	void DiskManager::AddFileTextureRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
 		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, U32 rowPitch, U32 depthPitch) noexcept
 	{
 		LockGuardRW lock(bucketMutex);
 		ZE_ASSERT(statusBuckets.size() > 0, "There should always be at least one bucket!");
 
 		statusBuckets.back().emplace_back(Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression, U32 rowPitch, U32 depthPitch, std::latch* barrier) noexcept -> Status
+			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression, U32 rowPitch, U32 depthPitch) noexcept -> Status
 			{
 				const void* decompressedBuff = nullptr;
 				std::unique_ptr<U8[]> decompressedData;
@@ -129,35 +123,8 @@ namespace ZE::RHI::DX11
 				// TODO: Maybe need to do it per subresource too?...
 				ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(dst.Get(), 0, nullptr, decompressedBuff, rowPitch, depthPitch), "There were debug messages during buffer upload!");
 
-				if (barrier)
-					barrier->count_down();
 				return {};
 			},
-			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression, rowPitch, depthPitch, barrier));
-	}
-
-	void DiskManager::AddTexturePackID(EID resourceID, std::unique_ptr<std::latch> barrier) noexcept
-	{
-		if (resourceID != INVALID_EID)
-		{
-			if (barrier->try_wait())
-				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::GPU;
-			else
-			{
-				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::UploadingToGPU;
-
-				LockGuardRW lock(bucketMutex);
-				ZE_ASSERT(statusBuckets.size() > 0, "There should always be at least one bucket!");
-
-				statusBuckets.back().emplace_back(Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-					[barrier = std::move(barrier)](EID resourceID) noexcept -> Status
-					{
-						barrier->wait();
-						Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(resourceID) = Data::ResourceLocation::GPU;
-						return {};
-					},
-					resourceID));
-			}
-		}
+			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression, rowPitch, depthPitch));
 	}
 }

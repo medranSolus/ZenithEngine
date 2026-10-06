@@ -1,5 +1,4 @@
 #pragma once
-#include "Data/ResourceLocation.h"
 #include "GFX/Binding/Context.h"
 #include "GFX/Resource/CBufferData.h"
 #include "GFX/CommandList.h"
@@ -85,12 +84,7 @@ namespace ZE::RHI::DX11::Resource
 			dev.GetMainContext()->Unmap(buffer.Get(), 0);
 		}
 		else
-		{
 			dev.GetMainContext()->UpdateSubresource(buffer.Get(), 0, nullptr, dataSrc, 0, 0);
-
-			if (data.ResourceID != INVALID_EID)
-				Settings::Data.get<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
-		}
 		return {};
 	}
 #pragma endregion

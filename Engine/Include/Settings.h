@@ -1,7 +1,7 @@
 #pragma once
+#include "Data/SystemsBank.h"
 #include "GFX/RayTracingTier.h"
 #include "GFX/VendorGPU.h"
-#include "Data/Entity.h"
 #include "SettingsInitParams.h"
 #include "ThreadPool.h"
 
@@ -53,8 +53,7 @@ namespace ZE
 		// Time in miliseconds elapsed since last frame
 		static inline double FrameTime = 0.0;
 
-		// When creating new entities concurrently use CreateEntity() for thread-safe method
-		static inline Data::Storage Data;
+		static inline Data::SystemsBank DataBank;
 
 	private:
 		static inline const char* applicationName = nullptr;
@@ -74,12 +73,10 @@ namespace ZE
 		ZE_CLASS_DELETE(Settings);
 		~Settings() = default;
 
-		template<typename T>
-		static constexpr std::shared_mutex& GetEntityMutex() noexcept { static std::shared_mutex mutex; return mutex; }
-		// If data pool is used concurrently by multiple threads, it have to be assured that all pools are created before using them
-		template<typename Type, typename ...Other>
-		static constexpr void AssureEntityPools() noexcept;
-
+#if !_ZE_MODE_RELEASE
+		// Utility debug mutex to aid in debugging multi-threaded issues, should not be used in production code
+		static constexpr std::shared_mutex& GetDebugMutex() noexcept { static std::shared_mutex mutex; return mutex; }
+#endif
 		static constexpr const char* GetAppName() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationName; }
 		static constexpr U32 GetAppVersion() noexcept { ZE_ASSERT_INIT(Initialized()); return applicationVersion; }
 		static constexpr GfxApiType GetGfxApi() noexcept { ZE_ASSERT_INIT(Initialized() || gfxApi == GfxApiType::None); return gfxApi; }
@@ -122,11 +119,6 @@ namespace ZE
 		static constexpr void SetDebugView(bool enabled) noexcept { flags[Flags::DebugView] = enabled; }
 		static constexpr void SetGfxSupportAsyncQueue(bool enabled) noexcept { flags[Flags::SupportedAsyncQueue] = enabled; }
 
-		static EID CreateEntity() noexcept { LockGuardRW lock(GetEntityMutex<EID>()); return Data.create(); }
-		static void CreateEntities(std::vector<EID>& entities) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (EID& e : entities) e = Data.create(); }
-		static void DestroyEntity(EID entity) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); Data.destroy(entity); }
-		static void DestroyEntities(std::vector<EID>::iterator begin, std::vector<EID>::iterator end) noexcept { LockGuardRW lock(GetEntityMutex<EID>()); for (; begin < end; ++begin) Data.destroy(*begin); }
-
 		static constexpr U32 GetChainResourceCount() noexcept;
 
 		static constexpr void Init(const SettingsInitParams& params) noexcept;
@@ -134,17 +126,6 @@ namespace ZE
 	};
 
 #pragma region Functions
-	template<typename Type, typename ...Other>
-	static constexpr void Settings::AssureEntityPools() noexcept
-	{
-		if ((!Data.storage(entt::type_hash<Type>()) || ... || !Data.storage(entt::type_hash<Other>())))
-		{
-			static std::shared_mutex mutex;
-			LockGuardRW lock(mutex);
-			(Data.storage<Type>(), ..., Data.storage<Other>());
-		}
-	}
-
 	constexpr U32 Settings::GetChainResourceCount() noexcept
 	{
 		ZE_ASSERT_INIT(Initialized());

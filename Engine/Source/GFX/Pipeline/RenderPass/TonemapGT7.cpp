@@ -104,7 +104,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 		if (passData.UpdateData)
 		{
 			passData.UpdateData = false;
-			ZE_CODE_RET_FAILED_EXPECT(passData.ParamsBuffer.Update(dev, buildData.Assets.GetDisk(), { INVALID_EID, &passData.Params, nullptr, sizeof(TonemapParams) }));
+			ZE_CODE_RET_FAILED_EXPECT(passData.ParamsBuffer.Update(dev, buildData.Assets.GetDisk(), { &passData.Params, nullptr, sizeof(TonemapParams) }));
 
 			status = UpdateOperation::GpuUploadRequired;
 		}
@@ -128,7 +128,7 @@ namespace ZE::GFX::Pipeline::RenderPass::TonemapGT7
 			return std::unexpected(operation.error());
 
 		SetParams(passData->Params, passData->Alpha, passData->LinearSection, GT7_SDR_PAPER_WHITE, passData->UseJzazbz);
-		ZE_EXPECT_RET_FAILED(passData->ParamsBuffer, Resource::CBuffer::Create(dev, buildData.Assets.GetDisk(), { INVALID_EID, &passData->Params, nullptr, sizeof(TonemapParams) }));
+		ZE_EXPECT_RET_FAILED(passData->ParamsBuffer, Resource::CBuffer::Create(dev, buildData.Assets.GetDisk(), { &passData->Params, nullptr, sizeof(TonemapParams) }));
 
 		return passData;
 	}

@@ -2,6 +2,8 @@
 #include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
 #include "GFX/Primitive.h"
+#include "GFX/TransformBuffer.h"
+#include "Data/Light.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::PointLight
 {
@@ -58,7 +60,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		const auto volume = Primitive::Sphere::MakeIcoSolid(3);
 		Resource::MeshData meshData =
 		{
-			INVALID_EID, nullptr,
+			nullptr,
 			ZE::Utils::SafeCast<U32>(volume.Vertices.size()),
 			ZE::Utils::SafeCast<U32>(volume.Indices.size()),
 			sizeof(Float3), 0
@@ -70,9 +72,8 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		auto group = Data::GetPointLightGroup();
-		const U64 count = group.size();
-		if (count)
+		auto view = Settings::DataBank.GetWorldData().view<Data::LightPoint, Data::PointLight, Data::PointLightBuffer, Data::TransformGlobal>();
+		if (view.begin() != view.end())
 		{
 			ZE_PERF_GUARD("Point Light - present");
 			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
@@ -82,35 +83,33 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 			const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
 
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
-			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::DataBank.GetWorldData().get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation), cameraPos);
 
 			Binding::Context ctx{ renderData.Bindings.GetSchema(data.BindingIndex) };
 
 			auto& cbuffer = *renderData.DynamicBuffer;
 			ZE_PERF_START("Point Light - main loop");
-			for (U64 i = 0; i < count; ++i)
+			for (EID entity : view)
 			{
 				ZE_PERF_GUARD("Point Light - single loop item");
-				EID entity = group[i];
-				const auto& transform = group.get<Data::TransformGlobal>(entity);
-				const auto& light = group.get<Data::PointLightBuffer>(entity);
+				const auto& light = view.get<Data::PointLightBuffer>(entity);
 
 				// Check if light will be visible in current view
-				const Math::BoundingSphere lightSphere(transform.Position, light.Volume);
+				const Math::BoundingSphere lightSphere(view.get<Data::TransformGlobal>(entity).Position, light.Volume);
 				if (!frustum.Intersects(lightSphere))
 					continue;
 
 				ZE_PERF_START("Point Light - shadow map");
-				ZE_CODE_RET_FAILED_EXPECT(ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), transform.Position, light.Volume));
+				ZE_CODE_RET_FAILED_EXPECT(ShadowMapCube::Execute(dev, cl, renderData, data.ShadowData, *reinterpret_cast<ShadowMapCube::Resources*>(&ids.ShadowMap), lightSphere.Center, light.Volume));
 				ZE_PERF_STOP();
 
 				ZE_PERF_START("Point Light - after shadow map");
 				TransformBuffer transformBuffer = {};
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
 					Math::XMMatrixTranspose(Math::XMMatrixScaling(light.Volume, light.Volume, light.Volume) *
-						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&transform.Position))));
+						Math::XMMatrixTranslationFromVector(Math::XMLoadFloat3(&lightSphere.Center))));
 
-				ZE_DRAW_TAG_BEGIN(dev, cl, ("Point Light nr_" + std::to_string(i)).c_str(), Pixel(0xFD, 0xFB, 0xD3));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Point Light eid_" + std::to_string(static_cast<U64>(entity))).c_str(), Pixel(0xFD, 0xFB, 0xD3));
 				renderData.Buffers.BeginRaster(cl, ids.Lighting);
 				renderData.Buffers.Barrier(cl, BarrierTransition{ ids.ShadowMap, TextureLayout::RenderTarget, TextureLayout::ShaderResource,
 					Base(ResourceAccess::RenderTarget), Base(ResourceAccess::ShaderResource), Base(StageSync::RenderTarget), Base(StageSync::PixelShading) });
@@ -120,7 +119,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				data.State.Bind(cl);
 
 				Resource::Constant<Float3> lightPos;
-				ZE_EXPECT_RET_FAILED(lightPos, Resource::Constant<Float3>::Create(dev, transform.Position));
+				ZE_EXPECT_RET_FAILED(lightPos, Resource::Constant<Float3>::Create(dev, lightSphere.Center));
 				lightPos.Bind(cl, ctx);
 				light.Buffer.Bind(cl, ctx);
 
@@ -138,7 +137,8 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 				ZE_PERF_STOP();
 			}
 			ZE_PERF_STOP();
+			return true;
 		}
-		return count;
+		return false;
 	}
 }

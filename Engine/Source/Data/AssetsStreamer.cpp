@@ -1,11 +1,11 @@
 #include "Data/AssetsStreamer.h"
 #include "Data/MaterialPBR.h"
 #include "Data/Tags.h"
+#include "GFX/Resource/Mesh.h"
 #include "GFX/Vertex.h"
-#include "GUI/DearImGui.h"
 #include "GUI/DialogWindow.h"
+#include "GUI/DearImGui.h"
 #include "IO/Format/ResourcePackFile.h"
-#include "IO/Compressor.h"
 #include "IO/File.h"
 #include "IO/ResourcePackError.h"
 
@@ -40,16 +40,6 @@ namespace ZE::Data
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D);
 		assets.texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
 
-		// Preinitialize components that will be added anyway during loading resources
-		Settings::AssureEntityPools<std::string, MeshID, MaterialID, PackID, ParentID, Children,
-			Math::BoundingBox, IO::CompressionFormat,
-			GFX::Resource::Mesh, GFX::Resource::CBuffer, GFX::Resource::Texture::Pack>();
-		InitLightComponents();
-		InitRenderComponents();
-		InitTransformComponents();
-		InitMaterialPBRComponents();
-		InitCameraComponents();
-
 		return assets;
 	}
 
@@ -74,7 +64,7 @@ namespace ZE::Data
 
 				// Prepare IDs for all created entities
 				std::vector<EID> resourceIds(header.ResourcesCount);
-				Settings::CreateEntities(resourceIds);
+				//Settings::CreateEntities(resourceIds);
 
 				/* TODO: Resourcepack are not yet implemented fully, need to redesign this accordingly with proper async creation of resources
 				* 
@@ -386,15 +376,16 @@ namespace ZE::Data
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
 			[&]() noexcept -> Status
 			{
+				auto& dataStorage = Settings::DataBank.GetAssetsData();
 				// Gather all resources for given group
 				std::vector<EID> resourceIds;
 				U32 materialCount = 0;
-				for (EID entity : Settings::Data.view<PackID>())
+				for (EID entity : dataStorage.view<PackID>())
 				{
-					if (Settings::Data.get<PackID>(entity).ID == packId)
+					if (dataStorage.get<PackID>(entity).ID == packId)
 					{
 						resourceIds.emplace_back(entity);
-						if (Settings::Data.try_get<MaterialBuffersPBR>(entity))
+						if (dataStorage.try_get<MaterialBuffersPBR>(entity))
 							++materialCount;
 					}
 				}
@@ -430,24 +421,24 @@ namespace ZE::Data
 				{
 					auto& entry = resourceInfoTable[i++];
 					entry.NameIndex = nameOffset;
-					entry.NameSize = Utils::SafeCast<U16>(Settings::Data.get<std::string>(entity).size());
+					entry.NameSize = Utils::SafeCast<U16>(dataStorage.get<std::string>(entity).size());
 					nameOffset += entry.NameSize;
 
-					if (auto* mesh = Settings::Data.try_get<GFX::Resource::Mesh>(entity))
+					if (auto* mesh = dataStorage.try_get<GFX::Resource::Mesh>(entity))
 					{
 						entry.Type = IO::Format::ResourcePackEntryType::Geometry;
 						entry.Geometry.Offset = dataOffset;
 						entry.Geometry.Bytes = mesh->GetSize(); // TODO NOW: Currently no compression, add simple zlib ones
 						entry.Geometry.UncompressedSize = mesh->GetSize();
-						entry.Geometry.BoxCenter = Settings::Data.get<Math::BoundingBox>(entity).Center;
-						entry.Geometry.BoxExtents = Settings::Data.get<Math::BoundingBox>(entity).Extents;
+						entry.Geometry.BoxCenter = dataStorage.get<Math::BoundingBox>(entity).Center;
+						entry.Geometry.BoxExtents = dataStorage.get<Math::BoundingBox>(entity).Extents;
 						entry.Geometry.VertexCount = mesh->GetVertexCount();
 						entry.Geometry.IndexCount = mesh->GetIndexCount();
 						entry.Geometry.VertexSize = mesh->GetVertexSize();
 						entry.Geometry.IndexBufferFormat = mesh->GetIndexFormat();
 
 						// If custom compression specified then use this one
-						auto* compression = Settings::Data.try_get<IO::CompressionFormat>(entity);
+						auto* compression = dataStorage.try_get<IO::CompressionFormat>(entity);
 						entry.Geometry.Compression = compression ? *compression : defaultCompression;
 
 						if (entry.Geometry.IndexBufferFormat == PixelFormat::R8_UInt)
@@ -478,10 +469,10 @@ namespace ZE::Data
 	}
 
 #if _ZE_EXTERNAL_MODEL_LOADING
-	Task<Expected<MeshID>> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh) noexcept
+	Task<Expected<EID>> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() noexcept -> Expected<MeshID>
+			[&]() noexcept -> Expected<EID>
 			{
 				GFX::Resource::MeshData meshData = {};
 				meshData.VertexCount = mesh.mNumVertices;
@@ -554,40 +545,46 @@ namespace ZE::Data
 					}
 				}
 
+				// Load parsed mesh data into correct mesh and start it's upload to GPU
+				GFX::Resource::Mesh meshBuffer;
+				ZE_EXPECT_RET_FAILED(meshBuffer, GFX::Resource::Mesh::Create(dev, diskManager, meshData));
+
 				// Create main mesh data
-				EID meshId = Settings::CreateEntity();
-				meshData.MeshID = meshId;
+				LockGuardRW lock(Settings::DataBank.GetLoadingLock());
+
+				auto& dataStorage = Settings::DataBank.GetLoadingData();
+				EID meshId = dataStorage.create();
 
 				// Load custom data by default to resource pack 0
-				Settings::Data.emplace<PackID>(meshId).ID = 0;
-				Settings::Data.emplace<std::string>(meshId, mesh.mName.length != 0
-					? mesh.mName.C_Str() : "mesh_" + std::to_string(static_cast<U64>(meshId)));
-				Settings::Data.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
+				dataStorage.emplace<PackID>(meshId).ID = 0;
+#if !_ZE_GAME_BUILD
+				dataStorage.emplace<std::string>(meshId, mesh.mName.length != 0 ? mesh.mName.C_Str() : "mesh");
+#endif
+				dataStorage.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
+				dataStorage.emplace<GFX::Resource::Mesh>(meshId, std::move(meshBuffer));
 
-				// Load parsed mesh data into correct mesh and start it's upload to GPU
-				ZE_EXPECT_RET_FAILED(Settings::Data.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(dev, diskManager, meshData));
-				return MeshID{ meshId };
+				// Mark that this mesh is ready for merging
+				dataStorage.emplace<RefCount>(meshId);
+				dataStorage.emplace<SystemsBank::AssetLoaded>(meshId);
+				return meshId;
 			});
 	}
 
-	Task<Expected<MaterialID>> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options) noexcept
+	Task<Expected<EID>> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&, path = path]() noexcept -> Expected<MaterialID>
+			[&, path = path]() noexcept -> Expected<EID>
 			{
-				EID materialId = Settings::CreateEntity();
-
-				Settings::Data.emplace<std::string>(materialId, material.GetName().length != 0
-					? material.GetName().C_Str() : "material_" + std::to_string(static_cast<U64>(materialId)));
-
-				MaterialPBR& data = Settings::Data.emplace<MaterialPBR>(materialId);
-				PBRFlags& flags = Settings::Data.emplace<PBRFlags>(materialId);
+#if !_ZE_GAME_BUILD || _ZE_DEBUG_GFX_NAMES
+				std::string matName =  material.GetName().length != 0 ? material.GetName().C_Str() : "material_" + path;
+#endif
+				MaterialPBR data = {};
+				PBRFlags flags = {};
 
 				const GFX::Resource::Texture::Schema& texSchema = texSchemaLib.Get(MaterialPBR::TEX_SCHEMA_NAME);
 				GFX::Resource::Texture::PackDesc texDesc = {};
-				ZE_TEXTURE_SET_NAME(texDesc, Settings::Data.get<std::string>(materialId));
+				ZE_TEXTURE_SET_NAME(texDesc, matName);
 				texDesc.Init(texSchema);
-				texDesc.ResourceID = materialId;
 
 				aiString texFile = {};
 				bool notSolid = false;
@@ -883,17 +880,34 @@ namespace ZE::Data
 
 				// Indicate that material require special handling
 				if (notSolid)
-				{
 					flags |= MaterialPBR::Flag::IsTransparent;
-					Settings::Data.emplace<MaterialTransparent>(materialId);
-				}
 				data.Flags = flags;
 
-				// Load custom data by default to resource pack 0
-				Settings::Data.emplace<PackID>(materialId).ID = 0;
 				// Start upload of buffer data and textures to GPU
-				ZE_EXPECT_RET_FAILED(Settings::Data.emplace<MaterialBuffersPBR>(materialId), MaterialBuffersPBR::Create(dev, diskManager, data, texDesc));
-				return MaterialID{ materialId };
+				MaterialBuffersPBR matBuffer;
+				ZE_EXPECT_RET_FAILED(matBuffer, MaterialBuffersPBR::Create(dev, diskManager, data, texDesc));
+
+				// Load data into proper bank
+				LockGuardRW lock(Settings::DataBank.GetLoadingLock());
+
+				auto& dataStorage = Settings::DataBank.GetLoadingData();
+				EID materialId = dataStorage.create();
+#if !_ZE_GAME_BUILD
+				dataStorage.emplace<std::string>(materialId, std::move(matName));
+#endif
+				if (notSolid)
+					dataStorage.emplace<MaterialTransparent>(materialId);
+				// Load custom data by default to resource pack 0
+				dataStorage.emplace<PackID>(materialId).ID = 0;
+
+				dataStorage.emplace<MaterialPBR>(materialId, data);
+				dataStorage.emplace<PBRFlags>(materialId, flags);
+				dataStorage.emplace<MaterialBuffersPBR>(materialId, std::move(matBuffer));
+
+				// Mark that this material is ready for merging
+				dataStorage.emplace<RefCount>(materialId);
+				dataStorage.emplace<SystemsBank::AssetLoaded>(materialId);
+				return materialId;
 			});
 	}
 #endif

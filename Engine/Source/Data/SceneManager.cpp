@@ -1,15 +1,18 @@
 #include "Data/SceneManager.h"
 #include "Data/Tags.h"
 #include "Data/Transform.h"
+#if _ZE_EXTERNAL_MODEL_LOADING
+ZE_WARNING_PUSH
+#	include "assimp/Importer.hpp"
+#	include "assimp/postprocess.h"
+ZE_WARNING_POP
+#endif
 
 namespace ZE::Data
 {
 #if _ZE_EXTERNAL_MODEL_LOADING
-	void ParseNode(const aiNode& node, EID currentEntity, const Data::Transform& topTransform, const std::vector<std::pair<MeshID, MaterialID>>& meshes) noexcept
+	void ParseNode(const aiNode& node, EID currentEntity, const Data::Transform& topTransform, std::vector<std::vector<EID>>& meshReferences) noexcept
 	{
-		if (!Settings::Data.try_get<std::string>(currentEntity))
-			Settings::Data.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node_" + std::to_string(static_cast<U64>(currentEntity)));
-
 		// Load transforms for node
 		Vector translation = {}, rotation = {}, scaling = {};
 		if (!Math::XMMatrixDecompose(&scaling, &rotation, &translation,
@@ -21,69 +24,78 @@ namespace ZE::Data
 		}
 
 		// Store node transforms without influence of top-level transform
-		auto& local = Settings::Data.emplace<Transform>(currentEntity);
+		Transform local = {};
 		Math::XMStoreFloat4(&local.Rotation, rotation);
 		Math::XMStoreFloat3(&local.Position, translation);
 		Math::XMStoreFloat3(&local.Scale, scaling);
 
 		// Apply top-level transform and local one as final render transform
-		auto& global = Settings::Data.emplace<TransformGlobal>(currentEntity, topTransform);
+		TransformGlobal global = static_cast<TransformGlobal>(topTransform);
 		Math::XMStoreFloat4(&global.Rotation, Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&global.Rotation), rotation)));
 		Math::XMStoreFloat3(&global.Position, Math::XMVectorAdd(Math::XMLoadFloat3(&global.Position), translation));
 		Math::XMStoreFloat3(&global.Scale, Math::XMVectorMultiply(Math::XMLoadFloat3(&global.Scale), scaling));
 
-		if (Settings::ComputeMotionVectors())
-			Settings::Data.emplace<TransformPrevious>(currentEntity, topTransform);
-
-		if (!Settings::Data.all_of<Children>(currentEntity))
-			Settings::Data.emplace<Children>(currentEntity);
-
-		if (node.mNumMeshes)
+		std::vector<EID> childrenEntities;
 		{
-			Settings::Data.emplace<RenderLambertian>(currentEntity);
-			Settings::Data.emplace<ShadowCaster>(currentEntity);
-			Settings::Data.emplace<MeshID>(currentEntity, meshes.at(node.mMeshes[0]).first);
-			Settings::Data.emplace<MaterialID>(currentEntity, meshes.at(node.mMeshes[0]).second);
+			LockGuardRW lock(Settings::DataBank.GetLoadingLock());
 
-			// Create child entities for every multiple instances of meshes in this node
-			std::vector<EID> childrenEntities(node.mNumMeshes - 1);
-			Settings::CreateEntities(childrenEntities);
-			for (U32 i = 1; i < node.mNumMeshes; ++i)
+			auto& dataStorage = Settings::DataBank.GetLoadingData();
+#if !_ZE_GAME_BUILD
+			dataStorage.emplace<std::string>(currentEntity, node.mName.length != 0 ? node.mName.C_Str() : "node");
+#endif
+			dataStorage.emplace<Transform>(currentEntity, local);
+			dataStorage.emplace<TransformGlobal>(currentEntity, global);
+
+			if (Settings::ComputeMotionVectors())
+				dataStorage.emplace<TransformPrevious>(currentEntity, global);
+
+			auto& children = dataStorage.emplace<ChildrenIDs>(currentEntity).Childs;
+			if (node.mNumChildren)
 			{
-				EID child = childrenEntities.at(i - 1);
-				Settings::Data.emplace<ParentID>(child, currentEntity);
-				Settings::Data.emplace<RenderLambertian>(child);
-				Settings::Data.emplace<ShadowCaster>(child);
-				Settings::Data.emplace<std::string>(child, Settings::Data.get<std::string>(currentEntity) + "_" + std::to_string(i));
-
-				Settings::Data.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
-				Settings::Data.emplace<TransformGlobal>(child, global);
-				if (Settings::ComputeMotionVectors())
-					Settings::Data.emplace<TransformPrevious>(child, global);
-
-				Settings::Data.emplace<MeshID>(child, meshes.at(node.mMeshes[i]).first);
-				Settings::Data.emplace<MaterialID>(child, meshes.at(node.mMeshes[i]).second);
-				Settings::Data.get<Children>(currentEntity).Childs.emplace_back(child);
+				for (U32 i = 0; i < node.mNumChildren; ++i)
+				{
+					EID child = dataStorage.create();
+					dataStorage.emplace<ParentID>(child, currentEntity);
+					children.emplace_back(child);
+				}
+				childrenEntities = children; // Copy for thread safety
 			}
+
+			if (node.mNumMeshes)
+			{
+				dataStorage.emplace<RenderLambertian>(currentEntity);
+				dataStorage.emplace<ShadowCaster>(currentEntity);
+				// Mark current entity for mesh reference
+				meshReferences.at(node.mMeshes[0]).emplace_back(currentEntity);
+
+				// Create child entities for every multiple instances of meshes in this node
+				for (U32 i = 1; i < node.mNumMeshes; ++i)
+				{
+					EID child = dataStorage.create();
+#if !_ZE_GAME_BUILD
+					dataStorage.emplace<std::string>(child, dataStorage.get<std::string>(currentEntity) + "_" + std::to_string(i));
+#endif
+					dataStorage.emplace<Transform>(child, Transform({ 0.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }));
+					dataStorage.emplace<TransformGlobal>(child, global);
+					if (Settings::ComputeMotionVectors())
+						dataStorage.emplace<TransformPrevious>(child, global);
+
+					dataStorage.emplace<RenderLambertian>(child);
+					dataStorage.emplace<ShadowCaster>(child);
+					meshReferences.at(node.mMeshes[i]).emplace_back(child);
+
+					dataStorage.emplace<ParentID>(child, currentEntity);
+					children.emplace_back(child);
+				}
+			}
+
+			if (children.size() == 0)
+				dataStorage.remove<ChildrenIDs>(currentEntity);
 		}
 
-		if (node.mNumChildren)
-		{
-			std::vector<EID> childrenEntities(node.mNumChildren);
-			Settings::CreateEntities(childrenEntities);
-
-			for (U32 i = 0; i < node.mNumChildren; ++i)
-			{
-				EID child = childrenEntities.at(i);
-				Settings::Data.emplace<ParentID>(child, currentEntity);
-				Settings::Data.get<Children>(currentEntity).Childs.emplace_back(child);
-
-				ParseNode(*node.mChildren[i], child, global, meshes);
-			}
-		}
-
-		if (Settings::Data.get<Children>(currentEntity).Childs.size() == 0)
-			Settings::Data.remove<Children>(currentEntity);
+		// Release lock and go over next nodes
+		for (U32 i = 0; EID child : childrenEntities)
+			ParseNode(*node.mChildren[i++], child, global, meshReferences);
 	}
 
 	Task<Status> LoadExternalModel(GFX::Device& dev, AssetsStreamer& assets, EID root, const Data::Transform& transform, std::string_view filename, ExternalModelOptions options) noexcept
@@ -91,7 +103,7 @@ namespace ZE::Data
 		ZE_VALID_EID(root);
 
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() noexcept -> Status
+			[&dev, &assets, file = std::string(filename), root = root, transform = transform, options = options]() noexcept -> Status
 			{
 				Assimp::Importer importer;
 				importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
@@ -99,7 +111,7 @@ namespace ZE::Data
 					aiComponent_COLORS | aiComponent_CAMERAS | aiComponent_ANIMATIONS | aiComponent_LIGHTS);
 				// aiProcess_FindInstances <- takes a while??
 				// aiProcess_GenBoundingBoxes ??? No info
-				const aiScene* scene = importer.ReadFile(filename.data(),
+				const aiScene* scene = importer.ReadFile(file.c_str(),
 					aiProcess_MakeLeftHanded |
 					aiProcess_FlipWindingOrder |
 					(options & ExternalModelOption::FlipUV ? aiProcess_FlipUVs : 0) |
@@ -121,50 +133,44 @@ namespace ZE::Data
 				const char* error = importer.GetErrorString();
 				if (!scene || std::strlen(error))
 				{
-					Logger::Error("Loading model \"" + std::string(filename) + "\": " + error);
+					Logger::Error("Loading model \"" + file + "\": " + error);
 					return std::make_error_code(std::errc::io_error);
 				}
 
-				std::filesystem::path filePath(filename);
-				bool flipYZ = filePath.extension().string() == ".3ds";
-				if (flipYZ)
-				{
-					// Fix for incorrect format with YZ coords
-					float temp = scene->mRootNode->mTransformation.b2;
-					scene->mRootNode->mTransformation.b2 = -scene->mRootNode->mTransformation.b3;
-					scene->mRootNode->mTransformation.b3 = temp;
-					std::swap(scene->mRootNode->mTransformation.c2, scene->mRootNode->mTransformation.c3);
-				}
-				if (flipYZ || filePath.extension().string() == ".fbx")
-				{
-					// Fix for model rotated by 90 degrees in X axis
-					Float4& rotation = Settings::Data.get<TransformGlobal>(root).Rotation;
-					Math::XMStoreFloat4(&rotation,
-						Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(90.0f), 0.0f, 0.0f),
-							Math::XMLoadFloat4(&rotation))));
-				}
-
 				// Load geometry
-				std::vector<Task<Expected<MeshID>>> meshWaitables;
+				std::vector<Task<Expected<EID>>> meshWaitables;
 				meshWaitables.reserve(scene->mNumMeshes);
 				for (U32 i = 0; i < scene->mNumMeshes; ++i)
 					meshWaitables.emplace_back(assets.ParseMesh(dev, *scene->mMeshes[i]));
 
 				// Load materials
-				std::vector<Task<Expected<MaterialID>>> materialWaitables;
+				std::string pathDir = std::filesystem::path(file).remove_filename().string();
+				std::vector<Task<Expected<EID>>> materialWaitables;
 				materialWaitables.reserve(scene->mNumMaterials);
 				for (U32 i = 0; i < scene->mNumMaterials; ++i)
-					materialWaitables.emplace_back(assets.ParseMaterial(dev, *scene->mMaterials[i], filePath.remove_filename().string(), options));
+					materialWaitables.emplace_back(assets.ParseMaterial(dev, *scene->mMaterials[i], pathDir, options));
+
+				// Load model structure to shadow registry
+				auto& dataStorage = Settings::DataBank.GetLoadingData();
+				std::vector<std::vector<EID>> meshRefs;
+				meshRefs.resize(scene->mNumMeshes);
+				EID loadingRoot = INVALID_EID;
+				{
+					LockGuardRW lock(Settings::DataBank.GetLoadingLock());
+					loadingRoot = dataStorage.create();
+					dataStorage.emplace<SystemsBank::WorldSourceID>(loadingRoot, root);
+				}
+				ParseNode(*scene->mRootNode, loadingRoot, transform, meshRefs);
 
 				// Finish loading geometry
-				std::vector<std::pair<MeshID, MaterialID>> meshes;
+				std::vector<LoadingMeshID> meshes;
 				meshes.reserve(scene->mNumMeshes);
 				for (auto& task : meshWaitables)
 				{
-					Expected<MeshID> expId = {};
+					Expected<EID> expId = {};
 					ZE_EXPECT_RET_FAILED_CODE(expId, task.Get());
 					if (expId)
-						meshes.emplace_back(std::move(*expId), INVALID_EID);
+						meshes.emplace_back(*expId);
 					else
 					{
 						ZE_CODE_RET_FAILED(expId.error());
@@ -173,11 +179,11 @@ namespace ZE::Data
 				meshWaitables.clear();
 
 				// Finish loading materials (after geometry to give more time to process)
-				std::vector<MaterialID> materials;
+				std::vector<LoadingMaterialID> materials;
 				materials.reserve(scene->mNumMaterials);
 				for (auto& task : materialWaitables)
 				{
-					Expected<MaterialID> expId = {};
+					Expected<EID> expId = {};
 					ZE_EXPECT_RET_FAILED_CODE(expId, task.Get());
 					if (expId)
 						materials.emplace_back(*expId);
@@ -188,16 +194,33 @@ namespace ZE::Data
 				}
 				materialWaitables.clear();
 
-				// Patch meshes with correct materials
-				for (U32 i = 0; i < scene->mNumMeshes; ++i)
-					meshes.at(i).second = materials.at(scene->mMeshes[i]->mMaterialIndex);
-				materials.clear();
+				LockGuardRW lock(Settings::DataBank.GetLoadingLock());
+				// Resolve meshes and materials for each node
+				for (U32 i = 0; const auto& meshInstance : meshRefs)
+				{
+					ZE_ASSERT(meshInstance.size(), "Ill-formed model, each mesh should be referenced!");
 
-				// Load model structure
-				ParseNode(*scene->mRootNode, root, transform, meshes);
+					// Patch mesh with correct material
+					LoadingMeshID meshId = meshes.at(i);
+					LoadingMaterialID matId = materials.at(scene->mMeshes[i++]->mMaterialIndex);
+
+					// Set correct number of references
+					dataStorage.get<AssetsStreamer::RefCount>(meshId.ID).Count = Utils::SafeCast<U32>(meshInstance.size());
+					dataStorage.get<AssetsStreamer::RefCount>(matId.ID).Count += Utils::SafeCast<U32>(meshInstance.size());
+
+					for (EID node : meshInstance)
+					{
+						// Emplace with correct references
+						dataStorage.emplace<LoadingMeshID>(node, meshId);
+						dataStorage.emplace<LoadingMaterialID>(node, matId);
+					}
+				}
 
 				// For root node apply top-level transform as it's set by the user
-				Settings::Data.get<Data::Transform>(root) = Settings::Data.get<Data::TransformGlobal>(root);
+				dataStorage.get<Data::Transform>(loadingRoot) = dataStorage.get<Data::TransformGlobal>(loadingRoot);
+
+				// Mark that this object tree is ready for merging
+				dataStorage.emplace<SystemsBank::WorldObjectLoaded>(loadingRoot);
 				return {};
 			});
 	}

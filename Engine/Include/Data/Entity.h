@@ -11,19 +11,33 @@ namespace ZE
 	// Identifier of invalid entity
 	inline constexpr const EID& INVALID_EID = entt::null;
 
-	// Identifier of parent for given entity
-	struct ParentID { EID ID = INVALID_EID; };
-
-	// List of children for given entity
-	struct Children
-	{
-		std::vector<EID> Childs;
-	};
-
 	namespace Data
 	{
 		// Main component data storage object
 		typedef entt::registry Storage;
+
+		// Identifier of parent for given entity
+		struct ParentID { EID ID = INVALID_EID; };
+
+		// List of children for given entity
+		struct ChildrenIDs
+		{
+			std::vector<EID> Childs;
+		};
+
+		// Identifier of single geometry data, objects poiting to it might be part of the assets storage pool
+		struct MeshID { EID ID = INVALID_EID; };
+		
+		// Identifier of single material data, objects poiting to it might be part of the assets storage pool
+		struct MaterialID { EID ID = INVALID_EID; };
+
+		// If data pool is used concurrently by multiple threads, it have to be assured that all pools are created before using them
+		template<typename Type, typename ...Other>
+		constexpr void AssureEntityPools(Storage& data) noexcept
+		{
+			if ((!data.storage(entt::type_hash<Type>()) || ... || !data.storage(entt::type_hash<Other>())))
+				(data.storage<Type>(), ..., data.storage<Other>());
+		}
 	}
 }
 

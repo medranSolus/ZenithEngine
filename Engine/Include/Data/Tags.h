@@ -1,9 +1,4 @@
 #pragma once
-#include "Camera.h"
-#include "Light.h"
-#include "MaterialPBR.h"
-#include "Transform.h"
-#include "AssetsStreamer.h"
 
 namespace ZE::Data
 {
@@ -31,16 +26,4 @@ namespace ZE::Data
 	struct MaterialTransparent {};
 	// Indicates that material requires blending on already rendered geometry
 	struct MaterialBlend {};
-
-	template<EmptyType T>
-	constexpr auto GetRenderGroup() noexcept { return Settings::Data.group<T>(entt::get<TransformGlobal, MaterialID, MeshID>); }
-	template<EmptyType T, typename Visibility>
-	constexpr auto GetVisibleRenderGroup() noexcept { return Settings::Data.group<Visibility>(entt::get<T, TransformGlobal, MaterialID, MeshID>); }
-
-	// Assure that all render components are registered as pools in data storage
-	constexpr void InitRenderComponents() noexcept { Settings::AssureEntityPools<RenderLambertian, RenderOutline, RenderWireframe, ShadowCaster, LightDirectional, LightSpot, LightPoint, MaterialTransparent, MaterialBlend>(); }
-
-	inline auto GetDirectionalLightGroup() noexcept { return Settings::Data.group<LightDirectional, DirectionalLight, Direction, DirectionalLightBuffer>(); }
-	inline auto GetSpotLightGroup() noexcept { return Settings::Data.group<LightSpot, SpotLight, SpotLightBuffer>(entt::get<TransformGlobal>); }
-	inline auto GetPointLightGroup() noexcept { return Settings::Data.group<LightPoint, PointLight, PointLightBuffer>(entt::get<TransformGlobal>); }
 }

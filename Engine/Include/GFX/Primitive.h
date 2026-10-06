@@ -2,6 +2,7 @@
 #include "Resource/MeshData.h"
 #include "Data/Camera.h"
 #include "Vertex.h"
+#include "Settings.h"
 
 namespace ZE::GFX::Primitive
 {

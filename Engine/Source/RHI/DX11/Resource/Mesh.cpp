@@ -1,5 +1,4 @@
 #include "RHI/DX11/Resource/Mesh.h"
-#include "Data/ResourceLocation.h"
 
 namespace ZE::RHI::DX11::Resource
 {
@@ -38,9 +37,6 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, &resData, &mesh.buffer));
 		ZE_DX_SET_ID(mesh.buffer, "Mesh geometry buffer");
 
-		if (data.MeshID != INVALID_EID)
-			Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
-
 		return mesh;
 	}
 
@@ -73,7 +69,7 @@ namespace ZE::RHI::DX11::Resource
 		ZE_DX_RET_FAILED_EXPECT(dev.Get().dx11.GetDevice()->CreateBuffer(&bufferDesc, nullptr, &mesh.buffer));
 		ZE_DX_SET_ID(mesh.buffer, "Mesh geometry buffer from file");
 
-		disk.Get().dx11.AddFileBufferRequest(data.MeshID, mesh.buffer, file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
+		disk.Get().dx11.AddFileBufferRequest(mesh.buffer, file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize);
 		return mesh;
 	}
 

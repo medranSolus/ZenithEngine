@@ -1,29 +1,32 @@
 #include "App.h"
+#include "GFX/Resource/Mesh.h"
 #include "GFX/Primitive.h"
+#include "Data/Light.h"
+#include "Data/MaterialPBR.h"
 #include "Data/SceneManager.h"
 #include "Data/Tags.h"
 
 template<typename T>
 void App::EnableProperty(EID entity) noexcept
 {
-	if (!Settings::Data.all_of<T>(entity))
-		Settings::Data.emplace<T>(entity);
+	if (!Settings::DataBank.GetWorldData().all_of<T>(entity))
+		Settings::DataBank.GetWorldData().emplace<T>(entity);
 
 	// Process childs
-	if (Settings::Data.all_of<Children>(entity))
-		for (EID child : Settings::Data.get<Children>(entity).Childs)
+	if (Settings::DataBank.GetWorldData().all_of<Data::ChildrenIDs>(entity))
+		for (EID child : Settings::DataBank.GetWorldData().get<Data::ChildrenIDs>(entity).Childs)
 			EnableProperty<T>(child);
 }
 
 template<typename T>
 void App::DisableProperty(EID entity) noexcept
 {
-	if (Settings::Data.all_of<T>(entity))
-		Settings::Data.remove<T>(entity);
+	if (Settings::DataBank.GetWorldData().all_of<T>(entity))
+		Settings::DataBank.GetWorldData().remove<T>(entity);
 
 	// Process childs
-	if (Settings::Data.all_of<Children>(entity))
-		for (EID child : Settings::Data.get<Children>(entity).Childs)
+	if (Settings::DataBank.GetWorldData().all_of<Data::ChildrenIDs>(entity))
+		for (EID child : Settings::DataBank.GetWorldData().get<Data::ChildrenIDs>(entity).Childs)
 			DisableProperty<T>(child);
 }
 
@@ -144,12 +147,13 @@ void App::ProcessInput() noexcept
 
 	if (cameraChanged)
 	{
-		if (Settings::Data.try_get<ParentID>(currentCamera))
+		auto& worldData = Settings::DataBank.GetWorldData();
+		if (worldData.try_get<Data::ParentID>(currentCamera))
 			PropagateTransformChange(currentCamera);
 		else
 		{
-			Settings::Data.get<Data::TransformGlobal>(currentCamera) = static_cast<Data::TransformGlobal>(Settings::Data.get<Data::Transform>(currentCamera));
-			if (Children* children = Settings::Data.try_get<Children>(currentCamera))
+			worldData.get<Data::TransformGlobal>(currentCamera) = static_cast<Data::TransformGlobal>(worldData.get<Data::Transform>(currentCamera));
+			if (Data::ChildrenIDs* children = worldData.try_get<Data::ChildrenIDs>(currentCamera))
 			{
 				for (EID child : children->Childs)
 					PropagateTransformChange(child);
@@ -179,12 +183,13 @@ Status App::ShowOptionsWindow() noexcept
 
 void App::BuiltObjectTree(EID currentEntity, EID& selected) noexcept
 {
-	const bool children = Settings::Data.all_of<Children>(currentEntity);
+	auto& worldData = Settings::DataBank.GetWorldData();
+	const bool children = worldData.all_of<Data::ChildrenIDs>(currentEntity);
 	const bool expanded = ImGui::TreeNodeEx(reinterpret_cast<void*>(currentEntity),
 		ImGuiTreeNodeFlags_OpenOnArrow |
 		(children ? 0 : ImGuiTreeNodeFlags_Leaf) |
 		(currentEntity == selected ? ImGuiTreeNodeFlags_Selected : 0),
-		Settings::Data.get<std::string>(currentEntity).c_str());
+		worldData.get<std::string>(currentEntity).c_str());
 
 	if (ImGui::IsItemClicked() && selected != currentEntity)
 	{
@@ -197,7 +202,7 @@ void App::BuiltObjectTree(EID currentEntity, EID& selected) noexcept
 	if (expanded)
 	{
 		if (children)
-			for (EID child : Settings::Data.get<Children>(currentEntity).Childs)
+			for (EID child : worldData.get<Data::ChildrenIDs>(currentEntity).Childs)
 				BuiltObjectTree(child, selected);
 		ImGui::TreePop();
 	}
@@ -210,9 +215,11 @@ Status App::ShowObjectWindow() noexcept
 	Status stat = {};
 	if (ImGui::Begin("Objects"/*, nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize*/))
 	{
+		auto& worldData = Settings::DataBank.GetWorldData();
+
 		ImGui::Columns(2);
 		ImGui::BeginChild("##node_tree", { 0.0f, 231.5f }, false, ImGuiWindowFlags_HorizontalScrollbar);
-		for (EID parent : Settings::Data.view<std::string>(entt::exclude<ParentID, Data::AssetsStreamer::PackID>))
+		for (EID parent : worldData.view<std::string>(entt::exclude<Data::ParentID, Data::AssetsStreamer::PackID>))
 		{
 			BuiltObjectTree(parent, selected);
 		}
@@ -228,7 +235,7 @@ Status App::ShowObjectWindow() noexcept
 			ImGui::BeginChild("##node_options");
 			ImGui::Columns(2, "##model_node_options", false);
 
-			bool change = Settings::Data.all_of<Data::RenderOutline>(selected);
+			bool change = worldData.all_of<Data::RenderOutline>(selected);
 			if (ImGui::Checkbox("Model outline", &change))
 			{
 				if (change)
@@ -236,7 +243,7 @@ Status App::ShowObjectWindow() noexcept
 				else
 					DisableProperty<Data::RenderOutline>(selected);
 			}
-			change = Settings::Data.all_of<Data::RenderWireframe>(selected);
+			change = worldData.all_of<Data::RenderWireframe>(selected);
 			if (ImGui::Checkbox("Wireframe", &change))
 			{
 				if (change)
@@ -245,7 +252,7 @@ Status App::ShowObjectWindow() noexcept
 					DisableProperty<Data::RenderWireframe>(selected);
 			}
 			ImGui::NextColumn();
-			change = Settings::Data.all_of<Data::RenderLambertian>(selected);
+			change = worldData.all_of<Data::RenderLambertian>(selected);
 			if (ImGui::Checkbox("Render mesh", &change))
 			{
 				if (change)
@@ -253,7 +260,7 @@ Status App::ShowObjectWindow() noexcept
 				else
 					DisableProperty<Data::RenderLambertian>(selected);
 			}
-			change = Settings::Data.all_of<Data::ShadowCaster>(selected);
+			change = worldData.all_of<Data::ShadowCaster>(selected);
 			if (ImGui::Checkbox("Shadows", &change))
 			{
 				if (change)
@@ -263,11 +270,11 @@ Status App::ShowObjectWindow() noexcept
 			}
 			ImGui::Columns(1);
 
-			if (Settings::Data.all_of<Data::Transform>(selected))
+			if (worldData.all_of<Data::Transform>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& transform = Settings::Data.get<Data::Transform>(selected);
+				auto& transform = worldData.get<Data::Transform>(selected);
 
 				change = ImGui::InputFloat3("Scale [X|Y|Z]", reinterpret_cast<float*>(&transform.Scale));
 				if (transform.Scale.x < 0.001f)
@@ -306,12 +313,12 @@ Status App::ShowObjectWindow() noexcept
 
 				if (change)
 				{
-					if (Settings::Data.try_get<ParentID>(selected))
+					if (worldData.try_get<Data::ParentID>(selected))
 						PropagateTransformChange(selected);
 					else
 					{
-						Settings::Data.get<Data::TransformGlobal>(selected) = static_cast<Data::TransformGlobal>(transform);
-						if (Children* children = Settings::Data.try_get<Children>(selected))
+						worldData.get<Data::TransformGlobal>(selected) = static_cast<Data::TransformGlobal>(transform);
+						if (Data::ChildrenIDs* children = worldData.try_get<Data::ChildrenIDs>(selected))
 						{
 							for (EID child : children->Childs)
 								PropagateTransformChange(child);
@@ -320,19 +327,21 @@ Status App::ShowObjectWindow() noexcept
 				}
 			}
 
-			if (Settings::Data.all_of<Data::MaterialID>(selected))
+			if (worldData.all_of<Data::MaterialID>(selected))
 			{
+				auto& assetsData = Settings::DataBank.GetAssetsData();
+
 				ImGui::Separator();
 				ImGui::NewLine();
-				EID materialId = Settings::Data.get<Data::MaterialID>(selected).ID;
-				auto& material = Settings::Data.get<Data::MaterialPBR>(materialId);
-				auto pbrFlags = Settings::Data.get<Data::PBRFlags>(materialId);
+				EID materialId = worldData.get<Data::MaterialID>(selected).ID;
+				auto& material = assetsData.get<Data::MaterialPBR>(materialId);
+				auto pbrFlags = assetsData.get<Data::PBRFlags>(materialId);
 
 				ImGui::Text("Material ID: %llu", materialId);
-				if (Settings::Data.all_of<std::string>(materialId))
+				if (assetsData.all_of<std::string>(materialId))
 				{
 					ImGui::SameLine();
-					ImGui::Text("Name: %s", Settings::Data.get<std::string>(materialId).c_str());
+					ImGui::Text("Name: %s", assetsData.get<std::string>(materialId).c_str());
 				}
 
 				change = ImGui::ColorEdit4("Albedo", reinterpret_cast<float*>(&material.Albedo),
@@ -380,7 +389,7 @@ Status App::ShowObjectWindow() noexcept
 
 				if (change)
 				{
-					stat = Settings::Data.get<Data::MaterialBuffersPBR>(materialId).UpdateData(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), materialId, material);
+					stat = assetsData.get<Data::MaterialBuffersPBR>(materialId).UpdateData(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), material);
 					if (stat)
 					{
 						ZE_CODE_ERROR(stat, "Error updating material " + std::to_string(static_cast<U64>(materialId)) + " data!");
@@ -388,11 +397,11 @@ Status App::ShowObjectWindow() noexcept
 				}
 			}
 
-			if (!stat && Settings::Data.all_of<Data::PointLight>(selected))
+			if (!stat && worldData.all_of<Data::PointLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& light = Settings::Data.get<Data::PointLight>(selected);
+				auto& light = worldData.get<Data::PointLight>(selected);
 
 				ImGui::Text("Point Light Intensity");
 				change = ImGui::InputFloat("##point_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
@@ -410,9 +419,9 @@ Status App::ShowObjectWindow() noexcept
 
 				if (change)
 				{
-					auto& buffer = Settings::Data.get<Data::PointLightBuffer>(selected);
+					auto& buffer = worldData.get<Data::PointLightBuffer>(selected);
 
-					stat = buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					stat = buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { &light, nullptr, sizeof(light) });
 					if (stat)
 					{
 						ZE_CODE_ERROR(stat, "Error updating point light " + std::to_string(static_cast<U64>(selected)) + " data!");
@@ -421,11 +430,11 @@ Status App::ShowObjectWindow() noexcept
 				}
 			}
 
-			if (!stat && Settings::Data.all_of<Data::SpotLight>(selected))
+			if (!stat && worldData.all_of<Data::SpotLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& light = Settings::Data.get<Data::SpotLight>(selected);
+				auto& light = worldData.get<Data::SpotLight>(selected);
 
 				ImGui::Text("Spot Light Intensity");
 				change = ImGui::InputFloat("##spot_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
@@ -466,9 +475,9 @@ Status App::ShowObjectWindow() noexcept
 
 				if (change)
 				{
-					auto& buffer = Settings::Data.get<Data::SpotLightBuffer>(selected);
+					auto& buffer = worldData.get<Data::SpotLightBuffer>(selected);
 
-					stat = buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					stat = buffer.Buffer.Update(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { &light, nullptr, sizeof(light) });
 					if (stat)
 					{
 						ZE_CODE_ERROR(stat, "Error updating spot light " + std::to_string(static_cast<U64>(selected)) + " data!");
@@ -477,11 +486,11 @@ Status App::ShowObjectWindow() noexcept
 				}
 			}
 
-			if (!stat && Settings::Data.all_of<Data::DirectionalLight>(selected))
+			if (!stat && worldData.all_of<Data::DirectionalLight>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& light = Settings::Data.get<Data::DirectionalLight>(selected);
+				auto& light = worldData.get<Data::DirectionalLight>(selected);
 
 				ImGui::Text("Directional Light Intensity");
 				change = ImGui::InputFloat("##dir_intensity", &light.Intensity, 0.001f, 0.0f, "%.3f");
@@ -495,16 +504,16 @@ Status App::ShowObjectWindow() noexcept
 
 				ImGui::Text("Direction [X|Y|Z]");
 				ImGui::SetNextItemWidth(-5.0f);
-				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&Settings::Data.get<Data::Direction>(selected).Dir), -1.0f, 1.0f, "%.2f"))
+				if (ImGui::SliderFloat3("##spot_dir", reinterpret_cast<float*>(&worldData.get<Data::Direction>(selected).Dir), -1.0f, 1.0f, "%.2f"))
 				{
-					Math::NormalizeStore(Settings::Data.get<Data::Direction>(selected).Dir);
+					Math::NormalizeStore(worldData.get<Data::Direction>(selected).Dir);
 					change = true;
 				}
 
 				if (change)
 				{
-					stat = Settings::Data.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(),
-						engine.Assets().GetDisk(), { selected, &light, nullptr, sizeof(light) });
+					stat = worldData.get<Data::DirectionalLightBuffer>(selected).Buffer.Update(engine.Gfx().GetDevice(),
+						engine.Assets().GetDisk(), { &light, nullptr, sizeof(light) });
 					if (stat)
 					{
 						ZE_CODE_ERROR(stat, "Error updating directional light " + std::to_string(static_cast<U64>(selected)) + " data!");
@@ -512,11 +521,11 @@ Status App::ShowObjectWindow() noexcept
 				}
 			}
 
-			if (Settings::Data.all_of<Data::Camera>(selected))
+			if (worldData.all_of<Data::Camera>(selected))
 			{
 				ImGui::Separator();
 				ImGui::NewLine();
-				auto& camera = Settings::Data.get<Data::Camera>(selected);
+				auto& camera = worldData.get<Data::Camera>(selected);
 
 				ImGui::Text("FOV");
 				ImGui::SetNextItemWidth(-1.0f);
@@ -542,12 +551,13 @@ Status App::ShowObjectWindow() noexcept
 
 void App::PropagateTransformChange(EID childEntity) noexcept
 {
+	auto& worldData = Settings::DataBank.GetWorldData();
 	ZE_VALID_EID(childEntity);
-	ZE_ASSERT(Settings::Data.try_get<ParentID>(childEntity), "Incorrect child-parent structure defined!");
+	ZE_ASSERT(worldData.try_get<Data::ParentID>(childEntity), "Incorrect child-parent structure defined!");
 
-	auto& parent = Settings::Data.get<Data::TransformGlobal>(Settings::Data.get<ParentID>(childEntity).ID);
-	auto& global = Settings::Data.get<Data::TransformGlobal>(childEntity);
-	auto& local = Settings::Data.get<Data::Transform>(childEntity);
+	auto& parent = worldData.get<Data::TransformGlobal>(worldData.get<Data::ParentID>(childEntity).ID);
+	auto& global = worldData.get<Data::TransformGlobal>(childEntity);
+	auto& local = worldData.get<Data::Transform>(childEntity);
 	Math::XMStoreFloat4(&global.Rotation,
 		Math::XMQuaternionNormalize(Math::XMQuaternionMultiply(Math::XMLoadFloat4(&parent.Rotation), Math::XMLoadFloat4(&local.Rotation))));
 	Math::XMStoreFloat3(&global.Position,
@@ -555,7 +565,7 @@ void App::PropagateTransformChange(EID childEntity) noexcept
 	Math::XMStoreFloat3(&global.Scale,
 		Math::XMVectorMultiply(Math::XMLoadFloat3(&parent.Scale), Math::XMLoadFloat3(&local.Scale)));
 
-	if (Children* children = Settings::Data.try_get<Children>(childEntity))
+	if (Data::ChildrenIDs* children = worldData.try_get<Data::ChildrenIDs>(childEntity))
 	{
 		for (EID child : children->Childs)
 			PropagateTransformChange(child);
@@ -565,8 +575,10 @@ void App::PropagateTransformChange(EID childEntity) noexcept
 EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	Float3&& position, const Float3& angle) noexcept
 {
-	EID camera = Settings::CreateEntity();
-	Settings::Data.emplace<std::string>(camera, std::move(name));
+	auto& worldData = Settings::DataBank.GetWorldData();
+
+	EID camera = worldData.create();
+	worldData.emplace<std::string>(camera, std::move(name));
 
 	const Vector rotor = Math::XMQuaternionRotationRollPitchYaw(Math::ToRadians(angle.x), Math::ToRadians(angle.y), Math::ToRadians(angle.z));
 
@@ -576,7 +588,7 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 	Math::XMStoreFloat3(&upVector, Math::XMVector3Rotate({ 0.0f, 1.0f, 0.0f, 0.0f }, rotor));
 	Math::XMStoreFloat4(&roation, rotor);
 
-	Settings::Data.emplace<Data::Camera>(camera,
+	worldData.emplace<Data::Camera>(camera,
 		Data::Camera(std::move(eyeVector), std::move(upVector),
 			{
 				Math::ToRadians(60.0f),
@@ -584,8 +596,8 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 				nearZ
 			}));
 
-	Settings::Data.emplace<Data::TransformGlobal>(camera,
-		Settings::Data.emplace<Data::Transform>(camera,
+	worldData.emplace<Data::TransformGlobal>(camera,
+		worldData.emplace<Data::Transform>(camera,
 			std::move(roation), std::move(position), Math::UnitScale()));
 
 	return camera;
@@ -612,19 +624,21 @@ Expected<EID> App::AddModel(std::string&& name, Float3&& position,
 Expected<EID> App::AddPointLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range) noexcept
 {
-	EID light = Settings::CreateEntity();
-	Settings::Data.emplace<std::string>(light, std::move(name));
-	Settings::Data.emplace<Data::LightPoint>(light);
+	auto& worldData = Settings::DataBank.GetWorldData();
 
-	Settings::Data.emplace<Data::TransformGlobal>(light,
-		Settings::Data.emplace<Data::Transform>(light, Math::NoRotation(), std::move(position), Math::UnitScale()));
+	EID light = worldData.create();
+	worldData.emplace<std::string>(light, std::move(name));
+	worldData.emplace<Data::LightPoint>(light);
 
-	Data::PointLight& pointLight = Settings::Data.emplace<Data::PointLight>(light, std::move(color), intensity);
+	worldData.emplace<Data::TransformGlobal>(light,
+		worldData.emplace<Data::Transform>(light, Math::NoRotation(), std::move(position), Math::UnitScale()));
+
+	Data::PointLight& pointLight = worldData.emplace<Data::PointLight>(light, std::move(color), intensity);
 	pointLight.SetAttenuationRange(range);
 
-	Data::PointLightBuffer& buffer = Settings::Data.emplace<Data::PointLightBuffer>(light,
+	Data::PointLightBuffer& buffer = worldData.emplace<Data::PointLightBuffer>(light,
 		Math::Light::GetLightVolume(pointLight.Color, pointLight.Intensity, pointLight.AttnLinear, pointLight.AttnQuad));
-	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &pointLight, nullptr, sizeof(Data::PointLight) }));
+	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { &pointLight, nullptr, sizeof(Data::PointLight) }));
 
 	return light;
 }
@@ -633,21 +647,23 @@ Expected<EID> App::AddSpotLight(std::string&& name, Float3&& position,
 	ColorF3&& color, float intensity, U64 range,
 	float innerAngle, float outerAngle, const Float3& direction) noexcept
 {
-	EID light = Settings::CreateEntity();
-	Settings::Data.emplace<std::string>(light, std::move(name));
-	Settings::Data.emplace<Data::LightSpot>(light);
+	auto& worldData = Settings::DataBank.GetWorldData();
 
-	Settings::Data.emplace<Data::TransformGlobal>(light,
-		Settings::Data.emplace<Data::Transform>(light,
+	EID light = worldData.create();
+	worldData.emplace<std::string>(light, std::move(name));
+	worldData.emplace<Data::LightSpot>(light);
+
+	worldData.emplace<Data::TransformGlobal>(light,
+		worldData.emplace<Data::Transform>(light,
 			Math::NoRotation(), std::move(position), Math::UnitScale()));
 
-	Data::SpotLight& spotLight = Settings::Data.emplace<Data::SpotLight>(light, std::move(color),
+	Data::SpotLight& spotLight = worldData.emplace<Data::SpotLight>(light, std::move(color),
 		intensity, Math::NormalizeReturn(direction), Math::ToRadians(innerAngle), Math::ToRadians(outerAngle));
 	spotLight.SetAttenuationRange(range);
 
-	Data::SpotLightBuffer& buffer = Settings::Data.emplace<Data::SpotLightBuffer>(light,
+	Data::SpotLightBuffer& buffer = worldData.emplace<Data::SpotLightBuffer>(light,
 		Math::Light::GetLightVolume(spotLight.Color, spotLight.Intensity, spotLight.AttnLinear, spotLight.AttnQuad));
-	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &spotLight, nullptr, sizeof(Data::SpotLight) }));
+	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { &spotLight, nullptr, sizeof(Data::SpotLight) }));
 
 	return light;
 }
@@ -655,15 +671,17 @@ Expected<EID> App::AddSpotLight(std::string&& name, Float3&& position,
 Expected<EID> App::AddDirectionalLight(std::string&& name,
 	ColorF3&& color, float intensity, const Float3& direction) noexcept
 {
-	EID light = Settings::CreateEntity();
-	Settings::Data.emplace<std::string>(light, std::move(name));
-	Settings::Data.emplace<Data::LightDirectional>(light);
+	auto& worldData = Settings::DataBank.GetWorldData();
 
-	Data::DirectionalLight& dirLight = Settings::Data.emplace<Data::DirectionalLight>(light, std::move(color), intensity);
-	Settings::Data.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
+	EID light = worldData.create();
+	worldData.emplace<std::string>(light, std::move(name));
+	worldData.emplace<Data::LightDirectional>(light);
 
-	Data::DirectionalLightBuffer& buffer = Settings::Data.emplace<Data::DirectionalLightBuffer>(light);
-	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { light, &dirLight, nullptr, sizeof(Data::DirectionalLight) }));
+	Data::DirectionalLight& dirLight = worldData.emplace<Data::DirectionalLight>(light, std::move(color), intensity);
+	worldData.emplace<Data::Direction>(light, Math::NormalizeReturn(direction));
+
+	Data::DirectionalLightBuffer& buffer = worldData.emplace<Data::DirectionalLightBuffer>(light);
+	ZE_EXPECT_RET_FAILED(buffer.Buffer, GFX::Resource::CBuffer::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), { &dirLight, nullptr, sizeof(Data::DirectionalLight) }));
 
 	return light;
 }
@@ -704,37 +722,40 @@ Status App::Init(const CmdParser& params) noexcept
 
 	if (params.GetOption("cubePerfTest"))
 	{
+		auto& worldData = Settings::DataBank.GetWorldData();
+		auto& assetsData = Settings::DataBank.GetAssetsData();
+
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f });
 
 		ZE_LOAD_CHECK(AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.15f, -1.0f, 0.05f }));
 
 		// Create mesh for all the cubes
-		EID meshId = Settings::CreateEntity();
-		Settings::Data.emplace<std::string>(meshId, "Cube");
-		Settings::Data.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Cube::MakeBoundingBox());
+		EID meshId = assetsData.create();
+		assetsData.emplace<std::string>(meshId, "Cube");
+		assetsData.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Cube::MakeBoundingBox());
 
 		std::vector<U16> indices = GFX::Primitive::Cube::MakeIndex();
 		std::vector<GFX::Vertex> vertices = GFX::Primitive::Cube::MakeVertex(indices);
 		GFX::Resource::MeshData meshData =
 		{
-			meshId, nullptr,
+			nullptr,
 			Utils::SafeCast<U32>(vertices.size()),
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(GFX::Vertex), 0
 		};
 		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.IndexSize);
-		ZE_EXPECT_RET_FAILED_CODE(Settings::Data.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
+		ZE_EXPECT_RET_FAILED_CODE(assetsData.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
 
 		// And some materials for them all
 		std::array<EID, 255> materialIds;
 		for (U32 i = 0; EID& materialId : materialIds)
 		{
-			materialId = Settings::CreateEntity();
-			Settings::Data.emplace<std::string>(materialId, "Cube_mat_" + std::to_string(i++));
+			materialId = assetsData.create();
+			assetsData.emplace<std::string>(materialId, "Cube_mat_" + std::to_string(i++));
 
-			Data::MaterialPBR& data = Settings::Data.emplace<Data::MaterialPBR>(materialId);
-			Data::MaterialBuffersPBR& buffers = Settings::Data.emplace<Data::MaterialBuffersPBR>(materialId);
-			Settings::Data.emplace<Data::PBRFlags>(materialId);
+			Data::MaterialPBR& data = assetsData.emplace<Data::MaterialPBR>(materialId);
+			Data::MaterialBuffersPBR& buffers = assetsData.emplace<Data::MaterialBuffersPBR>(materialId);
+			assetsData.emplace<Data::PBRFlags>(materialId);
 
 			const float seed = static_cast<float>(i) / static_cast<float>(materialIds.size());
 			data.Albedo = { seed, seed * 0.8f, 1.0f - seed, 1.0f };
@@ -752,49 +773,52 @@ Status App::Init(const CmdParser& params) noexcept
 		std::mt19937_64 randEngine;
 		for (U32 i = 0, size = params.GetNumber("cubePerfTestSize"); i < size; ++i)
 		{
-			EID model = Settings::CreateEntity();
-			Settings::Data.emplace<std::string>(model, "Cube_" + std::to_string(i));
+			EID model = worldData.create();
+			worldData.emplace<std::string>(model, "Cube_" + std::to_string(i));
 
 			const float angleX = Math::Rand(0.0f, 360.0f, randEngine);
 			const float angleY = Math::Rand(0.0f, 360.0f, randEngine);
 			const float angleZ = Math::Rand(0.0f, 360.0f, randEngine);
 			const float scale = Math::Rand(0.5f, 5.0f, randEngine);
 
-			auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
-				Settings::Data.emplace<Data::Transform>(model,
+			auto& transform = worldData.emplace<Data::TransformGlobal>(model,
+				worldData.emplace<Data::Transform>(model,
 					Math::GetQuaternion(angleX, angleY, angleZ),
 					Math::RandPosition(-200.0f, 200.0f, randEngine),
 					Float3(scale, scale, scale)));
 			if (Settings::ComputeMotionVectors())
-				Settings::Data.emplace<Data::TransformPrevious>(model, transform);
+				worldData.emplace<Data::TransformPrevious>(model, transform);
 
-			Settings::Data.emplace<Data::RenderLambertian>(model);
-			Settings::Data.emplace<Data::ShadowCaster>(model);
-			Settings::Data.emplace<Data::MeshID>(model, meshId);
-			Settings::Data.emplace<Data::MaterialID>(model, materialIds.at(i % materialIds.size()));
+			worldData.emplace<Data::RenderLambertian>(model);
+			worldData.emplace<Data::ShadowCaster>(model);
+			worldData.emplace<Data::MeshID>(model, meshId);
+			worldData.emplace<Data::MaterialID>(model, materialIds.at(i % materialIds.size()));
 		}
 	}
 	else if (params.GetOption("lightParamsTest"))
 	{
+		auto& worldData = Settings::DataBank.GetWorldData();
+		auto& assetsData = Settings::DataBank.GetAssetsData();
+
 		currentCamera = AddCamera("Main camera", 0.075f, 60.0f, { 0.0f, 1.5f, -23.0f }, { 0.0f, 0.0f, 0.0f });
 
 		ZE_LOAD_CHECK(AddDirectionalLight("Sun", { 0.7608f, 0.7725f, 0.8f }, 5.0f, { 0.57f, -0.58f, 0.59f }));
 
 		// Mesh data for test sphere
-		EID meshId = Settings::CreateEntity();
-		Settings::Data.emplace<std::string>(meshId, "IcoSphere_6");
-		Settings::Data.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Sphere::MakeBoundingBox());
+		EID meshId = assetsData.create();
+		assetsData.emplace<std::string>(meshId, "IcoSphere_6");
+		assetsData.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Sphere::MakeBoundingBox());
 
 		GFX::Primitive::Data<GFX::Vertex> sphere = GFX::Primitive::Sphere::MakeIco(6);
 		GFX::Resource::MeshData meshData =
 		{
-			meshId, nullptr,
+			nullptr,
 			Utils::SafeCast<U32>(sphere.Vertices.size()),
 			Utils::SafeCast<U32>(sphere.Indices.size()),
 			sizeof(GFX::Vertex), 0
 		};
 		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(sphere.Vertices, sphere.Indices, meshData.IndexSize);
-		ZE_EXPECT_RET_FAILED_CODE(Settings::Data.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
+		ZE_EXPECT_RET_FAILED_CODE(assetsData.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
 
 		// Create test entities
 		U32 testSize = params.GetNumber("lightParamsTestSize");
@@ -806,12 +830,12 @@ Status App::Init(const CmdParser& params) noexcept
 			for (U32 roughness = 1; roughness <= testSize; ++roughness)
 			{
 				// Material creation
-				EID materialId = Settings::CreateEntity();
-				Settings::Data.emplace<std::string>(materialId, "Sphere_mat_Rgh_" + std::to_string(metalness) + "_Mtl_" + std::to_string(roughness));
+				EID materialId = assetsData.create();
+				assetsData.emplace<std::string>(materialId, "Sphere_mat_Rgh_" + std::to_string(metalness) + "_Mtl_" + std::to_string(roughness));
 
-				Data::MaterialPBR& data = Settings::Data.emplace<Data::MaterialPBR>(materialId);
-				Data::MaterialBuffersPBR& buffers = Settings::Data.emplace<Data::MaterialBuffersPBR>(materialId);
-				Settings::Data.emplace<Data::PBRFlags>(materialId);
+				Data::MaterialPBR& data = assetsData.emplace<Data::MaterialPBR>(materialId);
+				Data::MaterialBuffersPBR& buffers = assetsData.emplace<Data::MaterialBuffersPBR>(materialId);
+				assetsData.emplace<Data::PBRFlags>(materialId);
 
 				data.Albedo = { 1.0f, 0.0, 0.0f };
 				data.Metalness = static_cast<float>(metalness) / static_cast<float>(testSize);
@@ -823,21 +847,21 @@ Status App::Init(const CmdParser& params) noexcept
 				ZE_EXPECT_RET_FAILED_CODE(buffers, Data::MaterialBuffersPBR::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), data, texDesc));
 
 				// Object creation
-				EID model = Settings::CreateEntity();
-				Settings::Data.emplace<std::string>(model, "Sphere_Rgh_" + std::to_string(metalness) + "_Mtl_" + std::to_string(roughness));
+				EID model = worldData.create();
+				worldData.emplace<std::string>(model, "Sphere_Rgh_" + std::to_string(metalness) + "_Mtl_" + std::to_string(roughness));
 
-				auto& transform = Settings::Data.emplace<Data::TransformGlobal>(model,
-					Settings::Data.emplace<Data::Transform>(model,
+				auto& transform = worldData.emplace<Data::TransformGlobal>(model,
+					worldData.emplace<Data::Transform>(model,
 						Math::NoRotation(),
 						Float3(static_cast<float>(static_cast<S32>(roughness) - positionOffset) * 2.5f, static_cast<float>(static_cast<S32>(metalness) - positionOffset) * 2.5f, 0.0f),
 						Math::UnitScale()));
 				if (Settings::ComputeMotionVectors())
-					Settings::Data.emplace<Data::TransformPrevious>(model, transform);
+					worldData.emplace<Data::TransformPrevious>(model, transform);
 
-				Settings::Data.emplace<Data::RenderLambertian>(model);
-				Settings::Data.emplace<Data::ShadowCaster>(model);
-				Settings::Data.emplace<Data::MeshID>(model, meshId);
-				Settings::Data.emplace<Data::MaterialID>(model, materialId);
+				worldData.emplace<Data::RenderLambertian>(model);
+				worldData.emplace<Data::ShadowCaster>(model);
+				worldData.emplace<Data::MeshID>(model, meshId);
+				worldData.emplace<Data::MaterialID>(model, materialId);
 			}
 		}
 	}

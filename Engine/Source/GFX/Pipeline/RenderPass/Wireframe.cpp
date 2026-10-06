@@ -1,6 +1,9 @@
 #include "GFX/Pipeline/RenderPass/Wireframe.h"
 #include "GFX/Pipeline/RenderPass/Utils.h"
 #include "GFX/Resource/Constant.h"
+#include "GFX/Resource/Mesh.h"
+#include "GFX/TransformBuffer.h"
+#include "Data/Camera.h"
 
 namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 {
@@ -44,15 +47,14 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		ZE_PSO_SET_NAME(psoDesc, "Wireframe");
 		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
-		Settings::AssureEntityPools<InsideFrustum>();
+		Data::AssureEntityPools<InsideFrustum>(Settings::DataBank.GetWorldData());
 		return passData;
 	}
 
 	Expected<bool> Execute(Device& dev, CommandList& cl, RendererPassExecuteData& renderData, PassData& passData) noexcept
 	{
-		auto group = Data::GetRenderGroup<Data::RenderWireframe>();
-		U64 count = group.size();
-		if (count)
+		auto view = Settings::DataBank.GetWorldData().view<Data::RenderWireframe, Data::TransformGlobal, Data::MaterialID, Data::MeshID>();
+		if (view.begin() != view.end())
 		{
 			ZE_PERF_GUARD("Wireframe - present");
 			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
@@ -60,13 +62,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 			// Compute visibility of objects inside camera view
 			ZE_PERF_START("Wireframe - frustum culling");
 			Math::BoundingFrustum frustum = Data::GetFrustum(Math::XMLoadFloat4x4(&renderData.GraphData.Projection), Settings::MaxRenderDistance);
-			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::Data.get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation),
+			frustum.Transform(frustum, 1.0f, Math::XMLoadFloat4(&Settings::DataBank.GetWorldData().get<Data::TransformGlobal>(renderData.GraphData.CurrentCamera).Rotation),
 				Math::XMLoadFloat3(&renderData.DynamicData.CameraPos));
-			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(group, frustum);
+			Utils::FrustumCulling<InsideFrustum, InsideFrustum>(view, frustum);
 			ZE_PERF_STOP();
 
-			auto visibleGroup = Data::GetVisibleRenderGroup<Data::RenderWireframe, InsideFrustum>();
-			count = visibleGroup.size();
+			auto visibleView = Settings::DataBank.GetWorldData().view<InsideFrustum, Data::RenderWireframe, Data::TransformGlobal, Data::MaterialID, Data::MeshID>();
 
 			Resources ids = *reinterpret_cast<Resources*>(passData.Resources.get());
 			ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
@@ -86,13 +87,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 			auto& cbuffer = *renderData.DynamicBuffer;
 			ZE_PERF_START("Wireframe - main loop");
-			for (U64 i = 0; i < count; ++i)
+			for (EID entity : visibleView)
 			{
 				ZE_PERF_GUARD("Wireframe - single loop item");
-				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(i)).c_str(), Pixel(0xE3, 0x24, 0x2B));
+				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(static_cast<U64>(entity))).c_str(), Pixel(0xE3, 0x24, 0x2B));
 
-				auto entity = visibleGroup[i];
-				const auto& transform = visibleGroup.get<Data::TransformGlobal>(entity);
+				const auto& transform = visibleView.get<Data::TransformGlobal>(entity);
 
 				TransformBuffer transformBuffer = {};
 				Math::XMStoreFloat4x4(&transformBuffer.TransformTps, viewProjection *
@@ -101,7 +101,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 				ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 				ctx.Reset();
 
-				Settings::Data.get<Resource::Mesh>(visibleGroup.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			renderData.Buffers.EndRaster(cl);
@@ -110,9 +110,10 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 
 			// Remove current visibility
 			ZE_PERF_START("Wireframe - visibility clear");
-			Settings::Data.clear<InsideFrustum>();
+			Settings::DataBank.GetWorldData().clear<InsideFrustum>();
 			ZE_PERF_STOP();
+			return true;
 		}
-		return count;
+		return false;
 	}
 }

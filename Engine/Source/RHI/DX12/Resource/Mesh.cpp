@@ -1,6 +1,5 @@
 #include "RHI/DX12/Resource/Mesh.h"
 #include "RHI/DX12/GarbageCollector.h"
-#include "Data/ResourceLocation.h"
 
 namespace ZE::RHI::DX12::Resource
 {
@@ -50,12 +49,9 @@ namespace ZE::RHI::DX12::Resource
 			ZE_DX_RET_FAILED_EXPECT(mesh.info.Resource->Map(0, &range, &uploadBuffer));
 			std::memcpy(uploadBuffer, data.PackedMesh.get(), desc.Width);
 			mesh.info.Resource->Unmap(0, nullptr);
-			// Indicate that resource is already on GPU
-			if (data.MeshID != INVALID_EID)
-				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.MeshID) = Data::ResourceLocation::GPU;
 		}
 		else
-			disk.Get().dx12.AddMemoryBufferRequest(data.MeshID, mesh.info.Resource.Get(), nullptr, data.PackedMesh, Utils::SafeCast<U32>(desc.Width), true);
+			disk.Get().dx12.AddMemoryBufferRequest(mesh.info.Resource.Get(), nullptr, data.PackedMesh, Utils::SafeCast<U32>(desc.Width), true);
 		return mesh;
 	}
 
@@ -81,7 +77,7 @@ namespace ZE::RHI::DX12::Resource
 		mesh.indexView.BufferLocation = mesh.vertexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
 		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer from file");
 
-		disk.Get().dx12.AddFileBufferRequest(data.MeshID, mesh.info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, true);
+		disk.Get().dx12.AddFileBufferRequest(mesh.info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, true);
 		return mesh;
 	}
 

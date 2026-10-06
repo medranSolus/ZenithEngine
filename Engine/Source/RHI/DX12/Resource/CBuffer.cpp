@@ -1,5 +1,4 @@
 #include "RHI/DX12/Resource/CBuffer.h"
-#include "Data/ResourceLocation.h"
 
 namespace ZE::RHI::DX12::Resource
 {
@@ -37,7 +36,7 @@ namespace ZE::RHI::DX12::Resource
 		ZE_DX_SET_ID(buffer.resInfo.Resource, "CBuffer from file");
 		buffer.address = buffer.resInfo.Resource->GetGPUVirtualAddress();
 
-		disk.Get().dx12.AddFileBufferRequest(data.ResourceID, buffer.resInfo.Resource.Get(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, false);
+		disk.Get().dx12.AddFileBufferRequest(buffer.resInfo.Resource.Get(), file, data.BufferDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, false);
 		return buffer;
 	}
 
@@ -68,12 +67,9 @@ namespace ZE::RHI::DX12::Resource
 			ZE_DX_RET_FAILED(resInfo.Resource->Map(0, &range, &uploadBuffer));
 			std::memcpy(uploadBuffer, data.DataRef.get() ? data.DataRef.get() : data.DataStatic, data.Bytes);
 			resInfo.Resource->Unmap(0, nullptr);
-			// Indicate that resource is already on GPU
-			if (data.ResourceID != INVALID_EID)
-				Settings::Data.get_or_emplace<Data::ResourceLocationAtom>(data.ResourceID) = Data::ResourceLocation::GPU;
 		}
 		else
-			disk.Get().dx12.AddMemoryBufferRequest(data.ResourceID, resInfo.Resource.Get(), data.DataStatic, data.DataRef, data.Bytes, false);
+			disk.Get().dx12.AddMemoryBufferRequest(resInfo.Resource.Get(), data.DataStatic, data.DataRef, data.Bytes, false);
 		return {};
 	}
 
