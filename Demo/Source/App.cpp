@@ -606,17 +606,11 @@ EID App::AddCamera(std::string&& name, float nearZ, float fov,
 Expected<EID> App::AddModel(std::string&& name, Float3&& position,
 	const Float3& angle, float scale, const std::string& file, Data::ExternalModelOptions options) noexcept
 {
-	EID model = Settings::CreateEntity();
-	Settings::Data.emplace<std::string>(model, std::move(name));
+	EID model = Settings::DataBank.GetWorldData().create();
+	Settings::DataBank.GetWorldData().emplace<std::string>(model, std::move(name));
 	Data::Transform transform = { Math::GetQuaternion(angle.x, angle.y, angle.z), std::move(position), Float3(scale, scale, scale) };
 
-	auto load = Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, ZE_GET_ASSET_PATH(file), options).Get();
-	if (load)
-	{
-		ZE_CODE_RET_FAILED_EXPECT(*load);
-	}
-	else
-		return std::unexpected(load.error());
+	Data::LoadExternalModel(engine.Gfx().GetDevice(), engine.Assets(), model, transform, ZE_GET_ASSET_PATH(file), options);
 
 	return model;
 }
@@ -708,9 +702,9 @@ Status App::Init(const CmdParser& params) noexcept
 	if (!params.GetOption("noExternalAssets"))
 	{
 		engineParams.CoreRendererParams.BrdfLutSource = ZE_GET_ASSET_PATH("Lightmaps/brdf_lut_ggx_512px_8192s_half.dds");
-		engineParams.CoreRendererParams.EnvMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/newport_loft_env_2k_4096s.dds"));
-		engineParams.CoreRendererParams.IrrMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/newport_loft_irr_64px_1024s.dds"));
-		engineParams.CoreRendererParams.SkyboxSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Skybox/newport_loft_2k.dds"));
+		engineParams.CoreRendererParams.EnvMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/satara_night_no_lamps_env_2k_4096s.dds"));
+		engineParams.CoreRendererParams.IrrMapSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Lightmaps/satara_night_no_lamps_irr_64px_1024s.dds"));
+		engineParams.CoreRendererParams.SkyboxSource.InitSingleFileCubemap(ZE_GET_ASSET_PATH("Skybox/satara_night_no_lamps_4k.dds"));
 	}
 	ZE_CODE_RET_FAILED(engine.Init(engineParams));
 
