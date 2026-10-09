@@ -156,4 +156,12 @@ namespace ZE::Data
 			}
 		}
 	}
+
+	void SystemsBank::ClearStorage() noexcept
+	{
+		worldData.clear();
+		assetsData.clear();
+		LockGuardRW lock(loadingMutex);
+		loadingData.clear();
+	}
 }

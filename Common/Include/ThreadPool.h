@@ -29,28 +29,26 @@ namespace ZE
 		bool useMultiThreading = true;
 
 		BoolAtom runControl = true;
-		std::unique_ptr<BoolAtom[]> threadRunControls;
-		std::vector<std::thread> threads;
+		std::vector<std::jthread> threads;
 
 		std::condition_variable signaler;
 		std::array<Allocator::BlockingQueue<std::pair<std::coroutine_handle<>, PromiseBase*>>, 3> taskQueues;
 
-		static void Join(std::thread& worker, U8 id) noexcept;
-
 		constexpr void ResizeThreads(U8 oldCount, U8 currentCount) noexcept;
 		bool AddThread(U8 threadId) noexcept;
-		void Worker(const BoolAtom& run) const noexcept;
+		void Worker(std::stop_token& stoken) noexcept;
 
 	public:
 		ThreadPool() noexcept;
 		ZE_CLASS_MOVE(ThreadPool);
-		~ThreadPool();
+		~ThreadPool() { Stop(); }
 
 		static constexpr VendorCPU GetCurrentCPU() noexcept { return currentCPU; }
 		static constexpr U8 GetCoresCount() noexcept { return coresCount; }
 		static constexpr U8 GetLogicalCoresCount() noexcept { return logicalCoresCount; }
 
-		void Stop() noexcept { runControl = false; }
+		template <typename Func, typename... Args>
+		static constexpr Expected<std::jthread> CreatePersistentThread(Func&& f, Args&&... args) noexcept;
 
 		template <typename Func, typename... Args>
 		constexpr auto Schedule(ThreadPriority priority, Func&& f, Args&&... args) noexcept;
@@ -65,12 +63,50 @@ namespace ZE
 
 		// Get some job from thread pool if available
 		bool GetNextJob(std::coroutine_handle<>& handle, PromiseBase*& promise) noexcept;
+		void Stop() noexcept;
 	};
 
 #pragma region Functions
 	template <typename Func, typename... Args>
-	constexpr auto ThreadPool::Schedule(ThreadPriority priority, Func&& f, Args&&... args) noexcept
+	constexpr Expected<std::jthread> ThreadPool::CreatePersistentThread(Func&& f, Args&&... args) noexcept
+	{
+		Status result = {};
+		auto handleFail = [&](Status code)
 			{
+				std::string_view msg = "Failed to start new persistent thread!";
+				if (code)
+				{
+					ZE_CODE_ERROR(code, msg);
+				}
+				else
+					Logger::Error(msg);
+				result = code;
+			};
+
+		try
+		{
+			std::jthread thread(std::forward<Func>(f), std::forward<Args>(args)...);
+			return thread;
+		}
+		catch (const std::system_error& e)
+		{
+			handleFail(e.code());
+		}
+		catch (const std::exception& e)
+		{
+			Logger::Error(e.what());
+			handleFail(std::make_error_code(std::errc::invalid_argument));
+		}
+		catch (...)
+		{
+			handleFail(std::make_error_code(std::errc::invalid_argument));
+		}
+		return std::unexpected(result);
+	}
+
+	template <typename Func, typename... Args>
+	constexpr auto ThreadPool::Schedule(ThreadPriority priority, Func&& f, Args&&... args) noexcept
+	{
 		using RawResult = std::invoke_result_t<std::decay_t<Func>, std::decay_t<Args>...>;
 		using TaskType = to_task_t<RawResult>;
 
@@ -140,7 +176,6 @@ namespace ZE
 
 			// Create worker threads that will sleep waiting for new job to execute
 			const U8 count = GetWorkerThreadsCount();
-			threadRunControls = std::make_unique_for_overwrite<BoolAtom[]>(count);
 			threads.reserve(count);
 
 			for (U8 i = 0; i < count; ++i)

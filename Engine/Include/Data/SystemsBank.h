@@ -33,5 +33,6 @@ namespace ZE::Data
 		constexpr std::shared_mutex& GetLoadingLock() noexcept { return loadingMutex; }
 
 		void MergeLoadedData() noexcept;
+		void ClearStorage() noexcept;
 	};
 }

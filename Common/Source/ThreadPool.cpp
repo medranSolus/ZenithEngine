@@ -2,46 +2,13 @@
 
 namespace ZE
 {
-	void ThreadPool::Join(std::thread& worker, U8 id) noexcept
-	{
-		auto handleFail = [&](Status code)
-			{
-				std::string msg = "Failed to join worker thread No. " + std::to_string(id);
-				if (code)
-				{
-					ZE_CODE_ERROR(code, msg);
-				}
-				else
-					Logger::Error(msg);
-			};
-		try
-		{
-			worker.join();
-		}
-		catch (const std::system_error& e)
-		{
-			handleFail(e.code());
-		}
-		catch (const std::exception& e)
-		{
-			Logger::Error(e.what());
-			handleFail({});
-		}
-		catch (...)
-		{
-			handleFail({});
-		}
-	}
-
 	constexpr void ThreadPool::ResizeThreads(U8 oldCount, U8 currentCount) noexcept
 	{
 		if (currentCount < oldCount)
 		{
 			for (U8 i = currentCount; i < oldCount; ++i)
-				threadRunControls[i] = false;
+				threads[i].request_stop();
 			signaler.notify_all();
-			for (U8 i = currentCount; i < oldCount; ++i)
-				Join(threads[i], i);
 			threads.resize(currentCount);
 		}
 		else
@@ -57,7 +24,7 @@ namespace ZE
 		bool fail = false;
 		auto handleFail = [&](Status code)
 			{
-				std::string msg = "Failed to start new worker thread, capping thread count to " + std::to_string(threadId);
+				std::string_view msg = "Failed to start new worker thread, capping thread count to " + std::to_string(threadId);
 				if (code)
 				{
 					ZE_CODE_ERROR(code, msg);
@@ -65,14 +32,12 @@ namespace ZE
 				else
 					Logger::Error(msg);
 				fail = true;
-				threadRunControls[threadId] = false;
 				threadsCountOverride = threadId == 0 ? UINT8_MAX : threadId;
 			};
 
-		threadRunControls[threadId] = true;
 		try
 		{
-			threads.emplace_back(&ThreadPool::Worker, this, std::cref(threadRunControls[threadId]));
+			threads.emplace_back([this](std::stop_token stoken) { Worker(stoken); });
 		}
 		catch (const std::system_error& e)
 		{
@@ -90,7 +55,7 @@ namespace ZE
 		return fail;
 	}
 
-	void ThreadPool::Worker(const BoolAtom& run) const noexcept
+	void ThreadPool::Worker(std::stop_token& stoken) noexcept
 	{
 		// Process tasks till stopped by master thread
 		while (true)
@@ -103,14 +68,14 @@ namespace ZE
 			std::mutex mutex;
 			std::unique_lock lock(mutex);
 			// Wait for new task and try obtain it (more important jobs first)
-			signaler.wait(lock, [this, &run, &newItem, &handle, &promise]() noexcept -> bool
-					{
+			signaler.wait(lock, [this, &stoken, &newItem, &handle, &promise]() noexcept -> bool
+				{
 					newItem = GetNextJob(handle, promise);
-					return newItem || !(run && runControl);
+					return newItem || stoken.stop_requested() || !runControl;
 				});
 
 			// Don't stop when task queue is not empty
-			if ((run || runControl) && !newItem)
+			if (!newItem && (stoken.stop_requested() || !runControl))
 				return;
 			
 			// Check if task can be started, otherwise skip
@@ -204,11 +169,10 @@ namespace ZE
 		return false;
 	}
 
-	ThreadPool::~ThreadPool()
+	void ThreadPool::Stop() noexcept
 	{
 		runControl = false;
 		signaler.notify_all();
-		for (U8 i = 0; std::thread& worker : threads)
-			Join(worker, i++);
+		threads.clear();
 	}
 }

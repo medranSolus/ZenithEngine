@@ -131,9 +131,7 @@ namespace ZE
 				}
 			}
 			Settings::GetThreadPool().Stop();
-			Settings::DataBank.GetWorldData().clear();
-			Settings::DataBank.GetAssetsData().clear();
-			Settings::DataBank.GetLoadingData().clear();
+			Settings::DataBank.ClearStorage();
 		}
 	}
 

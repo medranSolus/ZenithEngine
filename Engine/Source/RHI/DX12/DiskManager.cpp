@@ -58,7 +58,7 @@ namespace ZE::RHI::DX12
 		return isSSD;
 	}
 
-	void DiskManager::DecompressAssets(Device& dev) const noexcept
+	void DiskManager::DecompressAssets(std::stop_token& stoken, Device& dev) const noexcept
 	{
 		ThreadPool& pool = Settings::GetThreadPool();
 		const U8 maxRequestCount = std::max(pool.GetWorkerThreadsCount(), static_cast<U8>(MINIMAL_DECOPRESSED_OBJECTS_PER_TURN));
@@ -66,14 +66,26 @@ namespace ZE::RHI::DX12
 		auto results = std::make_unique<DSTORAGE_CUSTOM_DECOMPRESSION_RESULT[]>(maxRequestCount);
 		auto decompresionTasks = std::make_unique<Task<Status>[]>(maxRequestCount);
 
-		while (decompressionData->CheckForDecompression && decompressionEvent)
+		// Automatic stop event
+		HANDLE handles[2] = {};
+		handles[0] = CreateEventW(nullptr, false, false, nullptr);
+		if (!handles[0])
+		{
+			ZE_CODE_ERROR(ZE_WIN_LAST_ERROR(), "Cannot create DirectStorage asset decompression stop event!");
+			return;
+		}
+		std::stop_callback stopCallback(stoken, [stopEvent = handles[0]]() { SetEvent(stopEvent); });
+		handles[1] = decompressQueue->GetEvent();
+
+		while (!stoken.stop_requested())
 		{
 			// Check if any requests ready with timeout for checking of program end
-			switch (WaitForSingleObject(decompressionEvent, MAX_DECOMPRESSION_WAIT))
+			switch (WaitForMultipleObjects(2, handles, FALSE, INFINITE))
 			{
 			case WAIT_TIMEOUT:
+			case WAIT_OBJECT_0: // Stop requested
 				continue;
-			case WAIT_OBJECT_0:
+			case WAIT_OBJECT_0 + 1:
 				break;
 			case WAIT_ABANDONED:
 				ZE_FAIL("Error occured in thread releasing DirectStorage decompression queue mutex!");
@@ -165,17 +177,10 @@ namespace ZE::RHI::DX12
 			// Wait for custom requests to complete
 			for (U32 i = 0; i < requestCount; ++i)
 			{
-				auto exp = decompresionTasks[i].Get();
-				if (exp)
+				Status stat = decompresionTasks[i].Get();
+				if (stat)
 				{
-					if (*exp)
-					{
-						ZE_CODE_ERROR(*exp, "Failed to perform DirectStorage custom decompression task, some data might be corrupted!");
-					}
-				}
-				else
-				{
-					ZE_CODE_ERROR(exp.error(), "Failed to wait for DirectStorage custom decompression task, some data might be corrupted!");
+					ZE_CODE_ERROR(stat, "Failed to perform DirectStorage custom decompression task, some data might be corrupted!");
 				}
 			}
 
@@ -185,6 +190,9 @@ namespace ZE::RHI::DX12
 				ZE_CODE_ERROR(ZE_WIN_ERROR(hr), "Failure in setting DirectStorage decompression results, some requests might be reprocessed!");
 			}
 		}
+
+		CloseHandle(handles[0]);
+		CloseHandle(handles[1]);
 	}
 
 	void DiskManager::AddRequest(IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept
@@ -199,9 +207,11 @@ namespace ZE::RHI::DX12
 
 	void DiskManager::MoveFrom(DiskManager&& disk) noexcept
 	{
+		disk.cpuDecompressionThread.request_stop();
+		disk.cpuDecompressionThread.join();
+
 		factory = std::move(disk.factory);
 		decompressQueue = std::move(disk.decompressQueue);
-		decompressionEvent = std::exchange(disk.decompressionEvent, nullptr);
 		compressCodecGDeflate = std::move(disk.compressCodecGDeflate);
 
 		fileQueue = std::move(disk.fileQueue);
@@ -211,21 +221,23 @@ namespace ZE::RHI::DX12
 		uploadQueue = std::move(disk.uploadQueue);
 		fenceEvents = std::move(disk.fenceEvents);
 
-		if (disk.decompressionData && disk.decompressionData->CheckForDecompression)
+		if (disk.decompressionData)
 		{
-			disk.decompressionData->CheckForDecompression = false;
-			disk.cpuDecompressionThread.join();
 			decompressionData = std::move(disk.decompressionData);
 			decompressionData->Disk = this;
-			decompressionData->CheckForDecompression = true;
-			cpuDecompressionThread = std::jthread([data = decompressionData.get()]() { data->Disk->DecompressAssets(*data->Dev); });
+			auto exp = ThreadPool::CreatePersistentThread([data = decompressionData.get()](std::stop_token stoken) { data->Disk->DecompressAssets(stoken, *data->Dev); });
+			if (exp)
+				cpuDecompressionThread = std::move(*exp);
+			else
+			{
+				ZE_CODE_CRITICAL(exp.error(), "Failed creating DiskManager decompression thread! Aborting.");
+				std::abort();
+			}
 		}
 	}
 
 	DiskManager::~DiskManager()
 	{
-		if (decompressionData)
-			decompressionData->CheckForDecompression = false;
 		for (auto& events : fenceEvents)
 		{
 			if (events.second.at(0))
@@ -233,8 +245,6 @@ namespace ZE::RHI::DX12
 			if (events.second.at(1))
 				CloseHandle(events.second.at(1));
 		}
-		if (decompressionEvent)
-			CloseHandle(decompressionEvent);
 	}
 
 	Expected<DiskManager> DiskManager::Create(GFX::Device& dev) noexcept
@@ -269,7 +279,6 @@ namespace ZE::RHI::DX12
 		disk.factory->SetStagingBufferSize(Settings::GetHeapSizes().StagingBufferSize);
 
 		ZE_DX_RET_FAILED_EXPECT(disk.factory.As(&disk.decompressQueue));
-		disk.decompressionEvent = disk.decompressQueue->GetEvent();
 
 		DSTORAGE_QUEUE_DESC queueDesc = {};
 		queueDesc.SourceType = DSTORAGE_REQUEST_SOURCE_FILE;
@@ -289,10 +298,9 @@ namespace ZE::RHI::DX12
 		ZE_DX_RET_FAILED_EXPECT(DStorageCreateCompressionCodec(DSTORAGE_COMPRESSION_FORMAT_GDEFLATE, 0, IID_PPV_ARGS(&disk.compressCodecGDeflate)));
 
 		disk.decompressionData = std::make_unique<DecompressThreadData>();
-		disk.decompressionData->CheckForDecompression = true;
 		disk.decompressionData->Dev = &dev.Get().dx12;
 		disk.decompressionData->Disk = &disk;
-		disk.cpuDecompressionThread = std::jthread([data = disk.decompressionData.get()]() { data->Disk->DecompressAssets(*data->Dev); });
+		ZE_EXPECT_RET_FAILED(disk.cpuDecompressionThread, ThreadPool::CreatePersistentThread([data = disk.decompressionData.get()](std::stop_token stoken) { data->Disk->DecompressAssets(stoken, *data->Dev); }));
 		return disk;
 	}
 

@@ -20,8 +20,6 @@ namespace ZE::RHI::DX12
 
 	class DiskManager final
 	{
-		// Number of miliseconds to wait for new decompression request to come
-		static constexpr U32 MAX_DECOMPRESSION_WAIT = 2000;
 		// Number of objects that can be processed in single query to DirectStorage at once
 		static constexpr U32 MINIMAL_DECOPRESSED_OBJECTS_PER_TURN = 4;
 		// Custom decompression formats
@@ -40,14 +38,12 @@ namespace ZE::RHI::DX12
 
 		struct DecompressThreadData
 		{
-			BoolAtom CheckForDecompression = false;
 			Device* Dev = nullptr;
 			DiskManager* Disk = nullptr;
 		};
 
 		DX::ComPtr<IStorageFactory> factory;
 		DX::ComPtr<IStorageCustomDecompressionQueue> decompressQueue;
-		HANDLE decompressionEvent = nullptr;
 		DX::ComPtr<IStorageCompressionCodec> compressCodecGDeflate;
 
 		DX::ComPtr<IStorageQueue> fileQueue;
@@ -63,7 +59,7 @@ namespace ZE::RHI::DX12
 
 		static constexpr DSTORAGE_COMPRESSION_FORMAT GetCompressionFormat(IO::CompressionFormat compression) noexcept;
 		static bool IsFileOnSSD(std::wstring_view path) noexcept;
-		void DecompressAssets(Device& dev) const noexcept;
+		void DecompressAssets(std::stop_token& stoken, Device& dev) const noexcept;
 		void AddRequest(IResource* dest, ResourceType type, std::shared_ptr<const U8[]> src) noexcept;
 
 		void MoveFrom(DiskManager&& disk) noexcept;

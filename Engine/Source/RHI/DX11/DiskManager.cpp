@@ -8,7 +8,7 @@ namespace ZE::RHI::DX11
 	{
 		currentFenceValue = disk.currentFenceValue;
 		baseBucketFenceValue = disk.baseBucketFenceValue;
-		statusBuckets = disk.statusBuckets;
+		statusBuckets = std::move(disk.statusBuckets);
 	}
 
 	Expected<DiskManager> DiskManager::Create(GFX::Device& dev) noexcept
@@ -40,9 +40,7 @@ namespace ZE::RHI::DX11
 		{
 			for (auto& task : statusBuckets.front())
 			{
-				Status result = {};
-				ZE_EXPECT_RET_FAILED_CODE(result, task.Get());
-				ZE_CODE_RET_FAILED(result);
+				ZE_CODE_RET_FAILED(task.Get());
 			}
 			statusBuckets.pop_front();
 		} while (--waitBucketsCount);

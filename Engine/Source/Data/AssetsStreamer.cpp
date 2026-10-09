@@ -454,16 +454,8 @@ namespace ZE::Data
 				// TODO: better error reporting
 				for (auto& res : results)
 				{
-					auto exp = res.Get();
-					if (exp)
-					{
-						ZE_CODE_RET_FAILED(*exp);
+					ZE_CODE_RET_FAILED(res.Get());
 					}
-					else
-					{
-						ZE_CODE_RET_FAILED(exp.error());
-					}
-				}
 				return {};
 			});
 	}
@@ -924,13 +916,7 @@ namespace ZE::Data
 					if (pathExp)
 					{
 						if (*pathExp)
-						{
-							auto result = LoadResourcePack(dev, pathExp->value()).Get();
-							if (result)
-								stat = *result;
-							else
-								stat = result.error();
-						}
+							stat = LoadResourcePack(dev, pathExp->value()).Get();
 					}
 					else
 					{
