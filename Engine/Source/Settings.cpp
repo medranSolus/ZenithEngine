@@ -5,6 +5,7 @@ namespace ZE
 	void Settings::Destroy() noexcept
 	{
 		ZE_ASSERT_INIT(Initialized());
+		JobSteal::RegisterThreadPool(nullptr);
 		threadPool.Stop();
 
 		GpuVendor = GFX::VendorGPU::Unknown;

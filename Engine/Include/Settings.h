@@ -190,6 +190,7 @@ namespace ZE
 		AmbientOcclusionType = params.AmbientOcclusion;
 		Tonemapper = params.Tonemapper;
 		threadPool.Init(params.StaticThreadsCount, params.CustomThreadPoolThreadsCount);
+		JobSteal::RegisterThreadPool(&threadPool);
 	}
 #pragma endregion
 }

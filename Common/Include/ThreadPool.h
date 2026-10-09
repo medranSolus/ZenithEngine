@@ -32,8 +32,8 @@ namespace ZE
 		std::unique_ptr<BoolAtom[]> threadRunControls;
 		std::vector<std::thread> threads;
 
-		mutable std::condition_variable signaler;
-		mutable std::array<Allocator::BlockingQueue<std::function<void()>>, 3> taskQueues;
+		std::condition_variable signaler;
+		std::array<Allocator::BlockingQueue<std::pair<std::coroutine_handle<>, PromiseBase*>>, 3> taskQueues;
 
 		static void Join(std::thread& worker, U8 id) noexcept;
 
@@ -53,7 +53,7 @@ namespace ZE
 		void Stop() noexcept { runControl = false; }
 
 		template <typename Func, typename... Args>
-		constexpr auto Schedule(ThreadPriority priority, Func&& f, Args&&... args) const noexcept -> Task<decltype(f(args...))>;
+		constexpr auto Schedule(ThreadPriority priority, Func&& f, Args&&... args) noexcept;
 
 		constexpr U8 GetWorkerThreadsCount() const noexcept;
 		constexpr void ResetThreadsCount() noexcept;
@@ -62,30 +62,27 @@ namespace ZE
 		// allocThreadsCount: decrease threadpool count by X for static threads that will not be managed by this pool
 		// customThreadCount: set custom override to number of threads (no function will change this number)
 		constexpr void Init(U8 allocThreadsCount = 0, U8 customThreadCount = 0) noexcept;
+
+		// Get some job from thread pool if available
+		bool GetNextJob(std::coroutine_handle<>& handle, PromiseBase*& promise) noexcept;
 	};
 
 #pragma region Functions
 	template <typename Func, typename... Args>
-	constexpr auto ThreadPool::Schedule(ThreadPriority priority, Func&& f, Args&&... args) const noexcept -> Task<decltype(f(args...))>
-	{
-		using Return = decltype(f(args...));
-
-		std::packaged_task<Return()> taskPackage(std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
-		Task<Return> task(std::move(taskPackage));
-		auto workerFunc = [execData = task.GetData()]() noexcept -> void
+	constexpr auto ThreadPool::Schedule(ThreadPriority priority, Func&& f, Args&&... args) noexcept
 			{
-				const bool status = std::atomic_exchange_explicit(&execData->processing, true, std::memory_order::memory_order_acq_rel);
-				if (!status)
-					execData->task();
-			};
-		// When pool is stopped don't delegate new tasks to it, only run them in single thread
+		using RawResult = std::invoke_result_t<std::decay_t<Func>, std::decay_t<Args>...>;
+		using TaskType = to_task_t<RawResult>;
+
+		TaskType task(std::forward<Func>(f), std::forward<Args>(args)...);
 		if (GetWorkerThreadsCount() > 0 && runControl)
 		{
-			taskQueues[static_cast<U8>(priority)].EmplaceBack(std::move(workerFunc));
+			task.SetThreadPoolOwnership();
+			taskQueues[static_cast<U8>(priority)].EmplaceBack(task.GetHandle(), &task.GetHandle().promise());
 			signaler.notify_one();
 		}
 		else
-			workerFunc();
+			task.GetHandle().resume();
 		return task;
 	}
 

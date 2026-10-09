@@ -96,27 +96,28 @@ namespace ZE
 		while (true)
 		{
 			bool newItem = false;
-			std::function<void()> task;
+			std::coroutine_handle<> handle = nullptr;
+			PromiseBase* promise = nullptr;
 
 			// Creating local mutex because access to task queue is protected by more efficient one
 			std::mutex mutex;
 			std::unique_lock lock(mutex);
 			// Wait for new task and try obtain it (more important jobs first)
-			signaler.wait(lock, [this, &run, &newItem, &task]() noexcept -> bool
-				{
-					for (auto& queue : taskQueues)
+			signaler.wait(lock, [this, &run, &newItem, &handle, &promise]() noexcept -> bool
 					{
-						newItem = queue.TryPopFront(task);
-						if (newItem)
-							break;
-					}
+					newItem = GetNextJob(handle, promise);
 					return newItem || !(run && runControl);
 				});
 
 			// Don't stop when task queue is not empty
 			if ((run || runControl) && !newItem)
 				return;
-			task();
+			
+			// Check if task can be started, otherwise skip
+			if (promise->TryClaimExecution())
+				handle.resume();
+			if (handle.done())
+				promise->DecrementRef();
 		}
 	}
 
@@ -186,6 +187,21 @@ namespace ZE
 			else
 				coresCount = logicalCoresCount = Utils::SafeCast<U8>(std::thread::hardware_concurrency());
 		}
+	}
+
+	bool ThreadPool::GetNextJob(std::coroutine_handle<>& handle, PromiseBase*& promise) noexcept
+	{
+		std::pair<std::coroutine_handle<>, PromiseBase*> task;
+		for (auto& queue : taskQueues)
+		{
+			if (queue.TryPopFront(task))
+			{
+				handle = task.first;
+				promise = task.second;
+				return true;
+			}
+		}
+		return false;
 	}
 
 	ThreadPool::~ThreadPool()

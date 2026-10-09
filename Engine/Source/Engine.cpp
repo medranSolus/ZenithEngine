@@ -419,6 +419,7 @@ namespace ZE
 		}
 
 		// Add or remove missing transform components
+		auto& worldData = Settings::DataBank.GetWorldData();
 		if (Settings::ComputeMotionVectors())
 		{
 			if (!worldData.all_of<Data::TransformPrevious>(renderGraph.GetCurrentCamera()))
