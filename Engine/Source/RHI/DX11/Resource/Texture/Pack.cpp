@@ -148,21 +148,32 @@ namespace ZE::RHI::DX11::Resource::Texture
 			{
 				// Gather source data
 				const GFX::Surface& startSurface = tex.Surfaces.front();
-				surfaces = surfaces > 1 ? surfaces : startSurface.GetArraySize();
+				U32 subresources = (surfaces > 1 ? surfaces : std::max(startSurface.GetDepth(), startSurface.GetArraySize())) * startSurface.GetMipCount();
 
-				auto resData = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(surfaces);
+				auto resData = std::make_unique<D3D11_SUBRESOURCE_DATA[]>(subresources);
 				for (U32 j = 0; const auto& surface : tex.Surfaces)
 				{
 					ZE_ASSERT(surface.GetFormat() == startSurface.GetFormat(), "Every surface should have same format!");
 					ZE_ASSERT(surface.GetWidth() == startSurface.GetWidth(), "Every surface should have same width!");
 					ZE_ASSERT(surface.GetHeight() == startSurface.GetHeight(), "Every surface should have same height!");
+					ZE_ASSERT(surface.GetMipCount() == startSurface.GetMipCount(), "Every surface should have same number of mips!");
+					ZE_ASSERT(surface.GetDepth() == startSurface.GetDepth(), "Every surface should have same depth!");
 
-					for (U16 k = 0; k < surface.GetArraySize(); ++k)
+					const U8* currentMem = surface.GetBuffer();
+					for (U16 a = 0; a < surface.GetArraySize(); ++a)
 					{
-						resData[j].pSysMem = surface.GetBuffer() + surface.GetSliceByteSize() * k;
-						resData[j].SysMemPitch = surface.GetRowByteSize();
-						resData[j].SysMemSlicePitch = Utils::SafeCast<U32>(surface.GetSliceByteSize());
-						++j;
+						for (U16 m = 0; m < surface.GetMipCount(); ++m)
+						{
+							U16 depth = std::max<U16>(surface.GetDepth() >> m, 1);
+							for (U16 d = 0; d < depth; ++d)
+							{
+								resData[j].pSysMem = currentMem;
+								resData[j].SysMemPitch = surface.GetRowByteSize(m);
+								resData[j].SysMemSlicePitch = Utils::SafeCast<U32>(surface.GetSliceByteSize(m));
+								currentMem += resData[j].SysMemSlicePitch;
+								++j;
+							}
+						}
 					}
 				}
 
@@ -172,7 +183,7 @@ namespace ZE::RHI::DX11::Resource::Texture
 				DX::ComPtr<IResource> resource;
 				ZE_EXPECT_RET_FAILED(resource, CreateTexture(device, srvDesc, resData.get(),
 					tex.Type, startSurface.GetWidth(), startSurface.GetHeight(), startSurface.GetMipCount(),
-					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : surfaces,
+					startSurface.GetDepth() > 1 ? startSurface.GetDepth() : surfaces > 1 ? surfaces : startSurface.GetArraySize(),
 					D3D11_USAGE_IMMUTABLE));
 				ZE_DX_SET_ID(resource, "Texture_" + std::to_string(i) + (desc.DebugName.size() ? "_" + desc.DebugName : ""));
 
