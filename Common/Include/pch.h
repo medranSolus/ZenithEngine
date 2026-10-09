@@ -280,6 +280,19 @@
 */
 #if _ZE_PLATFORM_WINDOWS
 /*
+* ThreadPool.h
+* WinAPI.h
+*/
+#	include "Platform/WinAPI/AsyncBackgroundThread.h"
+
+/*
+* IO/EofResult.h
+*** WinAPI.h
+* IocpOverlapped.h
+*/
+#	include "Platform/WinAPI/AsyncIoAwaiter.h"
+
+/*
 * BasicTypes.h
 * WinAPI.h
 */

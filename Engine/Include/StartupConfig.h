@@ -8,8 +8,20 @@ namespace ZE
 	class StartupConfig
 	{
 	public:
-		constexpr StartupConfig(const SettingsInitParams& params) noexcept { Settings::Init(params); }
+		constexpr StartupConfig(const SettingsInitParams& params) noexcept;
 		ZE_CLASS_DEFAULT(StartupConfig);
 		virtual ~StartupConfig() { Settings::Destroy(); }
 	};
+
+#pragma region Functions
+	constexpr StartupConfig::StartupConfig(const SettingsInitParams& params) noexcept
+	{
+		Status stat = Settings::Init(params);
+		if (stat)
+		{
+			ZE_CODE_CRITICAL(stat, "Failed to initialize main settings, aborting!");
+			std::abort();
+		}
+	}
+#pragma endregion
 }

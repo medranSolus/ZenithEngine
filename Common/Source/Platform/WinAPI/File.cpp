@@ -1,4 +1,6 @@
 #include "Platform/WinAPI/File.h"
+#include "Platform/WinAPI/AsyncBackgroundThread.h"
+#include "Platform/WinAPI/AsyncIoAwaiter.h"
 #include <io.h>
 #include <fcntl.h>
 
@@ -12,70 +14,16 @@ namespace ZE::Platform::WinAPI
 		{
 			ZE_FAIL("Invalid file buffer!");
 
-			Task<Status> task(std::packaged_task<Status()>([]() noexcept -> Status { return std::make_error_code(std::errc::invalid_argument); }));
+			Task<Status> task([]() noexcept -> Status { return std::make_error_code(std::errc::invalid_argument); });
 			return task;
 		}
 
-		std::unique_ptr<OVERLAPPED> overlapped = std::make_unique<OVERLAPPED>();
-		overlapped->Offset = static_cast<U32>(offset & UINT32_MAX);
-		overlapped->OffsetHigh = static_cast<U32>(offset >> 32);
-		overlapped->hEvent = CreateEventW(nullptr, false, false, nullptr);
-
-		BOOL operation;
-		if constexpr (IS_READ)
-			operation = ReadFile(osFile, buffer, size, nullptr, overlapped.get());
-		else
-			operation = WriteFile(osFile, buffer, size, nullptr, overlapped.get());
-
-		if (!operation)
-		{
-			DWORD error = GetLastError();
-			if (error != ERROR_IO_PENDING)
+		Task<Status> task([](HANDLE fileHandle, BuffBtr buffer, U32 requestedBytes, U64 offset) noexcept -> Task<Status>
 			{
-				Status lastError = ZE_WIN_ERROR(static_cast<HRESULT>(error));
-				[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
-				ZE_ASSERT(status, "Error closing file event handle!");
-
-				Task<Status> task(std::packaged_task<Status()>(std::bind([](Status code) noexcept -> Status { return code; }, lastError)));
-				return task;
-			}
-		}
-
-		Task<Status> task(std::packaged_task<Status()>(std::bind([overlapped = std::move(overlapped)](HANDLE fileHandle, U32 requestedBytes) noexcept -> Status
-			{
-				// Wait for async IO operation to complete
-				Status code = {};
-				bool wait = true;
-				do
-				{
-					switch (WaitForSingleObject(overlapped->hEvent, INFINITE))
-					{
-					case WAIT_OBJECT_0:
-					{
-						DWORD bytesProcessed = 0;
-						if (GetOverlappedResult(fileHandle, overlapped.get(), &bytesProcessed, TRUE) != 0)
-							code = ZE_WIN_LAST_ERROR();
-						else if (requestedBytes != bytesProcessed)
-							code = IO::EofResult::Make(bytesProcessed);
-						wait = false;
-						break;
-					}
-					case WAIT_IO_COMPLETION:
-						break;
-					default:
-					{
-						code = ZE_WIN_LAST_ERROR();
-						wait = false;
-						break;
-					}
-					}
-				} while (wait);
-
-				[[maybe_unused]] const BOOL status = CloseHandle(overlapped->hEvent);
-				ZE_ASSERT(status, "Error closing file event handle!");
-
-				return code;
-			}, osFile, size)));
+				Status stat = co_await AsyncIoAwaiter<IS_READ, BuffBtr>{ fileHandle, buffer, requestedBytes, offset };
+				co_return stat;
+			}, osFile, buffer, size, offset);
+		task.Start();
 		return task;
 	}
 
@@ -86,59 +34,15 @@ namespace ZE::Platform::WinAPI
 		if (offset == UINT64_MAX)
 			offset = currentOffset;
 
-		OVERLAPPED overlapped = {};
-		overlapped.Offset = static_cast<U32>(offset & UINT32_MAX);
-		overlapped.OffsetHigh = static_cast<U32>(offset >> 32);
-		overlapped.hEvent = CreateEventW(nullptr, false, false, nullptr);
-
-		BOOL operation;
-		if constexpr (IS_READ)
-			operation = ReadFile(osFile, buffer, size, nullptr, &overlapped);
-		else
-			operation = WriteFile(osFile, buffer, size, nullptr, &overlapped);
-
-		Status code = {};
-		if (!operation)
-		{
-			DWORD error = GetLastError();
-			if (error != ERROR_IO_PENDING)
-				code = ZE_WIN_ERROR(static_cast<HRESULT>(error));
-		}
-
-		// Wait for IO operation to complete
-		bool wait = true;
-		do
-		{
-			switch (WaitForSingleObject(overlapped.hEvent, INFINITE))
+		Task<Status> task([](HANDLE fileHandle, BuffBtr buffer, U32 requestedBytes, U64 offset) noexcept -> Task<Status>
 			{
-			case WAIT_OBJECT_0:
-			{
-				DWORD bytesProcessed = 0;
-				if (GetOverlappedResult(osFile, &overlapped, &bytesProcessed, TRUE) != 0)
-					code = ZE_WIN_LAST_ERROR();
-				else
-				{
-					offset += bytesProcessed;
-					currentOffset = offset;
-					if (size != bytesProcessed)
-						code = IO::EofResult::Make(bytesProcessed);
-				}
-				wait = false;
-				break;
-			}
-			case WAIT_IO_COMPLETION:
-				break;
-			default:
-			{
-				code = ZE_WIN_LAST_ERROR();
-				wait = false;
-				break;
-			}
-			}
-		} while (wait);
+				Status stat = co_await AsyncIoAwaiter<IS_READ, BuffBtr>{ fileHandle, buffer, requestedBytes, offset };
+				co_return stat;
+			}, osFile, buffer, size, offset);
 
-		[[maybe_unused]] const BOOL status = CloseHandle(overlapped.hEvent);
-		ZE_ASSERT(status, "Error closing file event handle!");
+		Status code = task.Get();
+		offset += IO::EofResult::IsEOF(code) ? IO::EofResult::GetRealBytes(code) : size;
+		currentOffset = offset;
 		return code;
 	}
 
@@ -278,6 +182,11 @@ namespace ZE::Platform::WinAPI
 				osFile = nullptr;
 				return std::make_error_code(std::errc::bad_file_descriptor);
 			}
+		}
+		else
+		{
+			// Enable usage of IOCP
+			ZE_CODE_RET_FAILED(AsyncBackgroundThread::RegisterFileHandle(osFile));
 		}
 
 		if (fileMapping)
