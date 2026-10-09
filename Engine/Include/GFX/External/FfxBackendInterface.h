@@ -11,6 +11,12 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::External::FFX
 {
+	// Custom extension format to basic surfaces
+	enum FfxCustomSurfaceFormat : U32
+	{
+		FFX_ZE_SURFACE_FORMAT_BC6H_UF16 = FFX_SURFACE_FORMAT_R32_TYPELESS + 1
+	};
+
 	// Description of additional resource used by FFX backend to be allocated in frame buffer
 	struct InternalResourceDescription
 	{
@@ -185,12 +191,14 @@ namespace ZE::GFX::External::FFX
 			return FFX_SURFACE_FORMAT_R11G11B10_FLOAT;
 		case PixelFormat::R9G9B9E5_SharedExp:
 			return FFX_SURFACE_FORMAT_R9G9B9E5_SHAREDEXP;
+		case PixelFormat::BC6H_UF16:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_BC6H_UF16);
 		}
 	}
 
 	constexpr PixelFormat GetPixelFormat(FfxSurfaceFormat format) noexcept
 	{
-		switch (format)
+		switch (static_cast<U32>(format))
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
@@ -281,6 +289,8 @@ namespace ZE::GFX::External::FFX
 			return PixelFormat::R32_Float;
 		case FFX_SURFACE_FORMAT_R9G9B9E5_SHAREDEXP:
 			return PixelFormat::R9G9B9E5_SharedExp;
+		case FFX_ZE_SURFACE_FORMAT_BC6H_UF16:
+			return PixelFormat::BC6H_UF16;
 		}
 	}
 #pragma region
