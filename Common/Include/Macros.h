@@ -88,16 +88,28 @@ namespace ZE
 
 // Instantly return if received error code
 #define ZE_CODE_RET_FAILED(call) do { if (Status __code = (call)) return __code; } while (false)
+// Instantly return if received error code in coroutine
+#define ZE_CODE_RET_FAILED_CORO(call) do { if (Status __code = (call)) co_return __code; } while (false)
 // Instantly return if received error code (wrapped in std::unexpected)
 #define ZE_CODE_RET_FAILED_EXPECT(call) do { if (Status __code = (call)) return std::unexpected(__code); } while (false)
+// Instantly return if received error code in coroutine (wrapped in std::unexpected)
+#define ZE_CODE_RET_FAILED_EXPECT_CORO(call) do { if (Status __code = (call)) co_return std::unexpected(__code); } while (false)
 // Instantly return if received error code and log aprioriate error
 #define ZE_LOG_RET_FAILED(call, info) do { if (Status __code = (call)) { ZE_CODE_ERROR(__code, info); return __code; } } while (false)
+// Instantly return if received error code and log aprioriate error in coroutine
+#define ZE_LOG_RET_FAILED_CORO(call, info) do { if (Status __code = (call)) { ZE_CODE_ERROR(__code, info); co_return __code; } } while (false)
 // Instantly return if received error code (wrapped in std::unexpected) and log aprioriate error
 #define ZE_LOG_RET_FAILED_EXPECT(call, info) do { if (Status __code = (call)) { ZE_CODE_ERROR(__code, info); return std::unexpected(__code); } } while (false)
+// Instantly return if received error code (wrapped in std::unexpected) and log aprioriate error in coroutine
+#define ZE_LOG_RET_FAILED_EXPECT_CORO(call, info) do { if (Status __code = (call)) { ZE_CODE_ERROR(__code, info); co_return std::unexpected(__code); } } while (false)
 // Instantly return if received error code instead of expected object
 #define ZE_EXPECT_RET_FAILED(expectedVar, call) do { auto __exp = (call); if (!__exp) return std::unexpected(__exp.error()); expectedVar = std::move(*__exp); } while (false)
+// Instantly return if received error code instead of expected object in coroutine
+#define ZE_EXPECT_RET_FAILED_CORO(expectedVar, call) do { auto __exp = (call); if (!__exp) co_return std::unexpected(__exp.error()); expectedVar = std::move(*__exp); } while (false)
 // Instantly return if received error code instead of expected object (return error code only)
 #define ZE_EXPECT_RET_FAILED_CODE(expectedVar, call) do { auto __exp = (call); if (!__exp) return __exp.error(); expectedVar = std::move(*__exp); } while (false)
+// Instantly return if received error code instead of expected object in coroutine (return error code only)
+#define ZE_EXPECT_RET_FAILED_CODE_CORO(expectedVar, call) do { auto __exp = (call); if (!__exp) co_return __exp.error(); expectedVar = std::move(*__exp); } while (false)
 
 #if !_ZE_MODE_RELEASE
 // Log informational message base on given code (silenced in release build)

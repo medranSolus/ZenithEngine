@@ -103,7 +103,7 @@ namespace ZE::Data
 		ZE_VALID_EID(root);
 
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&dev, &assets, file = std::string(filename), root = root, transform = transform, options = options]() noexcept -> Status
+			[&dev, &assets, file = std::string(filename), root = root, transform = transform, options = options](this auto self) noexcept -> Task<Status>
 			{
 				Assimp::Importer importer;
 				importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, 80.0f);
@@ -134,21 +134,21 @@ namespace ZE::Data
 				if (!scene || std::strlen(error))
 				{
 					Logger::Error("Loading model \"" + file + "\": " + error);
-					return std::make_error_code(std::errc::io_error);
+					co_return std::make_error_code(std::errc::io_error);
 				}
+
+				// Load materials first as they are harder to parse
+				std::string pathDir = std::filesystem::path(file).remove_filename().string();
+				std::vector<Task<Expected<EID>>> materialWaitables;
+				materialWaitables.reserve(scene->mNumMaterials);
+				for (U32 i = 0; i < scene->mNumMaterials; ++i)
+					materialWaitables.emplace_back(assets.ParseMaterial(dev, *scene->mMaterials[i], pathDir, options));
 
 				// Load geometry
 				std::vector<Task<Expected<EID>>> meshWaitables;
 				meshWaitables.reserve(scene->mNumMeshes);
 				for (U32 i = 0; i < scene->mNumMeshes; ++i)
 					meshWaitables.emplace_back(assets.ParseMesh(dev, *scene->mMeshes[i]));
-
-				// Load materials
-				std::string pathDir = std::filesystem::path(file).remove_filename().string();
-				std::vector<Task<Expected<EID>>> materialWaitables;
-				materialWaitables.reserve(scene->mNumMaterials);
-				for (U32 i = 0; i < scene->mNumMaterials; ++i)
-					materialWaitables.emplace_back(assets.ParseMaterial(dev, *scene->mMaterials[i], pathDir, options));
 
 				// Load model structure to shadow registry
 				auto& dataStorage = Settings::DataBank.GetLoadingData();
@@ -167,13 +167,12 @@ namespace ZE::Data
 				meshes.reserve(scene->mNumMeshes);
 				for (auto& task : meshWaitables)
 				{
-					Expected<EID> expId = {};
-					ZE_EXPECT_RET_FAILED_CODE(expId, task.Get());
+					Expected<EID> expId = co_await task;
 					if (expId)
 						meshes.emplace_back(*expId);
 					else
 					{
-						ZE_CODE_RET_FAILED(expId.error());
+						ZE_CODE_RET_FAILED_CORO(expId.error());
 					}
 				}
 				meshWaitables.clear();
@@ -183,13 +182,12 @@ namespace ZE::Data
 				materials.reserve(scene->mNumMaterials);
 				for (auto& task : materialWaitables)
 				{
-					Expected<EID> expId = {};
-					ZE_EXPECT_RET_FAILED_CODE(expId, task.Get());
+					Expected<EID> expId = co_await task;
 					if (expId)
 						materials.emplace_back(*expId);
 					else
 					{
-						ZE_CODE_RET_FAILED(expId.error());
+						ZE_CODE_RET_FAILED_CORO(expId.error());
 					}
 				}
 				materialWaitables.clear();
@@ -221,7 +219,7 @@ namespace ZE::Data
 
 				// Mark that this object tree is ready for merging
 				dataStorage.emplace<SystemsBank::WorldObjectLoaded>(loadingRoot);
-				return {};
+				co_return Status{};
 			});
 	}
 #endif

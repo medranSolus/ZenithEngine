@@ -13,7 +13,7 @@ namespace ZE::Data
 {
 #if _ZE_EXTERNAL_MODEL_LOADING
 	template<typename Index>
-	void AssetsStreamer::ParseIndices(Index* indices, const aiMesh& mesh) noexcept
+	Task<void> AssetsStreamer::ParseIndices(Index* indices, const aiMesh& mesh) noexcept
 	{
 		for (U32 i = 0, index = 0; i < mesh.mNumFaces; ++i)
 		{
@@ -24,6 +24,7 @@ namespace ZE::Data
 			indices[index++] = Utils::SafeCast<Index>(face.mIndices[1]);
 			indices[index++] = Utils::SafeCast<Index>(face.mIndices[2]);
 		}
+		co_return;
 	}
 #endif
 
@@ -455,7 +456,7 @@ namespace ZE::Data
 				for (auto& res : results)
 				{
 					ZE_CODE_RET_FAILED(res.Get());
-					}
+				}
 				return {};
 			});
 	}
@@ -464,7 +465,7 @@ namespace ZE::Data
 	Task<Expected<EID>> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&]() noexcept -> Expected<EID>
+			[this, &dev, &mesh](this auto self) noexcept -> Task<Expected<EID>>
 			{
 				GFX::Resource::MeshData meshData = {};
 				meshData.VertexCount = mesh.mNumVertices;
@@ -472,23 +473,24 @@ namespace ZE::Data
 				meshData.VertexSize = sizeof(GFX::Vertex);
 
 				// Gather index data and parse it into continuous array
+				Task<void> indexTask;
 				if (meshData.IndexCount >= UINT16_MAX)
 				{
 					meshData.IndexSize = sizeof(U32);
 					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount * sizeof(U32) + meshData.VertexCount * sizeof(GFX::Vertex));
-					ParseIndices(reinterpret_cast<U32*>(meshData.PackedMesh.get()), mesh);
+					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U32>, reinterpret_cast<U32*>(meshData.PackedMesh.get()), mesh);
 				}
 				else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
 				{
 					meshData.IndexSize = sizeof(U16);
 					meshData.PackedMesh = std::make_shared<U8[]>(Math::AlignUp(meshData.IndexCount * sizeof(U16), static_cast<U64>(GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT)) + meshData.VertexCount * sizeof(GFX::Vertex));
-					ParseIndices(reinterpret_cast<U16*>(meshData.PackedMesh.get()), mesh);
+					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U16>, reinterpret_cast<U16*>(meshData.PackedMesh.get()), mesh);
 				}
 				else
 				{
 					meshData.IndexSize = sizeof(U8);
 					meshData.PackedMesh = std::make_shared<U8[]>(Math::AlignUp(meshData.IndexCount, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + meshData.VertexCount * sizeof(GFX::Vertex));
-					ParseIndices(meshData.PackedMesh.get(), mesh);
+					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U8>, meshData.PackedMesh.get(), mesh);
 				}
 
 				// Parse vertex data into structured format just after index array
@@ -539,7 +541,8 @@ namespace ZE::Data
 
 				// Load parsed mesh data into correct mesh and start it's upload to GPU
 				GFX::Resource::Mesh meshBuffer;
-				ZE_EXPECT_RET_FAILED(meshBuffer, GFX::Resource::Mesh::Create(dev, diskManager, meshData));
+				co_await indexTask;
+				ZE_EXPECT_RET_FAILED_CORO(meshBuffer, GFX::Resource::Mesh::Create(dev, diskManager, meshData));
 
 				// Create main mesh data
 				LockGuardRW lock(Settings::DataBank.GetLoadingLock());
@@ -558,14 +561,14 @@ namespace ZE::Data
 				// Mark that this mesh is ready for merging
 				dataStorage.emplace<RefCount>(meshId);
 				dataStorage.emplace<SystemsBank::AssetLoaded>(meshId);
-				return meshId;
+				co_return meshId;
 			});
 	}
 
 	Task<Expected<EID>> AssetsStreamer::ParseMaterial(GFX::Device& dev, const aiMaterial& material, const std::string& path, ExternalModelOptions options) noexcept
 	{
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[&, path = path]() noexcept -> Expected<EID>
+			[this, &dev, &material, &path, options](this auto self) noexcept -> Task<Expected<EID>>
 			{
 #if !_ZE_GAME_BUILD || _ZE_DEBUG_GFX_NAMES
 				std::string matName =  material.GetName().length != 0 ? material.GetName().C_Str() : "material_" + path;
@@ -578,32 +581,59 @@ namespace ZE::Data
 				ZE_TEXTURE_SET_NAME(texDesc, matName);
 				texDesc.Init(texSchema);
 
+				std::shared_mutex texDescMutex;
 				aiString texFile = {};
 				bool notSolid = false;
 				// Emissive: aiTextureType_EMISSIVE
 				// Decals: $mat.gltf.alphaMode
 
 				// Get diffuse texture
+				Task<void> loadDiffuse(std::noop_coroutine());
 				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 				{
-					std::vector<GFX::Surface> surfaces;
-					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
-					{
-						notSolid |= surfaces.back().HasAlpha();
+					loadDiffuse = Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+						[&texSchema, &texDesc, &texDescMutex, &flags, &notSolid](this auto self, std::string file) noexcept
+						{
+							std::vector<GFX::Surface> surfaces;
+							if (surfaces.emplace_back().Load(file))
+							{
+								LockGuardRW lock(texDescMutex);
+								notSolid |= surfaces.back().HasAlpha();
 
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_ALBEDO_NAME, std::move(surfaces), true);
-						flags |= MaterialPBR::Flag::UseAlbedoTex;
-					}
+								texDesc.AddTexture(texSchema, MaterialPBR::TEX_ALBEDO_NAME, std::move(surfaces), true);
+								flags |= MaterialPBR::Flag::UseAlbedoTex;
+							}
+						}, path + texFile.C_Str());
 				}
 
 				// Get normal map texture
+				Task<void> loadNormal(std::noop_coroutine());
 				if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
+				{
+					loadNormal = Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+						[&texSchema, &texDesc, &texDescMutex, &flags](this auto self, std::string file) noexcept
+						{
+							std::vector<GFX::Surface> surfaces;
+							if (surfaces.emplace_back().Load(file))
+							{
+								LockGuardRW lock(texDescMutex);
+
+								texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
+								flags |= MaterialPBR::Flag::UseNormalTex;
+							}
+						}, path + texFile.C_Str());
+				}
+
+				// Get height texture
+				// TODO: fix height maps
+				if constexpr (false && material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
 				{
 					std::vector<GFX::Surface> surfaces;
 					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 					{
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_NORMAL_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseNormalTex;
+						texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
+						flags |= MaterialPBR::Flag::UseParallaxTex;
+						notSolid = true;
 					}
 				}
 
@@ -635,16 +665,6 @@ namespace ZE::Data
 								{
 									switch (Utils::GetChannelCount(surfaces.front().GetFormat()))
 									{
-									default:
-									case 0:
-									{
-										// Probably already compressed texture, ignore it an just load as-is
-										texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
-										flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
-										break;
-									}
-									case 1:
-										break;
 									case 2:
 									{
 										// Just swap channels
@@ -691,8 +711,19 @@ namespace ZE::Data
 											if (currentDepth == 0)
 												currentDepth = 1;
 										}
+										[[fallthrough]];
+									}
+									default:
+									case 0:
+									{
+										LockGuardRW lock(texDescMutex);
+										// Probably already compressed texture, ignore it an just load as-is
+										texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
+										flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
 										break;
 									}
+									case 1:
+										break;
 									case 3:
 									case 4:
 									{
@@ -765,6 +796,8 @@ namespace ZE::Data
 											if (parseRough != parseMetal)
 											{
 												surfaces.erase(surfaces.begin());
+
+												LockGuardRW lock(texDescMutex);
 												texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 												if (parseRough)
 													flags |= MaterialPBR::Flag::UseRoughnessTex;
@@ -774,6 +807,8 @@ namespace ZE::Data
 											else if (surfaces.front().ReplaceChannels(surfaces.data() + 1, 2))
 											{
 												surfaces.resize(1);
+
+												LockGuardRW lock(texDescMutex);
 												texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 												flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
 											}
@@ -788,6 +823,7 @@ namespace ZE::Data
 								std::vector<GFX::Surface> surfaces;
 								if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 								{
+									LockGuardRW lock(texDescMutex);
 									texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 									flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
 								}
@@ -804,6 +840,8 @@ namespace ZE::Data
 								if (surfaces.emplace_back().ReplaceChannels(surfaces.data(), 2))
 								{
 									surfaces.erase(surfaces.begin(), surfaces.begin() + 2);
+
+									LockGuardRW lock(texDescMutex);
 									texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 									flags |= MaterialPBR::Flag::UseRoughnessTex | MaterialPBR::Flag::UseMetalnessTex | MaterialPBR::Flag::MergedRoughnessMetal;
 								}
@@ -811,12 +849,16 @@ namespace ZE::Data
 							else if (loadedRoughness)
 							{
 								surfaces.pop_back();
+
+								LockGuardRW lock(texDescMutex);
 								texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 								flags |= MaterialPBR::Flag::UseRoughnessTex;
 							}
 							else if (loadedMetalness)
 							{
 								surfaces.erase(surfaces.begin());
+
+								LockGuardRW lock(texDescMutex);
 								texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 								flags |= MaterialPBR::Flag::UseMetalnessTex;
 							}
@@ -827,6 +869,7 @@ namespace ZE::Data
 						std::vector<GFX::Surface> surfaces;
 						if (surfaces.emplace_back().Load(path + texFile.C_Str()))
 						{
+							LockGuardRW lock(texDescMutex);
 							texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 							flags |= MaterialPBR::Flag::UseRoughnessTex;
 						}
@@ -836,6 +879,7 @@ namespace ZE::Data
 						std::vector<GFX::Surface> surfaces;
 						if (surfaces.emplace_back().Load(path + metalTexFile.C_Str()))
 						{
+							LockGuardRW lock(texDescMutex);
 							texDesc.AddTexture(texSchema, MaterialPBR::TEX_SHADING_PARAMS_NAME, std::move(surfaces));
 							flags |= MaterialPBR::Flag::UseMetalnessTex;
 						}
@@ -843,18 +887,9 @@ namespace ZE::Data
 				}
 				metalTexFile.Clear();
 
-				// Get height texture
-				// TODO: fix height maps
-				if constexpr (false && material.GetTexture(aiTextureType_HEIGHT, 0, &texFile) == aiReturn_SUCCESS)
-				{
-					std::vector<GFX::Surface> surfaces;
-					if (surfaces.emplace_back().Load(path + texFile.C_Str()))
-					{
-						texDesc.AddTexture(texSchema, MaterialPBR::TEX_HEIGHT_NAME, std::move(surfaces));
-						flags |= MaterialPBR::Flag::UseParallaxTex;
-						notSolid = true;
-					}
-				}
+				// Ensure that all textures are loaded by this point
+				co_await loadDiffuse;
+				co_await loadNormal;
 
 				if (material.Get(AI_MATKEY_COLOR_DIFFUSE, reinterpret_cast<aiColor4D&>(data.Albedo)) != aiReturn_SUCCESS)
 					data.Albedo = { 0.0f, 0.8f, 1.0f };
@@ -877,7 +912,7 @@ namespace ZE::Data
 
 				// Start upload of buffer data and textures to GPU
 				MaterialBuffersPBR matBuffer;
-				ZE_EXPECT_RET_FAILED(matBuffer, MaterialBuffersPBR::Create(dev, diskManager, data, texDesc));
+				ZE_EXPECT_RET_FAILED_CORO(matBuffer, MaterialBuffersPBR::Create(dev, diskManager, data, texDesc));
 
 				// Load data into proper bank
 				LockGuardRW lock(Settings::DataBank.GetLoadingLock());
@@ -899,7 +934,7 @@ namespace ZE::Data
 				// Mark that this material is ready for merging
 				dataStorage.emplace<RefCount>(materialId);
 				dataStorage.emplace<SystemsBank::AssetLoaded>(materialId);
-				return materialId;
+				co_return materialId;
 			});
 	}
 #endif
