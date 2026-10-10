@@ -48,6 +48,7 @@ namespace ZE::GFX::Pipeline
 	{
 		EID CurrentCamera = INVALID_EID;
 		Float4x4 Projection = {};
+		Float4x4 ViewProjectionNoJitterTps = {};
 		Float4x4 PrevViewTps = {};
 		Float4x4 PrevProjection = {};
 		U32 JitterIndex = 0;

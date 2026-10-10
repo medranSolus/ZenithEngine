@@ -66,7 +66,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 			Resources ids = *reinterpret_cast<const Resources*>(passData.Resources.get());
 			ExecuteData& data = *static_cast<ExecuteData*>(passData.ExecData.get());
 
-			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.DynamicData.ViewProjectionTps);
+			const Matrix viewProjection = Math::XMLoadFloat4x4(&renderData.GraphData.ViewProjectionNoJitterTps);
 			const Vector cameraPos = Math::XMLoadFloat3(&renderData.DynamicData.CameraPos);
 
 			// Compute visibility of objects inside camera view and sort them front-back

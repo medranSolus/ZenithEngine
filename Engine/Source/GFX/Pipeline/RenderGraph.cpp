@@ -220,6 +220,14 @@ namespace ZE::GFX::Pipeline
 
 		const Matrix viewProjection = view * projection;
 		Math::XMStoreFloat4x4(&execData.DynamicData.ViewProjectionTps, Math::XMMatrixTranspose(viewProjection));
+		if (Settings::ApplyJitter())
+		{
+			Data::Projection proj = currentCamera.Projection;
+			proj.JitterX = proj.JitterY = 0.0f;
+			Math::XMStoreFloat4x4(&execData.GraphData.ViewProjectionNoJitterTps, Math::XMMatrixTranspose(view * Data::GetProjectionMatrix(proj)));
+		}
+		else
+			execData.GraphData.ViewProjectionNoJitterTps = execData.DynamicData.ViewProjectionTps;
 		Math::XMStoreFloat4x4(&execData.DynamicData.ViewProjectionInverseTps, Math::XMMatrixTranspose(Math::XMMatrixInverse(nullptr, viewProjection)));
 	}
 }
