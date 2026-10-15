@@ -18,6 +18,11 @@ namespace std
 
 namespace ZE::Math::FP16
 {
+	static constexpr U16 NEG_ZERO_VAL = 0x8000;
+	static constexpr U16 POS_ZERO_VAL = 0x0000;
+	static constexpr U16 NEG_ONE_VAL = 0xBC00;
+	static constexpr U16 POS_ONE_VAL = 0x3C00;
+
 	static constexpr float MAX_VAL = 65504.0f;
 
 	// Source: https://stackoverflow.com/a/3542975

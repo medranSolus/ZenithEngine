@@ -2,6 +2,111 @@
 
 namespace ZE::Math
 {
+	Float2 EncodeOctahedral(const Float3& nrm) noexcept
+	{
+		// Project onto octahedron (L1 norm)
+		Vector n = XMLoadFloat3(&nrm);
+		Vector absN = XMVectorAbs(n);
+
+		Float3 l1 = {};
+		XMStoreFloat3(&l1, XMVectorDivide(n, XMVectorAdd(XMVectorSplatX(absN), XMVectorAdd(XMVectorSplatY(absN), XMVectorSplatZ(absN)))));
+		
+		// If z is negative, fold the coordinates across the axes
+		if (l1.z < 0.0f)
+			return { (1.0f - std::abs(l1.y)) * SignNotZero(l1.x), (1.0f - std::abs(l1.x)) * SignNotZero(l1.y) };
+		else
+			return { l1.x, l1.y };
+	}
+
+	Float3 DecodeOctahedral(const Float3& oct) noexcept
+	{
+		Float3 v = { oct.x, oct.y, 1.0f - std::abs(oct.x) - std::abs(oct.y) };
+
+		if (v.z < 0.0f)
+		{
+			v.x -= v.z * SignNotZero(v.x);
+			v.y -= v.z * SignNotZero(v.y);
+		}
+
+		XMStoreFloat3(&v, XMVector3Normalize(XMLoadFloat3(&v)));
+		return v;
+	}
+
+	float EncodeTangentAngle(const Float3& nrm, const Float3& tangent) noexcept
+	{
+		Vector n = XMLoadFloat3(&nrm);
+		Vector t = XMLoadFloat3(&tangent);
+
+		// Canonical basis direction as in DOOM Eternal SIGGRAPH 2020 https://advances.realtimerendering.com/s2020/RenderingDoomEternal.pdf
+		Vector axis = XMVector3Normalize(std::abs(nrm.x) > std::abs(nrm.z) ?
+			XMVectorSet(-nrm.y, nrm.x, 0.0f, 0.0f) : XMVectorSet(0.0f, -nrm.z, nrm.y, 0.0f));
+
+		Vector t1 = XMVector3Normalize(XMVector3Cross(axis, n));
+		Vector t2 = XMVector3Normalize(XMVector3Cross(n, t1));
+
+		// Get sin-cos after projection
+		float c = XMVectorGetX(XMVector3Dot(t, t1));
+		float s = XMVectorGetX(XMVector3Dot(t, t2));
+
+		return std::atan2(s, c);
+	}
+
+	Float3 DecodeTangentAngle(const Float3& nrm, float angle) noexcept
+	{
+		Vector axis = XMVector3Normalize(std::abs(nrm.x) > std::abs(nrm.z) ?
+			XMVectorSet(-nrm.y, nrm.x, 0.0f, 0.0f) : XMVectorSet(0.0f, -nrm.z, nrm.y, 0.0f));
+
+		Float3 tangent = {};
+		XMStoreFloat3(&tangent, XMVectorMultiplyAdd(axis, XMVectorReplicate(std::cos(angle)),
+			XMVectorScale(XMVector3Normalize(XMVector3Cross(XMLoadFloat3(&nrm), axis)), std::sin(angle))));
+		return tangent;
+	}
+
+	float EncodeTangentDiamond(const Float3& nrm, const Float3& tangent) noexcept
+	{
+		// https://www.jeremyong.com/graphics/2023/01/09/tangent-spaces-and-diamond-encoding/#:~:text=%E2%80%9CDiamond%20Encoding
+		Vector t = XMLoadFloat3(&tangent);
+
+		// First canonical direction
+		Vector t1 = XMVector3Normalize(std::abs(nrm.y) > std::abs(nrm.z) ?
+			XMVectorSet(nrm.y, -nrm.x, 0.0f, 0.0f) : XMVectorSet(nrm.z, 0.0f, -nrm.x, 0.0f));
+
+		// Construct t2 such that t1 and t2 span the plane
+		Vector t2 = XMVector3Cross(t1, XMLoadFloat3(&nrm));
+
+		// Decompose the tangent into two coordinates in the canonical basis
+		Float2 packedTangent = { XMVectorGetX(XMVector3Dot(t, t1)), XMVectorGetX(XMVector3Dot(t, t2)) };
+
+		// Project to the unit diamond, then to the x-axis.
+		float x = packedTangent.x / (std::abs(packedTangent.x) + abs(packedTangent.y));
+
+		// Contract the x coordinate by a factor of 4 to represent all 4 quadrants in
+		// the unit range and remap
+		float sign = Sign(packedTangent.y);
+		return -sign * 0.25f * x + 0.5f + sign * 0.25f;
+	}
+
+	Float3 DecodeTangentDiamond(const Float3& nrm, float diamond) noexcept
+	{
+		// As in the encode step, find our canonical tangent basis span(t1, t2)
+		Vector t1 = XMVector3Normalize(std::abs(nrm.y) > std::abs(nrm.z) ?
+			XMVectorSet(nrm.y, -nrm.x, 0.0f, 0.0f) : XMVectorSet(nrm.z, 0.0f, -nrm.x, 0.0f));
+
+		Vector t2 = XMVector3Cross(t1, XMLoadFloat3(&nrm));
+
+		// Remap value to the appropriate segment on the diamond
+		float sign = Sign(diamond - 0.5f);
+		float x = -sign * 4.0f * diamond + 1.0f + sign * 2.0f;
+		Vector packedTangent = { x, sign * (1.0f - std::abs(x)), 0.0f, 0.0f };
+
+		// Normalization extends the point on the diamond back to the unit circle
+		packedTangent = XMVector2Normalize(packedTangent);
+
+		Float3 tangent = {};
+		XMStoreFloat3(&tangent, XMVectorMultiplyAdd(t1, XMVectorSplatX(packedTangent), XMVectorMultiply(t2, XMVectorSplatY(packedTangent))));
+		return tangent;
+	}
+
 	Float3 GetEulerAngles(const Float4& rotor) noexcept
 	{
 		constexpr float SINGULARITY = 0.4999f;
@@ -270,7 +375,7 @@ namespace ZE::Math
 				result = XMVectorAdd(result, XMLoadFloat4(&sample));
 
 			if (samples.size())
-				result = XMVectorMultiply(result, XMVectorReplicate(1.0f / static_cast<float>(samples.size())));
+				result = XMVectorScale(result, 1.0f / static_cast<float>(samples.size()));
 			break;
 		}
 		case FilterType::GammaAverage:
@@ -281,7 +386,7 @@ namespace ZE::Math
 				result = XMVectorMultiplyAdd(v, v, result);
 			}
 			if (samples.size())
-				result = XMVectorMultiply(XMVectorSqrt(result), XMVectorReplicate(1.0f / static_cast<float>(samples.size())));
+				result = XMVectorScale(XMVectorSqrt(result), 1.0f / static_cast<float>(samples.size()));
 			break;
 		}
 		case FilterType::Bilinear:
@@ -370,7 +475,7 @@ namespace ZE::Math
 				}
 			}
 
-			result = XMVectorMultiply(result, XMVectorReplicate(1.0f / coeffSum));
+			result = XMVectorScale(result, 1.0f / coeffSum);
 			break;
 		}
 		}

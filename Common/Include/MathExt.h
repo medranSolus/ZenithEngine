@@ -276,6 +276,12 @@ namespace ZE::Math
 	}
 
 	template<typename T>
+	constexpr T SignNotZero(T val) noexcept
+	{
+		return static_cast<T>(val >= static_cast<T>(0) ? static_cast<T>(1) : static_cast<T>(-1));
+	}
+
+	template<typename T>
 	constexpr T WrapCoord(T coord, T size) noexcept
 	{
 		return (coord % size + size) % size;
@@ -288,6 +294,14 @@ namespace ZE::Math
 		return mod < size ? (mod < 0 ? std::abs(mod + 1) : mod) : (size * 2 - mod - 1);
 	}
 
+	// Input vector must be already normalized
+	Float2 EncodeOctahedral(const Float3& nrm) noexcept;
+	Float3 DecodeOctahedral(const Float3& oct) noexcept;
+	// Returns angle in [-PI,PI]
+	float EncodeTangentAngle(const Float3& nrm, const Float3& tangent) noexcept;
+	Float3 DecodeTangentAngle(const Float3& nrm, float angle) noexcept;
+	float EncodeTangentDiamond(const Float3& nrm, const Float3& tangent) noexcept;
+	Float3 DecodeTangentDiamond(const Float3& nrm, float diamond) noexcept;
 	Float3 GetEulerAngles(const Float4& rotor) noexcept;
 	Float3 Add(const Float3& v1, const Float3& v2) noexcept;
 	Float3 AddNormal(const Float3& v1, const Float3& v2) noexcept;
