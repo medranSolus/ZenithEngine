@@ -108,19 +108,19 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 
 		// Static preprocessed resources
 		graphDesc.AddResource("skybox",
-			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32B32_Float, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Cubemap skybox"));
+			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::Unknown, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Cubemap skybox"));
 		graphDesc.AddResource("irrMap",
-			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32B32_Float, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Irradiance map"));
+			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::Unknown, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Irradiance map"));
 		graphDesc.AddResource("envMap",
-			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32B32_Float, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Environment map"));
+			TEX_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::Unknown, 0.0f, 0.0f, 0.0f, 0.0f, FrameResourceType::TextureCube, "Environment map"));
 		graphDesc.AddResource("brdfLut",
-			TEX2D_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::R32G32_Float, 0.0f, 0.0f, 0.0f, 0.0f, "BRDF LUT"));
+			TEX2D_DESC(SIZE_SYNC, Base(FrameResourceFlag::OutsideResource), PixelFormat::Unknown, 0.0f, 0.0f, 0.0f, 0.0f, "BRDF LUT"));
 
 		// GBuffer related resources
 		graphDesc.AddResource("gbuffDepth",
 			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceSRV, PixelFormat::DepthOnly, "GBuff depth"));
 		graphDesc.AddResource("gbuffNormal",
-			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, "GBuff normals"));
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_SNorm, "GBuff normals"));
 		graphDesc.AddResource("gbuffAlbedo",
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_UNorm, "GBuff albedo"));
 		graphDesc.AddResource("gbuffMaterial",
@@ -134,7 +134,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		graphDesc.AddResource("gbuffDepthCompute",
 			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceDSV, PixelFormat::DepthOnly, "GBuff depth compute copy"));
 		graphDesc.AddResource("gbuffNormalCompute",
-			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_Float, "GBuff normals compute copy"));
+			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16_SNorm, "GBuff normals compute copy"));
 
 		// Light related resources
 		graphDesc.AddResource("directLighting",

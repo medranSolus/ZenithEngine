@@ -1,7 +1,6 @@
 #ifndef PBR_UTILS_HLSLI
 #define PBR_UTILS_HLSLI
-
-static const float PI = 3.14159265f;
+#include "Utils.hlsli"
 
 // Get Trowbridge-Reitz surface area aligned to the halfway vector between light and surface normal
 float GetNormalDistributionTrowbridgeReitzGGX(const in float3 surfaceNormal, const in float3 halfway, const in float roughness)

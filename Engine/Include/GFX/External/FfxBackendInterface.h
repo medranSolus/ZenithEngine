@@ -11,10 +11,32 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::External::FFX
 {
-	// Custom extension format to basic surfaces
+	// Custom extension formats to basic surfaces
 	enum FfxCustomSurfaceFormat : U32
 	{
-		FFX_ZE_SURFACE_FORMAT_BC6H_UF16 = FFX_SURFACE_FORMAT_R32_TYPELESS + 1
+		FFX_ZE_SURFACE_FORMAT_R32G32B32A32_SINT = FFX_SURFACE_FORMAT_R32_TYPELESS + 1,
+		FFX_ZE_SURFACE_FORMAT_R16G16B16A16_UINT,
+		FFX_ZE_SURFACE_FORMAT_R16G16B16A16_SINT,
+		FFX_ZE_SURFACE_FORMAT_R16G16B16A16_UNORM,
+		FFX_ZE_SURFACE_FORMAT_R16G16B16A16_SNORM,
+		FFX_ZE_SURFACE_FORMAT_R8G8B8A8_UINT,
+		FFX_ZE_SURFACE_FORMAT_R8G8B8A8_SINT,
+
+		FFX_ZE_SURFACE_FORMAT_R32G32_UINT,
+		FFX_ZE_SURFACE_FORMAT_R32G32_SINT,
+		FFX_ZE_SURFACE_FORMAT_R16G16_UNORM,
+		FFX_ZE_SURFACE_FORMAT_R16G16_SNORM,
+		FFX_ZE_SURFACE_FORMAT_R8G8_SINT,
+		FFX_ZE_SURFACE_FORMAT_R8G8_SNORM,
+
+		FFX_ZE_SURFACE_FORMAT_R32_SINT,
+		FFX_ZE_SURFACE_FORMAT_R16_SINT,
+		FFX_ZE_SURFACE_FORMAT_R8_SINT,
+		FFX_ZE_SURFACE_FORMAT_R8_SNORM,
+
+		FFX_ZE_SURFACE_FORMAT_R10G10B10A2_UINT,
+		FFX_ZE_SURFACE_FORMAT_BC6H_UF16,
+		FFX_ZE_SURFACE_FORMAT_BC6H_SF16,
 	};
 
 	// Description of additional resource used by FFX backend to be allocated in frame buffer
@@ -104,20 +126,21 @@ namespace ZE::GFX::External::FFX
 		case PixelFormat::R32G32B32A32_UInt:
 			return FFX_SURFACE_FORMAT_R32G32B32A32_UINT;
 		case PixelFormat::R32G32B32A32_SInt:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R32G32B32A32_SInt so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R32G32B32A32_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R32G32B32A32_SINT);
 		case PixelFormat::R16G16B16A16_Float:
 			return FFX_SURFACE_FORMAT_R16G16B16A16_FLOAT;
 		case PixelFormat::R16G16B16A16_UInt:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16G16B16A16_UINT);
 		case PixelFormat::R16G16B16A16_SInt:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16G16B16A16_SINT);
 		case PixelFormat::R16G16B16A16_UNorm:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16G16B16A16_UNORM);
 		case PixelFormat::R16G16B16A16_SNorm:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R16G16B16A16_* so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R16G16B16A16_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16G16B16A16_SNORM);
 		case PixelFormat::R8G8B8A8_UInt:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R8G8B8A8_UINT);
 		case PixelFormat::R8G8B8A8_SInt:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R32G32B32A32_SInt so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R8G8B8A8_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R8G8B8A8_SINT);
 		case PixelFormat::R8G8B8A8_UNorm:
 			return FFX_SURFACE_FORMAT_R8G8B8A8_UNORM;
 		case PixelFormat::R8G8B8A8_UNorm_SRGB:
@@ -133,9 +156,9 @@ namespace ZE::GFX::External::FFX
 		case PixelFormat::R32G32_Float:
 			return FFX_SURFACE_FORMAT_R32G32_FLOAT;
 		case PixelFormat::R32G32_UInt:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R32G32_UINT);
 		case PixelFormat::R32G32_SInt:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R32G32_*Int so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R32G32_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R32G32_SINT);
 		case PixelFormat::R16G16_Float:
 			return FFX_SURFACE_FORMAT_R16G16_FLOAT;
 		case PixelFormat::R16G16_UInt:
@@ -143,33 +166,31 @@ namespace ZE::GFX::External::FFX
 		case PixelFormat::R16G16_SInt:
 			return FFX_SURFACE_FORMAT_R16G16_SINT;
 		case PixelFormat::R16G16_UNorm:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16G16_UNORM);
 		case PixelFormat::R16G16_SNorm:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R16G16_*Norm so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R16G16_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16G16_SNORM);
 		case PixelFormat::R8G8_UInt:
 			return FFX_SURFACE_FORMAT_R8G8_UINT;
 		case PixelFormat::R8G8_UNorm:
 			return FFX_SURFACE_FORMAT_R8G8_UNORM;
 		case PixelFormat::R8G8_SInt:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R8G8_SINT);
 		case PixelFormat::R8G8_SNorm:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R8G8_S* so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R8G8_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R8G8_SNORM);
 		case PixelFormat::R32_Float:
 		case PixelFormat::R32_Depth:
 			return FFX_SURFACE_FORMAT_R32_FLOAT;
 		case PixelFormat::R32_UInt:
 			return FFX_SURFACE_FORMAT_R32_UINT;
 		case PixelFormat::R32_SInt:
-			ZE_WARNING("FidelityFX SDK is not supporting R32_SInt so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R32_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R32_SINT);
 		case PixelFormat::R16_Float:
 		case PixelFormat::R16_Depth:
 			return FFX_SURFACE_FORMAT_R16_FLOAT;
 		case PixelFormat::R16_UInt:
 			return FFX_SURFACE_FORMAT_R16_UINT;
 		case PixelFormat::R16_SInt:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R16_SInt so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R16_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R16_SINT);
 		case PixelFormat::R16_UNorm:
 			return FFX_SURFACE_FORMAT_R16_UNORM;
 		case PixelFormat::R16_SNorm:
@@ -179,12 +200,11 @@ namespace ZE::GFX::External::FFX
 		case PixelFormat::R8_UNorm:
 			return FFX_SURFACE_FORMAT_R8_UNORM;
 		case PixelFormat::R8_SInt:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R8_SINT);
 		case PixelFormat::R8_SNorm:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R8_S* so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R8_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R8_SNORM);
 		case PixelFormat::R10G10B10A2_UInt:
-			ZE_WARNING("FidelityFX SDK is not supporting plain R10G10B10A2_UInt so falling back to typeless version!");
-			return FFX_SURFACE_FORMAT_R10G10B10A2_TYPELESS;
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_R10G10B10A2_UINT);
 		case PixelFormat::R10G10B10A2_UNorm:
 			return FFX_SURFACE_FORMAT_R10G10B10A2_UNORM;
 		case PixelFormat::R11G11B10_Float:
@@ -193,6 +213,8 @@ namespace ZE::GFX::External::FFX
 			return FFX_SURFACE_FORMAT_R9G9B9E5_SHAREDEXP;
 		case PixelFormat::BC6H_UF16:
 			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_BC6H_UF16);
+		case PixelFormat::BC6H_SF16:
+			return static_cast<FfxSurfaceFormat>(FFX_ZE_SURFACE_FORMAT_BC6H_SF16);
 		}
 	}
 
@@ -289,8 +311,47 @@ namespace ZE::GFX::External::FFX
 			return PixelFormat::R32_Float;
 		case FFX_SURFACE_FORMAT_R9G9B9E5_SHAREDEXP:
 			return PixelFormat::R9G9B9E5_SharedExp;
+		// Extension formats
+		case FFX_ZE_SURFACE_FORMAT_R32G32B32A32_SINT:
+			return PixelFormat::R32G32B32A32_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R16G16B16A16_UINT:
+			return PixelFormat::R16G16B16A16_UInt;
+		case FFX_ZE_SURFACE_FORMAT_R16G16B16A16_SINT:
+			return PixelFormat::R16G16B16A16_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R16G16B16A16_UNORM:
+			return PixelFormat::R16G16B16A16_UNorm;
+		case FFX_ZE_SURFACE_FORMAT_R16G16B16A16_SNORM:
+			return PixelFormat::R16G16B16A16_SNorm;
+		case FFX_ZE_SURFACE_FORMAT_R8G8B8A8_UINT:
+			return PixelFormat::R8G8B8A8_UInt;
+		case FFX_ZE_SURFACE_FORMAT_R8G8B8A8_SINT:
+			return PixelFormat::R8G8B8A8_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R32G32_UINT:
+			return PixelFormat::R32G32_UInt;
+		case FFX_ZE_SURFACE_FORMAT_R32G32_SINT:
+			return PixelFormat::R32G32_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R16G16_UNORM:
+			return PixelFormat::R16G16_UNorm;
+		case FFX_ZE_SURFACE_FORMAT_R16G16_SNORM:
+			return PixelFormat::R16G16_SNorm;
+		case FFX_ZE_SURFACE_FORMAT_R8G8_SINT:
+			return PixelFormat::R8G8_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R8G8_SNORM:
+			return PixelFormat::R8G8_SNorm;
+		case FFX_ZE_SURFACE_FORMAT_R32_SINT:
+			return PixelFormat::R32_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R16_SINT:
+			return PixelFormat::R16_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R8_SINT:
+			return PixelFormat::R8_SInt;
+		case FFX_ZE_SURFACE_FORMAT_R8_SNORM:
+			return PixelFormat::R8_SNorm;
+		case FFX_ZE_SURFACE_FORMAT_R10G10B10A2_UINT:
+			return PixelFormat::R10G10B10A2_UInt;
 		case FFX_ZE_SURFACE_FORMAT_BC6H_UF16:
 			return PixelFormat::BC6H_UF16;
+		case FFX_ZE_SURFACE_FORMAT_BC6H_SF16:
+			return PixelFormat::BC6H_SF16;
 		}
 	}
 #pragma region

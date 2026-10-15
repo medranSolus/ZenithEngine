@@ -1,5 +1,6 @@
 #ifndef GBUFFER_UTILS_HLSLI
 #define GBUFFER_UTILS_HLSLI
+#include "Utils.hlsli"
 
 // GBuffer types for declaring storage
 typedef float2 CodedNormalGB;
@@ -9,37 +10,16 @@ typedef float2 MotionGB;
 typedef float ReactiveGB;
 typedef float TransparencyGB;
 
-// Encode normal into modified spherical coordinates
+// Encode normal into proper GBuffer encoding
 CodedNormalGB EncodeNormal(const in float3 normal)
 {
-	/*
-		phi = atan(y/x) (if x=0 then y+100)
-		theta = z
-	*/
-	if (normal.x == 0.0f)
-		return CodedNormalGB(normal.y + 100.0f, normal.z);
-	else
-		return CodedNormalGB(atan2(normal.y, normal.x), normal.z);
+	return EncodeOctahedral(normal);
 }
 
-// Decode normal from modified spherical coordinates
+// Decode normal from GBufferr
 float3 DecodeNormal(const in CodedNormalGB codedNormal)
 {
-	/*
-		x = sqrt(1 - z^2) * cos(phi)
-		y = sqrt(1 - z^2) * sin(phi)
-		z = z
-	*/
-	if (codedNormal.x > 90.0f)
-		return float3(0.0f, codedNormal.x - 100.0f, codedNormal.y);
-	else
-	{
-		float2 sinCosPhi;
-		sincos(codedNormal.x, sinCosPhi.x, sinCosPhi.y);
-		sinCosPhi *= sqrt(1.0f - codedNormal.y * codedNormal.y);
-
-		return float3(sinCosPhi.y, sinCosPhi.x, codedNormal.y);
-	}
+	return DecodeOctahedral(codedNormal);
 }
 
 // Pack material parameters into GBuffer packed format

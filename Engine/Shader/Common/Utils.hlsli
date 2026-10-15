@@ -1,6 +1,8 @@
 #ifndef COMMON_UTILS_HLSLI
 #define COMMON_UTILS_HLSLI
 
+static const float PI = 3.14159265f;
+
 // 1 in the linear frame-buffer space corresponds to this value of physical luminance (typically 100 cd/m^2) [cd/m^2]
 static const float REFERENCE_LUMINANCE = 100.0f;
 
@@ -56,6 +58,22 @@ float3 DeletePQ(const in float3 pq, float exponentScaleFactor)
 {
 	const float3 e = pow(saturate(pq), 1.0f / (PQ_M2 * exponentScaleFactor));
 	return GetColorFromLuminance(pow(max(e - PQ_C1, 0.0f) / (PQ_C2 - PQ_C3 * e), 1.0f / PQ_M1) * PQ_PQC);
+}
+
+// Encodes a 3D unit vector into a 2D vector in [-1, 1]
+float2 EncodeOctahedral(const in float3 nrm)
+{
+	float3 n = nrm / dot(abs(nrm), 1.0f);
+	float2 folded = (1.0 - abs(n.yx)) * (step(0.0f, n.xy) * 2.0f - 1.0f);
+	return lerp(folded, n.xy, step(0.0f, n.z));
+}
+
+// Decodes a 2D encoded vector back into a 3D unit vector
+float3 DecodeOctahedral(const in float2 oct)
+{
+	float3 n = float3(oct.xy, 1.0f - abs(oct.x) - abs(oct.y));
+	n.xy -= max(-n.z, 0.0) * (step(0.0f, n.xy) * 2.0f - 1.0f);
+	return normalize(n);
 }
 
 #endif // COMMON_UTILS_HLSLI
