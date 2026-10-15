@@ -187,4 +187,15 @@ add_shader_permutation("TonemapPS" "_ZE_EXPOSURE:E|_ZE_REINHARD:R|_ZE_REINHARD_E
 
 ############# VS PERMUTATIONS ##############
 
+add_shader_permutation("LambertDepthVS" "_ZE_PACKED_POSITION:H|_ZE_PACKED_POSITION,_ZE_BBQ_POS_PACK:B")
+
+add_shader_permutation("LambertVS" "_ZE_PACKED_POSITION:H|_ZE_PACKED_POSITION,_ZE_BBQ_POS_PACK:B")
+add_shader_permutation("LambertVS" "_ZE_NRM_TAN_DUAL_OCT:O|_ZE_NRM_OCT_TAN_ANGL:A|_ZE_NRM_OCT_TAN_DIAMOND:D")
 add_shader_permutation("LambertVS" "_ZE_OUTPUT_MOTION:M")
+
+add_shader_permutation("ShadowCubeDepthVS" "_ZE_PACKED_POSITION:H|_ZE_PACKED_POSITION,_ZE_BBQ_POS_PACK:B")
+
+add_shader_permutation("ShadowCubeVS" "_ZE_PACKED_POSITION:H|_ZE_PACKED_POSITION,_ZE_BBQ_POS_PACK:B")
+add_shader_permutation("ShadowCubeVS" "_ZE_NRM_TAN_DUAL_OCT:O|_ZE_NRM_OCT_TAN_ANGL:A|_ZE_NRM_OCT_TAN_DIAMOND:D")
+
+add_shader_permutation("SolidVS" "_ZE_PACKED_POSITION:H|_ZE_PACKED_POSITION,_ZE_BBQ_POS_PACK:B")

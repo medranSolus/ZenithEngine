@@ -24,6 +24,8 @@ namespace ZE
 		// WARNING: may result in higher or lower memory reservation for frame in some cases
 		//   but can sometimes leverage GPU consumption if most of heavy work is done early, measure it for specific use case
 		bool MinimizeRenderPassDistances = false;
+		// Input vertex layout that will be used by all models in the pipeline and to which all loaded geometry will be converted
+		GFX::Vertex::Packing VertexLayout = Base(GFX::Vertex::PackMethod::Default);
 		// Provide custom render graph definition if needed, otherwise fill in CoreRenderer parameters
 		GFX::Pipeline::RenderGraphDesc* CustomRendererDesc = nullptr;
 		// Parameters used by render pipeline

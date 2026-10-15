@@ -34,8 +34,10 @@ namespace ZE::RHI::DX11
 
 		// Gfx API Internal
 
+		// It is possible to split output to second buffer so that decompressed data will land in dest (size: uncompressedSize) and splitDest (size: splitOffset)
+		// while intermediate decompression size will be uncompressedSize + splitOffset
 		void AddFileBufferRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
-			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept;
+			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, DX::ComPtr<IResource> splitDest = nullptr, U32 splitOffset = 0) noexcept;
 		void AddFileTextureRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
 			U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, U32 rowPitch, U32 depthPitch) noexcept;
 	};

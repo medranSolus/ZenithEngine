@@ -50,12 +50,20 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			passData.MotionEnabled = isMotion;
 			passData.ReactiveEnabled = isReactive;
 
+			std::string vsPermSuffix = Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), false);
+			if (isMotion)
+			{
+				if (vsPermSuffix.empty())
+					vsPermSuffix = "_M";
+				else
+					vsPermSuffix += 'M';
+			}
 			const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
 
 			Resource::PipelineStateDesc psoDesc = {};
 			psoDesc.FormatDS = formatDS;
-			psoDesc.InputLayout = Vertex::GetLayout();
-			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, isMotion ? "LambertVS_M" : "LambertVS", buildData.ShaderCache));
+			psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
+			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LambertVS" + vsPermSuffix, buildData.ShaderCache));
 			psoDesc.RenderTargetsCount = 3 + isMotion + isReactive;
 			psoDesc.FormatsRT[0] = formatNormal;
 			psoDesc.FormatsRT[1] = formatAlbedo;
@@ -101,7 +109,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
-		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // MaterialPBR buffer
+		if (buildData.Assets.GetVertexLayout() & Vertex::PackMethod::Position_BBQ)
+			desc.AddRange({ 1, 1, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Internal decode buffer
+		desc.AddRange({ 1, 0, 5, Resource::ShaderType::Pixel, Binding::RangeFlag::CBV }); // MaterialPBR buffer
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, roughness+metal, parallax
 		desc.AddRange(buildData.DynamicDataRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
 		desc.AddRange(buildData.SettingsRange, Resource::ShaderType::Vertex | Resource::ShaderType::Pixel);
@@ -118,9 +128,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 			return std::unexpected(operation.error());
 
 		Resource::PipelineStateDesc psoDesc = {};
-		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), true), buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout = Vertex::GetLayout();
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		ZE_EXPECT_RET_FAILED(passData->StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
@@ -211,9 +221,12 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				auto& transformInfo = solidView.get<InsideFrustumSolid>(entity);
 				transformInfo.Transform = transformAlloc;
 				cbuffer.Bind(cl, ctx, transformAlloc);
+
+				auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID);
+				mesh.BindDecodeBuffer(cl, ctx);
 				ctx.Reset();
 
-				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				mesh.Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();
@@ -257,6 +270,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 				cbuffer.Bind(cl, ctx, solidView.get<InsideFrustumSolid>(entity).Transform);
 
+				auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID);
+				mesh.BindDecodeBuffer(cl, ctx);
+
 				const Data::MaterialID material = solidView.get<Data::MaterialID>(entity);
 				if (currentMaterial != material.ID)
 				{
@@ -275,7 +291,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				}
 				ctx.Reset();
 
-				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				mesh.Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();
@@ -342,6 +358,9 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 					ZE_CODE_RET_FAILED_EXPECT(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(ModelTransformBuffer)));
 				}
 
+				auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(transparentView.get<Data::MeshID>(entity).ID);
+				mesh.BindDecodeBuffer(cl, ctx);
+
 				const Data::MaterialID material = transparentView.get<Data::MaterialID>(entity);
 				if (currentMaterial != material.ID)
 				{
@@ -360,7 +379,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 				}
 				ctx.Reset();
 
-				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(transparentView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				mesh.Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			ZE_PERF_STOP();

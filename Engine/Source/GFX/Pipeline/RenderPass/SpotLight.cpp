@@ -67,7 +67,7 @@ namespace ZE::GFX::Pipeline::RenderPass::SpotLight
 			ZE::Utils::SafeCast<U32>(volume.Indices.size()),
 			sizeof(Float3), 0
 		};
-		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(volume.Vertices, volume.Indices, meshData.IndexSize);
+		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(volume.Vertices, volume.Indices, meshData.Options);
 		ZE_EXPECT_RET_FAILED(passData->VolumeMesh, Resource::Mesh::Create(dev, buildData.Assets.GetDisk(), meshData));
 
 		return passData;

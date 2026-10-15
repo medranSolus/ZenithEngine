@@ -729,15 +729,15 @@ Status App::Init(const CmdParser& params) noexcept
 		assetsData.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Cube::MakeBoundingBox());
 
 		std::vector<U16> indices = GFX::Primitive::Cube::MakeIndex();
-		std::vector<GFX::Vertex> vertices = GFX::Primitive::Cube::MakeVertex(indices);
+		std::vector<GFX::Vertex::Raw> vertices = GFX::Primitive::Cube::MakeVertex(indices);
 		GFX::Resource::MeshData meshData =
 		{
 			nullptr,
 			Utils::SafeCast<U32>(vertices.size()),
 			Utils::SafeCast<U32>(indices.size()),
-			sizeof(GFX::Vertex), 0
+			sizeof(GFX::Vertex::Raw), 0
 		};
-		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.IndexSize);
+		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.Options);
 		ZE_EXPECT_RET_FAILED_CODE(assetsData.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
 
 		// And some materials for them all
@@ -803,15 +803,15 @@ Status App::Init(const CmdParser& params) noexcept
 		assetsData.emplace<std::string>(meshId, "IcoSphere_6");
 		assetsData.emplace<Math::BoundingBox>(meshId, GFX::Primitive::Sphere::MakeBoundingBox());
 
-		GFX::Primitive::Data<GFX::Vertex> sphere = GFX::Primitive::Sphere::MakeIco(6);
+		GFX::Primitive::Data<GFX::Vertex::Raw> sphere = GFX::Primitive::Sphere::MakeIco(6);
 		GFX::Resource::MeshData meshData =
 		{
 			nullptr,
 			Utils::SafeCast<U32>(sphere.Vertices.size()),
 			Utils::SafeCast<U32>(sphere.Indices.size()),
-			sizeof(GFX::Vertex), 0
+			sizeof(GFX::Vertex::Raw), 0
 		};
-		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(sphere.Vertices, sphere.Indices, meshData.IndexSize);
+		meshData.PackedMesh = GFX::Primitive::GetPackedMeshPackIndex(sphere.Vertices, sphere.Indices, meshData.Options);
 		ZE_EXPECT_RET_FAILED_CODE(assetsData.emplace<GFX::Resource::Mesh>(meshId), GFX::Resource::Mesh::Create(engine.Gfx().GetDevice(), engine.Assets().GetDisk(), meshData));
 
 		// Create test entities

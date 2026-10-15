@@ -41,7 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Skybox
 			Utils::SafeCast<U32>(indices.size()),
 			sizeof(Float3), 0
 		};
-		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.IndexSize);
+		meshData.PackedMesh = Primitive::GetPackedMeshPackIndex(vertices, indices, meshData.Options);
 		ZE_EXPECT_RET_FAILED(passData->MeshData, Resource::Mesh::Create(dev, buildData.Assets.GetDisk(), meshData));
 
 		Resource::PipelineStateDesc psoDesc = {};

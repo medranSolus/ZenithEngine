@@ -119,6 +119,7 @@ namespace ZE::Data
 					aiProcess_JoinIdenticalVertices |
 					aiProcess_RemoveComponent |
 					aiProcess_GenSmoothNormals |
+					aiProcess_GenBoundingBoxes |
 					aiProcess_CalcTangentSpace |
 					aiProcess_GenUVCoords |
 					aiProcess_TransformUVCoords |

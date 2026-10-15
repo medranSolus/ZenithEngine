@@ -33,6 +33,8 @@ namespace ZE::GFX::Resource
 		constexpr U16 GetVertexSize() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetVertexSize); }
 		constexpr PixelFormat GetIndexFormat() const noexcept { ZE_RHI_BACKEND_CALL_RET(GetIndexFormat); }
 
+		// Bind cbuffer that's needed for vertex decoding if exists
+		constexpr void BindDecodeBuffer(CommandList& cl, Binding::Context& bindCtx) const noexcept { ZE_RHI_BACKEND_CALL(BindDecodeBuffer, cl, bindCtx); }
 		constexpr void Draw(Device& dev, CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(Draw, dev, cl); }
 	};
 }

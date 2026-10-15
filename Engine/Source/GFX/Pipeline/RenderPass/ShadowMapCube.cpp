@@ -20,7 +20,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 	Status Initialize(Device& dev, RendererPassBuildData& buildData, ExecuteData& passData, PixelFormat formatDS, PixelFormat formatRT) noexcept
 	{
 		Binding::SchemaDesc desc = {};
-		desc.AddRange({ 1, 0, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+		desc.AddRange({ 1, 0, 5, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+		if (buildData.Assets.GetVertexLayout() & Vertex::PackMethod::Position_BBQ)
+			desc.AddRange({ 1, 1, 4, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Internal decode buffer
 		desc.AddRange({ sizeof(ShaderConstantData), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Light shadow data
 		desc.AddRange({ 4, 0, 2, Resource::ShaderType::Pixel, Binding::RangeFlag::SRV | Binding::RangeFlag::BufferPack }); // Texture, normal, roughness+metal (not used), parallax
 		desc.AddRange({ 1, 0, 3, Resource::ShaderType::Geometry, Binding::RangeFlag::CBV }); // Cube view buffer
@@ -30,19 +32,21 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		ZE_EXPECT_RET_FAILED_CODE(passData.BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		const auto& schema = buildData.BindingLib.GetSchema(passData.BindingIndex);
+
 		Resource::PipelineStateDesc psoDesc;
-		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeDepthVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeDepthVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), true), buildData.ShaderCache));
 		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeDepthGS", buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout = Vertex::GetLayout();
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeDepth");
 		ZE_EXPECT_RET_FAILED_CODE(passData.StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
-		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), false), buildData.ShaderCache));
 		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeGS", buildData.ShaderCache));
 		psoDesc.RenderTargetsCount = 6;
 		for (U8 i = 0; i < psoDesc.RenderTargetsCount; ++i)
 			psoDesc.FormatsRT[i] = formatRT;
+
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows
 		U8 stateIndex = Data::MaterialPBR::GetPipelineStateNumber(SHADOW_PERMUTATIONS) + 1;
@@ -172,9 +176,12 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					auto& transformInfo = solidView.get<Solid>(entity);
 					ZE_EXPECT_RET_FAILED_CODE(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
 					cbuffer.Bind(cl, ctx, transformInfo.Transform);
+
+					auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID);
+					mesh.BindDecodeBuffer(cl, ctx);
 					ctx.Reset();
 
-					Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+					mesh.Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_PERF_STOP();
@@ -216,6 +223,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 
 					cbuffer.Bind(cl, ctx, solidView.get<Solid>(entity).Transform);
 
+					auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID);
+					mesh.BindDecodeBuffer(cl, ctx);
+
 					const Data::MaterialID material = solidView.get<Data::MaterialID>(entity);
 					if (currentMaterial != material.ID)
 					{
@@ -235,7 +245,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					}
 					ctx.Reset();
 
-					Settings::DataBank.GetAssetsData().get<Resource::Mesh>(solidView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+					mesh.Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_PERF_STOP();
@@ -280,6 +290,9 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					Math::XMStoreFloat4x4(&transformBuffer.TransformTps, Math::XMMatrixTranspose(Math::GetTransform(transform.Position, transform.Rotation, transform.Scale)));
 					ZE_CODE_RET_FAILED(cbuffer.AllocBind(dev, cl, ctx, &transformBuffer, sizeof(TransformBuffer)));
 
+					auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(transparentView.get<Data::MeshID>(entity).ID);
+					mesh.BindDecodeBuffer(cl, ctx);
+
 					const Data::MaterialID material = transparentView.get<Data::MaterialID>(entity);
 					if (currentMaterial != material.ID)
 					{
@@ -299,7 +312,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 					}
 					ctx.Reset();
 
-					Settings::DataBank.GetAssetsData().get<Resource::Mesh>(transparentView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+					mesh.Draw(dev, cl);
 					ZE_DRAW_TAG_END(dev, cl);
 				}
 				ZE_PERF_STOP();

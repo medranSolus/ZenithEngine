@@ -20,16 +20,16 @@ namespace ZE::GFX::Primitive
 
 	// Wrapper over standard GetPackedMesh to check if the mesh data can be packed into smaller index size
 	template<typename V, typename I>
-	constexpr std::shared_ptr<U8[]> GetPackedMeshPackIndex(const std::vector<V>& vertices, const std::vector<I>& indices, U8& resultingIndexSize) noexcept;
+	constexpr std::shared_ptr<U8[]> GetPackedMeshPackIndex(const std::vector<V>& vertices, const std::vector<I>& indices, Resource::MeshOptions& resultingOptions) noexcept;
 
 	// Compute simple normals based on normal vector of the surface and tangent vectors
-	void ComputeSurfaceNormalsTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept;
+	void ComputeSurfaceNormalsTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U32>& indices) noexcept;
 	// Compute simple normals based on normal vector of the surface and tangent vectors
-	void ComputeSurfaceNormalsTangents(std::vector<Vertex>& vertices, const std::vector<U16>& indices) noexcept;
+	void ComputeSurfaceNormalsTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U16>& indices) noexcept;
 	// Computes tangent vectors for mesh. Must contain valid UV and normal vectors
-	void ComputeTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept;
+	void ComputeTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U32>& indices) noexcept;
 	// Computes tangent vectors for mesh. Must contain valid UV and normal vectors
-	void ComputeTangents(std::vector<Vertex>& vertices, const std::vector<U16>& indices) noexcept;
+	void ComputeTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U16>& indices) noexcept;
 
 	namespace Square
 	{
@@ -54,7 +54,7 @@ namespace ZE::GFX::Primitive
 		std::vector<U16> MakeSolidIndexInverted() noexcept;
 
 		// Generate cube vertex data (requires index data from MakeIndex())
-		std::vector<Vertex> MakeVertex(const std::vector<U16>& indices) noexcept;
+		std::vector<Vertex::Raw> MakeVertex(const std::vector<U16>& indices) noexcept;
 		// Generate cube index data
 		std::vector<U16> MakeIndex() noexcept;
 	}
@@ -95,9 +95,9 @@ namespace ZE::GFX::Primitive
 		Data<Float3> MakeIcoSolid(U32 density) noexcept;
 
 		// Generate UV sphere vertex and index data, latitudeDensity: N-S, longitudeDensity: W-E
-		Data<Vertex> MakeUV(U32 latitudeDensity, U32 longitudeDensity) noexcept;
+		Data<Vertex::Raw> MakeUV(U32 latitudeDensity, U32 longitudeDensity) noexcept;
 		// Generate Ico sphere vertex and index data
-		Data<Vertex> MakeIco(U32 density) noexcept;
+		Data<Vertex::Raw> MakeIco(U32 density) noexcept;
 	}
 
 #pragma region Functions
@@ -146,11 +146,12 @@ namespace ZE::GFX::Primitive
 	}
 
 	template<typename V, typename I>
-	constexpr std::shared_ptr<U8[]> GetPackedMeshPackIndex(const std::vector<V>& vertices, const std::vector<I>& indices, U8& resultingIndexSize) noexcept
+	constexpr std::shared_ptr<U8[]> GetPackedMeshPackIndex(const std::vector<V>& vertices, const std::vector<I>& indices, Resource::MeshOptions& resultingOptions) noexcept
 	{
 		ZE_ASSERT(vertices.size(), "Empty vertex data!");
 		ZE_ASSERT(indices.size(), "Empty index data!");
 
+		resultingOptions &= ~(Resource::MeshOption::IndexFormat8bit | Resource::MeshOption::IndexFormat16bit);
 		switch (sizeof(I))
 		{
 		default:
@@ -159,7 +160,6 @@ namespace ZE::GFX::Primitive
 		{
 			if (vertices.size() >= UINT16_MAX)
 			{
-				resultingIndexSize = sizeof(U32);
 				return GetPackedMesh<V, I, sizeof(U32)>(vertices, indices);
 			}
 			[[fallthrough]];
@@ -168,7 +168,7 @@ namespace ZE::GFX::Primitive
 		{
 			if (!Settings::IsEnabledU8IndexBuffers() || vertices.size() >= UINT8_MAX)
 			{
-				resultingIndexSize = sizeof(U16);
+				resultingOptions |= Resource::MeshOption::IndexFormat16bit;
 				return GetPackedMesh<V, I, sizeof(U16)>(vertices, indices);
 			}
 			[[fallthrough]];
@@ -177,10 +177,10 @@ namespace ZE::GFX::Primitive
 		{
 			if (Settings::IsEnabledU8IndexBuffers())
 			{
-				resultingIndexSize = sizeof(U8);
+				resultingOptions |= Resource::MeshOption::IndexFormat8bit;
 				return GetPackedMesh<V, I, sizeof(U8)>(vertices, indices);
 			}
-			resultingIndexSize = sizeof(U16);
+			resultingOptions |= Resource::MeshOption::IndexFormat16bit;
 			return GetPackedMesh<V, I, sizeof(U16)>(vertices, indices);
 		}
 		}

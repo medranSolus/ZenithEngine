@@ -29,7 +29,7 @@ namespace std
 namespace ZE::GFX::Primitive
 {
 	template<bool GetSurfaceNormal, bool GetTangent, typename I>
-	constexpr void ComputeGeometryData(std::vector<Vertex>& vertices, const std::vector<I>& indices) noexcept
+	constexpr void ComputeGeometryData(std::vector<Vertex::Raw>& vertices, const std::vector<I>& indices) noexcept
 	{
 		static_assert(GetSurfaceNormal || GetTangent, "At least one of compute options should be specified!");
 		ZE_ASSERT(indices.size() % 3 == 0 && indices.size() > 2, "Incorrect index data!");
@@ -37,9 +37,9 @@ namespace ZE::GFX::Primitive
 		// https://gamedev.stackexchange.com/questions/68612/how-to-compute-tangent-and-bitangent-vectors
 		for (U64 i = 0; i < indices.size(); i += 3)
 		{
-			Vertex& v0 = vertices.at(indices.at(i));
-			Vertex& v1 = vertices.at(indices.at(i + 1));
-			Vertex& v2 = vertices.at(indices.at(i + 2));
+			Vertex::Raw& v0 = vertices.at(indices.at(i));
+			Vertex::Raw& v1 = vertices.at(indices.at(i + 1));
+			Vertex::Raw& v2 = vertices.at(indices.at(i + 2));
 
 			const Vector p0 = Math::XMLoadFloat3(&v0.Position);
 			const Vector edge1 = Math::XMVectorSubtract(Math::XMLoadFloat3(&v1.Position), p0);
@@ -119,22 +119,22 @@ namespace ZE::GFX::Primitive
 		}
 	}
 
-	void ComputeSurfaceNormalsTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept
+	void ComputeSurfaceNormalsTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U32>& indices) noexcept
 	{
 		ComputeGeometryData<true, true>(vertices, indices);
 	}
 
-	void ComputeSurfaceNormalsTangents(std::vector<Vertex>& vertices, const std::vector<U16>& indices) noexcept
+	void ComputeSurfaceNormalsTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U16>& indices) noexcept
 	{
 		ComputeGeometryData<true, true>(vertices, indices);
 	}
 
-	void ComputeTangents(std::vector<Vertex>& vertices, const std::vector<U32>& indices) noexcept
+	void ComputeTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U32>& indices) noexcept
 	{
 		ComputeGeometryData<false, true>(vertices, indices);
 	}
 
-	void ComputeTangents(std::vector<Vertex>& vertices, const std::vector<U16>& indices) noexcept
+	void ComputeTangents(std::vector<Vertex::Raw>& vertices, const std::vector<U16>& indices) noexcept
 	{
 		ComputeGeometryData<false, true>(vertices, indices);
 	}
@@ -206,7 +206,7 @@ namespace ZE::GFX::Primitive
 			};
 		}
 
-		std::vector<Vertex> MakeVertex(const std::vector<U16>& indices) noexcept
+		std::vector<Vertex::Raw> MakeVertex(const std::vector<U16>& indices) noexcept
 		{
 			ZE_ASSERT(indices.size() % 3 == 0 && indices.size() > 2, "Incorrect index data!");
 			constexpr float POINT = 0.5f;
@@ -221,38 +221,38 @@ namespace ZE::GFX::Primitive
 			*    ------| Bottom |---------------
 			* 0,1       --------                1,1
 			*/
-			std::vector<Vertex> vertices
+			std::vector<Vertex::Raw> vertices
 			{
 				// Front
-				{ { -POINT, -POINT, -POINT }, {}, { 1.0f, UV_SHORT_2 } },
-				{ { -POINT, POINT, -POINT }, {}, { 1.0f, UV_SHORT_1 } },
-				{ { POINT, POINT, -POINT }, {}, { 0.75f, UV_SHORT_1 } },
-				{ { POINT, -POINT, -POINT }, {}, { 0.75f, UV_SHORT_2 } },
+				{ { -POINT, -POINT, -POINT }, { 1.0f, UV_SHORT_2 } },
+				{ { -POINT, POINT, -POINT }, { 1.0f, UV_SHORT_1 } },
+				{ { POINT, POINT, -POINT }, { 0.75f, UV_SHORT_1 } },
+				{ { POINT, -POINT, -POINT }, { 0.75f, UV_SHORT_2 } },
 				// Left
-				{ { -POINT, -POINT, POINT }, {}, { 0.25f, UV_SHORT_2 } },
-				{ { -POINT, POINT, POINT }, {}, { 0.25f, UV_SHORT_1 } },
-				{ { -POINT, POINT, -POINT }, {}, { 0.0f, UV_SHORT_1 } },
-				{ { -POINT, -POINT, -POINT }, {}, { 0.0f, UV_SHORT_2 } },
+				{ { -POINT, -POINT, POINT }, { 0.25f, UV_SHORT_2 } },
+				{ { -POINT, POINT, POINT }, { 0.25f, UV_SHORT_1 } },
+				{ { -POINT, POINT, -POINT }, { 0.0f, UV_SHORT_1 } },
+				{ { -POINT, -POINT, -POINT }, { 0.0f, UV_SHORT_2 } },
 				// Back
-				{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
-				{ { POINT, POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
-				{ { -POINT, POINT, POINT }, {}, { 0.25f, UV_SHORT_1 } },
-				{ { -POINT, -POINT, POINT }, {}, { 0.25f, UV_SHORT_2 } },
+				{ { POINT, -POINT, POINT }, { 0.5f, UV_SHORT_2 } },
+				{ { POINT, POINT, POINT }, { 0.5f, UV_SHORT_1 } },
+				{ { -POINT, POINT, POINT }, { 0.25f, UV_SHORT_1 } },
+				{ { -POINT, -POINT, POINT }, { 0.25f, UV_SHORT_2 } },
 				// Right
-				{ { POINT, -POINT, -POINT }, {}, { 0.75f, UV_SHORT_2 } },
-				{ { POINT, POINT, -POINT }, {}, { 0.75f, UV_SHORT_1 } },
-				{ { POINT, POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
-				{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
+				{ { POINT, -POINT, -POINT }, { 0.75f, UV_SHORT_2 } },
+				{ { POINT, POINT, -POINT }, { 0.75f, UV_SHORT_1 } },
+				{ { POINT, POINT, POINT }, { 0.5f, UV_SHORT_1 } },
+				{ { POINT, -POINT, POINT }, { 0.5f, UV_SHORT_2 } },
 				// Top
-				{ { -POINT, POINT, -POINT }, {}, { 0.25f, 0.0f } },
-				{ { -POINT, POINT, POINT }, {}, { 0.25f, UV_SHORT_1 } },
-				{ { POINT, POINT, POINT }, {}, { 0.5f, UV_SHORT_1 } },
-				{ { POINT, POINT, -POINT }, {}, { 0.5f, 0.0f } },
+				{ { -POINT, POINT, -POINT }, { 0.25f, 0.0f } },
+				{ { -POINT, POINT, POINT }, { 0.25f, UV_SHORT_1 } },
+				{ { POINT, POINT, POINT }, { 0.5f, UV_SHORT_1 } },
+				{ { POINT, POINT, -POINT }, { 0.5f, 0.0f } },
 				// Down
-				{ { -POINT, -POINT, POINT }, {}, { 0.25f, UV_SHORT_2 } },
-				{ { -POINT, -POINT, -POINT }, {}, { 0.25f, 1.0f } },
-				{ { POINT, -POINT, -POINT }, {}, { 0.5f, 1.0f } },
-				{ { POINT, -POINT, POINT }, {}, { 0.5f, UV_SHORT_2 } },
+				{ { -POINT, -POINT, POINT }, { 0.25f, UV_SHORT_2 } },
+				{ { -POINT, -POINT, -POINT }, { 0.25f, 1.0f } },
+				{ { POINT, -POINT, -POINT }, { 0.5f, 1.0f } },
+				{ { POINT, -POINT, POINT }, { 0.5f, UV_SHORT_2 } },
 			};
 			ComputeSurfaceNormalsTangents(vertices, indices);
 			return vertices;
@@ -598,7 +598,7 @@ namespace ZE::GFX::Primitive
 			return data;
 		}
 
-		Data<Vertex> MakeUV(U32 latitudeDensity, U32 longitudeDensity) noexcept
+		Data<Vertex::Raw> MakeUV(U32 latitudeDensity, U32 longitudeDensity) noexcept
 		{
 			if (!latitudeDensity)
 				latitudeDensity = 1;
@@ -611,7 +611,7 @@ namespace ZE::GFX::Primitive
 			const float longitudeAngle = Math::PI2 / Utils::SafeCast<float>(longitudeDensity);
 			const Vector base = Math::XMVectorSet(0.0f, RADIUS, 0.0f, 0.0f);
 
-			Data<Vertex> data = {};
+			Data<Vertex::Raw> data = {};
 			data.Vertices.reserve(Utils::SafeCast<U64>(latitudeDensity - 1) * longitudeDensity * 4 + 2 * Utils::SafeCast<U64>(longitudeDensity));
 
 			// Sphere vertices without poles
@@ -689,7 +689,7 @@ namespace ZE::GFX::Primitive
 			data.Indices.emplace_back(rightUp - 5);
 			data.Indices.emplace_back(2);
 
-			for (Vertex& v : data.Vertices)
+			for (Vertex::Raw& v : data.Vertices)
 			{
 				// Generate normals
 				Math::XMStoreFloat3(&v.Normal, Math::XMVector3Normalize(Math::XMLoadFloat3(&v.Position)));
@@ -703,9 +703,9 @@ namespace ZE::GFX::Primitive
 			return data;
 		}
 
-		Data<Vertex> MakeIco(U32 density) noexcept
+		Data<Vertex::Raw> MakeIco(U32 density) noexcept
 		{
-			Data<Vertex> data
+			Data<Vertex::Raw> data
 			{
 				{
 					// 0
@@ -817,9 +817,9 @@ namespace ZE::GFX::Primitive
 					U32 i1 = data.Indices.at(j + 1);
 					U32 i2 = data.Indices.at(j + 2);
 
-					const Vertex& v0 = data.Vertices.at(i0);
-					const Vertex& v1 = data.Vertices.at(i1);
-					const Vertex& v2 = data.Vertices.at(i2);
+					const Vertex::Raw& v0 = data.Vertices.at(i0);
+					const Vertex::Raw& v1 = data.Vertices.at(i1);
+					const Vertex::Raw& v2 = data.Vertices.at(i2);
 
 					const Float3 left = Math::AddNormal(v0.Position, v1.Position);
 					const Float3 right = Math::AddNormal(v1.Position, v2.Position);
@@ -857,7 +857,7 @@ namespace ZE::GFX::Primitive
 				data.Indices = std::move(tmpIndices);
 			}
 
-			for (Vertex& v : data.Vertices)
+			for (Vertex::Raw& v : data.Vertices)
 			{
 				// Generate normals
 				Math::XMStoreFloat3(&v.Normal, Math::XMVector3Normalize(Math::XMLoadFloat3(&v.Position)));

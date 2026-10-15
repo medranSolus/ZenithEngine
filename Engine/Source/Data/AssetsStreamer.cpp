@@ -28,7 +28,7 @@ namespace ZE::Data
 	}
 #endif
 
-	Expected<AssetsStreamer> AssetsStreamer::Create(GFX::Device& dev) noexcept
+	Expected<AssetsStreamer> AssetsStreamer::Create(GFX::Device& dev, GFX::Vertex::Packing vertexLayout) noexcept
 	{
 		AssetsStreamer assets;
 		ZE_EXPECT_RET_FAILED(assets.diskManager, GFX::DiskManager::Create(dev));
@@ -41,6 +41,7 @@ namespace ZE::Data
 		pbrTextureSchema.AddTexture(MaterialPBR::TEX_HEIGHT_NAME, GFX::Resource::Texture::Type::Tex2D);
 		assets.texSchemaLib.Add(MaterialPBR::TEX_SCHEMA_NAME, std::move(pbrTextureSchema));
 
+		assets.vertexLayout = vertexLayout;
 		return assets;
 	}
 
@@ -464,79 +465,78 @@ namespace ZE::Data
 #if _ZE_EXTERNAL_MODEL_LOADING
 	Task<Expected<EID>> AssetsStreamer::ParseMesh(GFX::Device& dev, const aiMesh& mesh) noexcept
 	{
+		ZE_ASSERT(mesh.HasPositions(), "Positions missing from mesh!");
+		ZE_ASSERT(mesh.HasTextureCoords(0), "UV coords missing from mesh!");
+		ZE_ASSERT(mesh.HasNormals(), "Normals missing from mesh!");
+		ZE_ASSERT(mesh.HasTangentsAndBitangents(), "Tangent space missing from mesh!");
+
 		return Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
 			[this, &dev, &mesh](this auto self) noexcept -> Task<Expected<EID>>
 			{
+				// Just sanity check
+				if (!mesh.HasPositions() || !mesh.HasTextureCoords(0) || !mesh.HasNormals() || !mesh.HasTangentsAndBitangents())
+					co_return std::unexpected(std::make_error_code(std::errc::invalid_argument));
+
 				GFX::Resource::MeshData meshData = {};
 				meshData.VertexCount = mesh.mNumVertices;
 				meshData.IndexCount = mesh.mNumFaces * 3;
-				meshData.VertexSize = sizeof(GFX::Vertex);
+				meshData.VertexSize = GFX::Vertex::GetVertexSize(vertexLayout);
 
 				// Gather index data and parse it into continuous array
 				Task<void> indexTask;
+				const U32 indexOffset = vertexLayout & GFX::Vertex::PackMethod::Position_BBQ ? 2 * sizeof(Float4) : 0;
+				U32 indexSize = 0;
+				U32 vertexOffset = 0;
 				if (meshData.IndexCount >= UINT16_MAX)
 				{
-					meshData.IndexSize = sizeof(U32);
-					meshData.PackedMesh = std::make_shared<U8[]>(meshData.IndexCount * sizeof(U32) + meshData.VertexCount * sizeof(GFX::Vertex));
-					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U32>, reinterpret_cast<U32*>(meshData.PackedMesh.get()), mesh);
+					indexSize = sizeof(U32);
+					vertexOffset = meshData.IndexCount * sizeof(U32) + indexOffset;
+					meshData.PackedMesh = std::make_shared<U8[]>(vertexOffset + meshData.VertexCount * meshData.VertexSize);
+					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U32>, reinterpret_cast<U32*>(meshData.PackedMesh.get() + indexOffset), mesh);
 				}
 				else if (!Settings::IsEnabledU8IndexBuffers() || meshData.IndexCount >= UINT8_MAX)
 				{
-					meshData.IndexSize = sizeof(U16);
-					meshData.PackedMesh = std::make_shared<U8[]>(Math::AlignUp(meshData.IndexCount * sizeof(U16), static_cast<U64>(GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT)) + meshData.VertexCount * sizeof(GFX::Vertex));
-					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U16>, reinterpret_cast<U16*>(meshData.PackedMesh.get()), mesh);
+					indexSize = sizeof(U16);
+					vertexOffset = Math::AlignUp<U32>(meshData.IndexCount * sizeof(U16) + indexOffset, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
+					meshData.Options |= GFX::Resource::MeshOption::IndexFormat16bit;
+					meshData.PackedMesh = std::make_shared<U8[]>(vertexOffset + meshData.VertexCount * meshData.VertexSize);
+					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U16>, reinterpret_cast<U16*>(meshData.PackedMesh.get() + indexOffset), mesh);
 				}
 				else
 				{
-					meshData.IndexSize = sizeof(U8);
-					meshData.PackedMesh = std::make_shared<U8[]>(Math::AlignUp(meshData.IndexCount, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + meshData.VertexCount * sizeof(GFX::Vertex));
-					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U8>, meshData.PackedMesh.get(), mesh);
+					indexSize = sizeof(U8);
+					vertexOffset = Math::AlignUp(meshData.IndexCount + indexOffset, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
+					meshData.Options |= GFX::Resource::MeshOption::IndexFormat8bit;
+					meshData.PackedMesh = std::make_shared<U8[]>(vertexOffset + meshData.VertexCount * meshData.VertexSize);
+					indexTask = Settings::GetThreadPool().Schedule(ThreadPriority::Normal, ParseIndices<U8>, meshData.PackedMesh.get() + indexOffset, mesh);
 				}
 
 				// Parse vertex data into structured format just after index array
-				Vector min = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
-				Vector max = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
+				Vector boxCenter = {};
+				Vector boxHalfSize = {};
 
-				GFX::Vertex* vertices = reinterpret_cast<GFX::Vertex*>(meshData.PackedMesh.get() + Math::AlignUp(meshData.IndexCount * meshData.IndexSize, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT));
+				// Pack additional information into the created mesh
+				Math::BoundingBox box = Math::GetBoundingBox(Math::XMLoadFloat3(reinterpret_cast<const Float3*>(&mesh.mAABB.mMax)), Math::XMLoadFloat3(reinterpret_cast<const Float3*>(&mesh.mAABB.mMin)));
+				if (vertexLayout & GFX::Vertex::PackMethod::Position_BBQ)
+				{
+					meshData.Options |= GFX::Resource::MeshOption::SourceDataFormatBBQ;
+					*reinterpret_cast<Float3*>(meshData.PackedMesh.get()) = box.Center;
+					boxCenter = Math::XMLoadFloat3(&box.Center);
+					*reinterpret_cast<Float3*>(meshData.PackedMesh.get() + sizeof(Float4)) = box.Extents;
+					boxHalfSize = Math::XMLoadFloat3(&box.Extents);
+				}
+
+				U8* vertices = meshData.PackedMesh.get() + vertexOffset;
 				for (U32 i = 0; i < mesh.mNumVertices; ++i)
 				{
-					GFX::Vertex& vertex = vertices[i];
-
-					vertex.Position = *reinterpret_cast<Float3*>(mesh.mVertices + i);
-					ZE_ASSERT(vertex.Position.x == mesh.mVertices[i].x
-						&& vertex.Position.y == mesh.mVertices[i].y
-						&& vertex.Position.z == mesh.mVertices[i].z,
-						"Position data is incorrect, type of aiMesh::mVertices changed!");
-					// Find min/max position values to determine bounding box
-					const Vector pos = Math::XMLoadFloat3(&vertex.Position);
-					min = Math::XMVectorMin(min, pos);
-					max = Math::XMVectorMax(max, pos);
-
-					vertex.Normal = *reinterpret_cast<Float3*>(mesh.mNormals + i);
-					ZE_ASSERT(vertex.Normal.x == mesh.mNormals[i].x
-						&& vertex.Normal.y == mesh.mNormals[i].y
-						&& vertex.Normal.z == mesh.mNormals[i].z,
-						"Normal data is incorrect, type of aiMesh::mNormals changed!");
-
-					if (mesh.HasTextureCoords(0))
-					{
-						vertex.UV = *reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i);
-						ZE_ASSERT(vertex.UV.x == mesh.mTextureCoords[0][i].x
-							&& vertex.UV.y == mesh.mTextureCoords[0][i].y,
-							"UV data is incorrect, type of aiMesh::mTextureCoords changed!");
-					}
-					if (mesh.HasTangentsAndBitangents())
-					{
-						vertex.Tangent.x = mesh.mTangents[i].x;
-						vertex.Tangent.y = mesh.mTangents[i].y;
-						vertex.Tangent.z = mesh.mTangents[i].z;
-
-						// Get handedness of bitangent and store it in tangent W component to later multiply when recomputing bitangent
-						Vector tan = Math::XMLoadFloat3(reinterpret_cast<Float3*>(&vertex.Tangent));
-						Vector normal = Math::XMLoadFloat3(&vertex.Normal);
-						Vector bitan = Math::XMLoadFloat3(reinterpret_cast<Float3*>(mesh.mBitangents + i));
-						vertex.Tangent.w = Math::XMVectorGetX(Math::XMVector3Dot(Math::XMVector3Cross(tan, normal), bitan)) < 0.0f ? -1.0f : 1.0f;
-					}
+					GFX::Vertex::PackData(vertices, vertexLayout,
+						*reinterpret_cast<Float3*>(mesh.mVertices + i),
+						*reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i),
+						*reinterpret_cast<Float3*>(mesh.mNormals + i),
+						*reinterpret_cast<Float3*>(mesh.mTangents + i),
+						*reinterpret_cast<Float3*>(mesh.mBitangents + i),
+						&boxCenter, &boxHalfSize);
+					vertices += meshData.VertexSize;
 				}
 
 				// Load parsed mesh data into correct mesh and start it's upload to GPU
@@ -555,7 +555,7 @@ namespace ZE::Data
 #if !_ZE_GAME_BUILD
 				dataStorage.emplace<std::string>(meshId, mesh.mName.length != 0 ? mesh.mName.C_Str() : "mesh");
 #endif
-				dataStorage.emplace<Math::BoundingBox>(meshId, Math::GetBoundingBox(max, min));
+				dataStorage.emplace<Math::BoundingBox>(meshId, std::move(box));
 				dataStorage.emplace<GFX::Resource::Mesh>(meshId, std::move(meshBuffer));
 
 				// Mark that this mesh is ready for merging

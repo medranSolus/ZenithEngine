@@ -60,6 +60,44 @@ float3 DeletePQ(const in float3 pq, float exponentScaleFactor)
 	return GetColorFromLuminance(pow(max(e - PQ_C1, 0.0f) / (PQ_C2 - PQ_C3 * e), 1.0f / PQ_M1) * PQ_PQC);
 }
 
+float SignNotZero(const in float val)
+{
+	return step(0.0f, val) * 2.0f - 1.0f;
+}
+
+// Encode vector into modified spherical coordinates
+float2 EncodeSpherical(const in float3 nrm)
+{
+	/*
+		phi = atan(y/x) (if x=0 then y+100)
+		theta = z
+	*/
+	if (nrm.x == 0.0f)
+		return float2(nrm.y + 100.0f, nrm.z);
+	else
+		return float2(atan2(nrm.y, nrm.x), nrm.z);
+}
+
+// Decode vector from modified spherical coordinates
+float3 DecodeSpherical(const in float2 sph)
+{
+	/*
+		x = sqrt(1 - z^2) * cos(phi)
+		y = sqrt(1 - z^2) * sin(phi)
+		z = z
+	*/
+	if (sph.x > 90.0f)
+		return float3(0.0f, sph.x - 100.0f, sph.y);
+	else
+	{
+		float2 sinCosPhi;
+		sincos(sph.x, sinCosPhi.x, sinCosPhi.y);
+		sinCosPhi *= sqrt(1.0f - sph.y * sph.y);
+
+		return float3(sinCosPhi.y, sinCosPhi.x, sph.y);
+	}
+}
+
 // Encodes a 3D unit vector into a 2D vector in [-1, 1]
 float2 EncodeOctahedral(const in float3 nrm)
 {
@@ -74,6 +112,55 @@ float3 DecodeOctahedral(const in float2 oct)
 	float3 n = float3(oct.xy, 1.0f - abs(oct.x) - abs(oct.y));
 	n.xy -= max(-n.z, 0.0) * (step(0.0f, n.xy) * 2.0f - 1.0f);
 	return normalize(n);
+}
+
+// Computes angle for tangent frame encoding
+float EncodeTangentAngle(const in float3 nrm, const in float3 tan)
+{
+	float3 axis = normalize(lerp(float3(0.0f, -nrm.z, nrm.y), float3(-nrm.y, nrm.x, 0.0f), abs(nrm.x) > abs(nrm.z)));
+	
+	float3 t1 = normalize(cross(axis, nrm));
+	float3 t2 = normalize(cross(nrm, t1));
+	
+	float c = dot(tan, t1);
+	float s = dot(tan, t2);
+	
+	return atan2(s, c);
+}
+
+// Decodes tangent from given angle between the tangent frame basis
+float3 DecodeTangentAngle(const in float3 nrm, const in float angle)
+{
+	float3 axis = normalize(lerp(float3(0.0f, -nrm.z, nrm.y), float3(-nrm.y, nrm.x, 0.0f), abs(nrm.x) > abs(nrm.z)));
+	
+	float s, c;
+	sincos(angle, s, c);
+	return axis * c + normalize(cross(nrm, axis)) * s;
+}
+
+// Computes diamond value for tangent frame encoding
+float EncodeTangentDiamond(const in float3 nrm, const in float3 tan)
+{
+	float3 t1 = normalize(lerp(float3(nrm.z, 0.0f, -nrm.x), float3(nrm.y, -nrm.x, 0.0f), abs(nrm.y) > abs(nrm.z)));
+	float3 t2 = normalize(cross(t1, nrm));
+	
+	float2 packedTan = float2(dot(tan, t1), dot(tan, t2));
+	float x = packedTan.x / (abs(packedTan.x) + abs(packedTan.y));
+	
+	float ySign = sign(packedTan.y);
+	return -ySign * 0.25f * x + 0.5f + ySign * 0.25f;
+}
+
+float3 DecodeTangentDiamond(const in float3 nrm, const in float diamond)
+{
+	float3 t1 = normalize(lerp(float3(nrm.z, 0.0f, -nrm.x), float3(nrm.y, -nrm.x, 0.0f), abs(nrm.y) > abs(nrm.z)));
+	float3 t2 = normalize(cross(t1, nrm));
+	
+	float dSign = sign(diamond - 0.5f);
+	float x = -dSign * 4.0f * diamond + 1.0f + dSign * 2.0f;
+	float2 packedTan = normalize(float2(x, dSign * (1.0f - abs(x))));
+
+	return t1 * packedTan.x + t2 * packedTan.y;
 }
 
 #endif // COMMON_UTILS_HLSLI

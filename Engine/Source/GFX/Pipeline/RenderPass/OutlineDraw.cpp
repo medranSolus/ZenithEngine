@@ -31,15 +31,17 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 
 		Binding::SchemaDesc desc = {};
 		desc.AddRange({ 1, 0, 0, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Transform buffer
+		if (buildData.Assets.GetVertexLayout() & Vertex::PackMethod::Position_BBQ)
+			desc.AddRange({ 1, 1, 1, Resource::ShaderType::Vertex, Binding::RangeFlag::CBV }); // Internal decode buffer
 		desc.AddRange({ sizeof(Float3), 0, 0, Resource::ShaderType::Pixel, Binding::RangeFlag::Constant }); // Solid color
 		ZE_EXPECT_RET_FAILED(passData->BindingIndex, buildData.BindingLib.AddDataBinding(dev, desc));
 
 		Resource::PipelineStateDesc psoDesc = {};
-		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "SolidVS", buildData.ShaderCache));
+		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "SolidVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), true), buildData.ShaderCache));
 		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilWrite;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawStencil");
 		ZE_EXPECT_RET_FAILED(passData->StateStencil, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 
@@ -106,9 +108,12 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				auto& transformInfo = visibleView.get<InsideFrustum>(entity);
 				ZE_EXPECT_RET_FAILED(transformInfo.Transform, cbuffer.Alloc(dev, &transformBuffer, sizeof(TransformBuffer)));
 				cbuffer.Bind(cl, ctx, transformInfo.Transform);
+
+				auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID);
+				mesh.BindDecodeBuffer(cl, ctx);
 				ctx.Reset();
 
-				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				mesh.Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			renderData.Buffers.EndRaster(cl);
@@ -134,9 +139,12 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 				ZE_DRAW_TAG_BEGIN(dev, cl, ("Mesh_" + std::to_string(static_cast<U64>(entity))).c_str(), Pixel(0xB9, 0xAB, 0x6E));
 
 				cbuffer.Bind(cl, ctx, visibleView.get<InsideFrustum>(entity).Transform);
+
+				auto& mesh = Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID);
+				mesh.BindDecodeBuffer(cl, ctx);
 				ctx.Reset();
 
-				Settings::DataBank.GetAssetsData().get<Resource::Mesh>(visibleView.get<Data::MeshID>(entity).ID).Draw(dev, cl);
+				mesh.Draw(dev, cl);
 				ZE_DRAW_TAG_END(dev, cl);
 			}
 			renderData.Buffers.EndRaster(cl);

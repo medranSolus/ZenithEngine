@@ -3,6 +3,35 @@
 
 namespace ZE::RHI::DX12::Resource
 {
+	Expected<U32> Mesh::CreateMesh(Device& device, U32 vertexCount, U16 vertexSize, U32 indexCount) noexcept
+	{
+		vertexView.SizeInBytes = vertexCount * vertexSize;
+		vertexView.StrideInBytes = vertexSize;
+
+		if (indexCount)
+		{
+			ZE_ASSERT((options & GFX::Resource::MeshOption::IndexFormat8bit) == 0,
+				"Only 16 and 32 bit indices are supported for DirectX 12!");
+
+			indexView.SizeInBytes = indexCount * GetIndexSize();
+			indexView.Format = Is16BitIndices() ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
+		}
+		else
+			indexView.SizeInBytes = 0;
+
+		const U32 indexOffset = GetIndexOffset();
+		const U32 vertexOffset = Math::AlignUp(indexView.SizeInBytes + indexOffset, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
+		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + vertexView.SizeInBytes);
+		ZE_EXPECT_RET_FAILED(info, device.CreateBuffer(desc, false));
+		GarbageCollector::Get().MarkActive(device, info.Handle);
+
+		indexView.BufferLocation = info.Resource->GetGPUVirtualAddress() + indexOffset;
+		vertexView.BufferLocation = indexView.BufferLocation + vertexOffset - indexOffset;
+		ZE_DX_SET_ID(info.Resource, "Mesh geometry buffer");
+
+		return Utils::SafeCast<U32>(desc.Width);
+	}
+
 	Mesh::~Mesh()
 	{
 		if (info.Handle)
@@ -14,32 +43,9 @@ namespace ZE::RHI::DX12::Resource
 		Device& device = dev.Get().dx12;
 
 		Mesh mesh = {};
-		mesh.vertexView.SizeInBytes = data.VertexCount * data.VertexSize;
-		mesh.vertexView.StrideInBytes = data.VertexSize;
-
-		if (data.IndexCount)
-		{
-			ZE_ASSERT(data.IndexSize == sizeof(U16) || data.IndexSize == sizeof(U32),
-				"Only 16 and 32 bit indices are supported for DirectX 12!");
-
-			mesh.is16bitIndices = data.IndexSize == sizeof(U16);
-			mesh.indexView.SizeInBytes = data.IndexCount * data.IndexSize;
-			mesh.indexView.Format = mesh.is16bitIndices ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT;
-		}
-		else
-		{
-			mesh.is16bitIndices = false;
-			mesh.indexView.SizeInBytes = 0;
-		}
-
-		const U32 vertexOffset = Math::AlignUp(mesh.indexView.SizeInBytes, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
-		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + mesh.vertexView.SizeInBytes);
-		ZE_EXPECT_RET_FAILED(mesh.info, device.CreateBuffer(desc, false));
-		GarbageCollector::Get().MarkActive(device, mesh.info.Handle);
-
-		mesh.indexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
-		mesh.vertexView.BufferLocation = mesh.indexView.BufferLocation + vertexOffset;
-		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer");
+		mesh.options = data.Options;
+		U32 bufferSize = 0;
+		ZE_EXPECT_RET_FAILED(bufferSize, mesh.CreateMesh(device, data.VertexCount, data.VertexSize, data.IndexCount));
 
 		if (device.IsGpuUploadHeap())
 		{
@@ -47,11 +53,11 @@ namespace ZE::RHI::DX12::Resource
 			D3D12_RANGE range = {};
 			void* uploadBuffer = nullptr;
 			ZE_DX_RET_FAILED_EXPECT(mesh.info.Resource->Map(0, &range, &uploadBuffer));
-			std::memcpy(uploadBuffer, data.PackedMesh.get(), desc.Width);
+			std::memcpy(uploadBuffer, data.PackedMesh.get(), bufferSize);
 			mesh.info.Resource->Unmap(0, nullptr);
 		}
 		else
-			disk.Get().dx12.AddMemoryBufferRequest(mesh.info.Resource.Get(), nullptr, data.PackedMesh, Utils::SafeCast<U32>(desc.Width), true);
+			disk.Get().dx12.AddMemoryBufferRequest(mesh.info.Resource.Get(), nullptr, data.PackedMesh, bufferSize, true);
 		return mesh;
 	}
 
@@ -60,25 +66,26 @@ namespace ZE::RHI::DX12::Resource
 		Device& device = dev.Get().dx12;
 
 		Mesh mesh = {};
-		mesh.vertexView.SizeInBytes = data.VertexCount * data.VertexSize;
-		mesh.vertexView.StrideInBytes = data.VertexSize;
+		mesh.options = data.Options;
+		U32 bufferSize = 0;
+		ZE_EXPECT_RET_FAILED(bufferSize, mesh.CreateMesh(device, data.VertexCount, data.VertexSize, data.IndexCount));
 
-		mesh.indexView.SizeInBytes = data.UncompressedSize;
-		mesh.indexView.Format = DX::GetDXFormat(data.IndexFormat);
-
-		mesh.is16bitIndices = data.IndexCount && mesh.indexView.Format == DXGI_FORMAT_R16_UINT;
-		ZE_ASSERT(mesh.is16bitIndices || mesh.indexView.Format == DXGI_FORMAT_R32_UINT || mesh.indexView.Format == DXGI_FORMAT_UNKNOWN,
-			"Only 16 and 32 bit indices are supported for DirectX 12!");
-
-		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(data.UncompressedSize);
-		ZE_EXPECT_RET_FAILED(mesh.info, device.CreateBuffer(desc, false));
-		GarbageCollector::Get().MarkActive(device, mesh.info.Handle);
-
-		mesh.indexView.BufferLocation = mesh.vertexView.BufferLocation = mesh.info.Resource->GetGPUVirtualAddress();
-		ZE_DX_SET_ID(mesh.info.Resource, "Mesh geometry buffer from file");
-
-		disk.Get().dx12.AddFileBufferRequest(mesh.info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, data.UncompressedSize, true);
+		disk.Get().dx12.AddFileBufferRequest(mesh.info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, bufferSize, true);
 		return mesh;
+	}
+
+	void Mesh::BindDecodeBuffer(GFX::CommandList& cl, GFX::Binding::Context& bindCtx) const noexcept
+	{
+		U32 indexOffset = GetIndexOffset();
+		if (indexOffset)
+		{
+			const auto& schema = bindCtx.BindingSchema.Get().dx12;
+			ZE_ASSERT(schema.GetCurrentType(bindCtx.Count) == Binding::Schema::BindType::CBV,
+				"Bind slot is not a constant buffer! Wrong root signature or order of bindings!");
+
+			ZE_DX_CHECK_FAILED(cl.Get().dx12.GetList()->SetGraphicsRootConstantBufferView(bindCtx.Count++, indexView.BufferLocation - indexOffset),
+				"Setting vertex decoding cbuffer resulted in debug layer messages!");
+		}
 	}
 
 	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept

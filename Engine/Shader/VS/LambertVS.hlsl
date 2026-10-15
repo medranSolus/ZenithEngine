@@ -1,3 +1,5 @@
+#define ZE_BBQ_CB_RANGE 4
+#include "CB/ModelGeometryIO.hlsli"
 #include "CB/ModelTransform.hlsli"
 #include "DynamicDataCB.hlsli"
 
@@ -15,17 +17,17 @@ struct VSOut
 	float4 pos : SV_POSITION;
 };
 
-VSOut main(float3 pos : POSITION,
-	float3 normal : NORMAL,
-	float2 tc : TEXCOORD,
-	float4 tangent : TANGENTPACK)
+VSOut main(ModelVSIn vsi)
 {
+	float3 pos = GetPosition(vsi.PosPack);
+	float3 normal = GetNormal(vsi);
+	
 	VSOut vso;
 	vso.worldPos = (float3)mul(float4(pos, 1.0f), cb_transform.M);
 	vso.worldNormal = mul(normal, (float3x3) cb_transform.M);
 
-	vso.tc = tc;
-	vso.worldTan = float4(mul(tangent.xyz, (float3x3) cb_transform.M), tangent.w);
+	vso.tc = vsi.UV;
+	vso.worldTan = float4(mul(GetTangent(vsi, normal), (float3x3) cb_transform.M), GetBitanHandedness(vsi));
 
 	vso.cameraDir = vso.worldPos - cb_dynamicData.CameraPos;
 	vso.pos = mul(float4(pos, 1.0f), cb_transform.MVP);

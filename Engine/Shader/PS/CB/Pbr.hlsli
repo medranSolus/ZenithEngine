@@ -12,6 +12,6 @@ struct PbrBuffer
 	uint Flags;
 };
 
-CBUFFER(material, PbrBuffer, 0, 4);
+CBUFFER(material, PbrBuffer, 0, 5);
 
 #endif // PBR_PS_HLSLI

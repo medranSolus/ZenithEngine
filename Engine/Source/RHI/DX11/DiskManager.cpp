@@ -50,29 +50,29 @@ namespace ZE::RHI::DX11
 	}
 
 	void DiskManager::AddFileBufferRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,
-		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize) noexcept
+		U32 sourceBytes, IO::CompressionFormat compression, U32 uncompressedSize, DX::ComPtr<IResource> splitDest, U32 splitOffset) noexcept
 	{
 		LockGuardRW lock(bucketMutex);
 		ZE_ASSERT(statusBuckets.size() > 0, "There should always be at least one bucket!");
 
 		statusBuckets.back().emplace_back(Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
-			[](const void* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, IO::CompressionFormat compression) noexcept -> Status
+			[](const U8* src, U32 srcSize, DX::ComPtr<IResource> dst, U32 dstSize, DX::ComPtr<IResource> splitDest, U32 splitOffset, IO::CompressionFormat compression) noexcept -> Status
 			{
-				const void* decompressedBuff = nullptr;
+				const U8* decompressedBuff = nullptr;
 				std::unique_ptr<U8[]> decompressedData;
 				if (compression != IO::CompressionFormat::None)
 				{
 					IO::Compressor codec(compression);
-					ZE_ASSERT(dstSize == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
+					ZE_ASSERT(dstSize + splitOffset == codec.GetOriginalSize(src, srcSize), "Uncompressed sizes don't match!");
 
-					decompressedData = std::make_unique_for_overwrite<U8[]>(dstSize);
+					decompressedData = std::make_unique_for_overwrite<U8[]>(dstSize + splitOffset);
 					decompressedBuff = decompressedData.get();
 
-					ZE_CODE_RET_FAILED(codec.Decompress(src, srcSize, decompressedData.get(), dstSize));
+					ZE_CODE_RET_FAILED(codec.Decompress(src, srcSize, decompressedData.get(), dstSize + splitOffset));
 				}
 				else
 				{
-					ZE_ASSERT(dstSize == srcSize, "Unmatched sizes of buffers for asset!");
+					ZE_ASSERT(dstSize + splitOffset == srcSize, "Unmatched sizes of buffers for asset!");
 					decompressedBuff = src;
 				}
 
@@ -80,11 +80,16 @@ namespace ZE::RHI::DX11
 				dst->GetDevice(&dev);
 				DX::ComPtr<ID3D11DeviceContext> ctx;
 				dev->GetImmediateContext(&ctx);
-				ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(dst.Get(), 0, nullptr, decompressedBuff, 0, 0), "There were debug messages during buffer upload!");
+				ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(dst.Get(), 0, nullptr, decompressedBuff + splitOffset, 0, 0), "There were debug messages during buffer upload!");
 				
+				if (splitOffset && splitDest)
+				{
+					ZE_DX_CHECK_FAILED(ctx->UpdateSubresource(splitDest.Get(), 0, nullptr, decompressedBuff, 0, 0), "There were debug messages during split buffer upload!");
+				}
+
 				return {};
 			},
-			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, compression));
+			file.Get().dx11.GetMemory(), sourceBytes, dest, uncompressedSize, splitDest, splitOffset, compression));
 	}
 
 	void DiskManager::AddFileTextureRequest(DX::ComPtr<IResource> dest, GFX::GFile& file, U64 sourceOffset,

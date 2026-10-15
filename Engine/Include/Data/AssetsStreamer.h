@@ -1,6 +1,7 @@
 #pragma once
 #include "GFX/DiskManager.h"
 #include "GFX/Material.h"
+#include "GFX/Vertex.h"
 #include "IO/CompressionFormat.h"
 #include "ExternalModelOptions.h"
 #if _ZE_EXTERNAL_MODEL_LOADING
@@ -36,6 +37,7 @@ namespace ZE::Data
 
 		GFX::DiskManager diskManager;
 		GFX::Resource::Texture::Library texSchemaLib;
+		GFX::Vertex::Packing vertexLayout = Base(GFX::Vertex::PackMethod::None);
 
 #if _ZE_EXTERNAL_MODEL_LOADING
 		template<typename Index>
@@ -47,10 +49,11 @@ namespace ZE::Data
 		ZE_CLASS_MOVE(AssetsStreamer);
 		~AssetsStreamer() = default;
 
-		static Expected<AssetsStreamer> Create(GFX::Device& dev) noexcept;
+		static Expected<AssetsStreamer> Create(GFX::Device& dev, GFX::Vertex::Packing vertexLayout) noexcept;
 
 		constexpr GFX::DiskManager& GetDisk() noexcept { return diskManager; }
 		constexpr GFX::Resource::Texture::Library& GetSchemaLib() noexcept { return texSchemaLib; }
+		constexpr GFX::Vertex::Packing GetVertexLayout() const noexcept { return vertexLayout; }
 
 		Task<Status> LoadResourcePack(GFX::Device& dev, U16 packId) noexcept { return LoadResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT); }
 		Task<Status> SaveResourcePack(GFX::Device& dev, U16 packId, IO::CompressionFormat defaultCompression) noexcept { return SaveResourcePack(dev, RESOURCE_FILE + std::to_string(packId) + RESOURCE_FILE_EXT, packId, defaultCompression); }

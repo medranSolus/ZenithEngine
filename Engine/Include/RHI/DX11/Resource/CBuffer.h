@@ -47,6 +47,7 @@ namespace ZE::RHI::DX11::Resource
 		// Gfx API Internal
 
 		IBuffer* GetBuffer() const noexcept { return impl.GetBuffer(); }
+		DX::ComPtr<IResource> GetResource() const noexcept { return impl.GetResource(); }
 		Status Update(Device& dev, const GFX::Resource::CBufferData& data) const noexcept { return impl.Update(dev, data); }
 	};
 
