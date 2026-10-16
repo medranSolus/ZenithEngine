@@ -28,8 +28,11 @@ namespace ZE::GFX::Vertex
 		// UV coords are packed as half floats
 		UV_Half = 0x40,
 
+		// Pack position  separately from other vertex attributes
+		SplitPositionStream = 0x80,
+
 		// Default vertex packing
-		Default = Position_BBQ | UV_Half | NormalTangent_OctDiamond,
+		Default = Position_BBQ | UV_Half | NormalTangent_OctDiamond | SplitPositionStream,
 
 		// Mask for extracting position related flags
 		PositionMask = Position_Half | Position_BBQ,
@@ -50,21 +53,26 @@ namespace ZE::GFX::Vertex
 #pragma pack(pop)
 
 	// Get size of single vertex given it's packing strategy
-	constexpr U8 GetVertexSize(Packing pack) noexcept;
+	constexpr U8 GetVertexSize(Packing pack, bool positionOnly) noexcept;
 	// Get input layout of the vertex
-	constexpr std::vector<Resource::InputParam> GetLayout(Packing pack) noexcept;
+	constexpr std::array<std::vector<Resource::InputParam>, 2> GetLayout(Packing pack, bool positionOnly) noexcept;
 
 	// Fill-out memory with correct vertex layout packing
 	void PackData(U8* memory, Packing pack, const Float3& pos, const Float2& uv, const Float3& normal,
 		const Float3& tangent, const Float3& bitangent, Vector* boxCenter, Vector* boxHalfSize) noexcept;
+	// Fill-out memory with position-only stream
+	void PackPositionData(U8* memory, Packing pack, const Float3& pos, const Float2& uv, const Float3& normal,
+		const Float3& tangent, const Float3& bitangent, Vector* boxCenter, Vector* boxHalfSize) noexcept;
+	// Fill-out memory with rest of the vertex attributes
+	void PackAttributesData(U8* memory, Packing pack, const Float2& uv, const Float3& normal, const Float3& tangent, const Float3& bitangent) noexcept;
 	// Get proper general suffix for shaders using model inputs
 	std::string DecodeShaderSuffix(Packing pack, bool positionOnly) noexcept;
 
 #pragma region Functions
-	constexpr U8 GetVertexSize(Packing pack) noexcept
+	constexpr U8 GetVertexSize(Packing pack, bool positionOnly) noexcept
 	{
 		if (pack == PackMethod::Default)
-			return 16;
+			return positionOnly ? 4 * sizeof(U16) : 8 * sizeof(U16);
 		if (pack == PackMethod::None)
 			return sizeof(Raw);
 
@@ -74,6 +82,9 @@ namespace ZE::GFX::Vertex
 			size += 4 * Utils::GetFormatSize(Resource::GetInputFormat(Resource::InputParam::PosHalf_X));
 		else
 			size += Utils::GetFormatSize(Resource::GetInputFormat(Resource::InputParam::Pos3D));
+
+		if (positionOnly)
+			return size;
 
 		// Same bit size
 		if (pack & (PackMethod::UV_UNorm | PackMethod::UV_Half))
@@ -99,65 +110,79 @@ namespace ZE::GFX::Vertex
 		return Math::AlignUp<U8>(size, 4U);
 	}
 
-	constexpr std::vector<Resource::InputParam> GetLayout(Packing pack) noexcept
+	constexpr std::array<std::vector<Resource::InputParam>, 2> GetLayout(Packing pack, bool positionOnly) noexcept
 	{
 		if (pack == PackMethod::Default)
+		{
+			if (positionOnly)
+				return { std::vector<Resource::InputParam>{ Resource::InputParam::PosBBQ_X, Resource::InputParam::PosBBQ_Y, Resource::InputParam::PosBBQ_Z, Resource::InputParam::BitangentHand } };
 			return
 			{
-				Resource::InputParam::PosBBQ_X, Resource::InputParam::PosBBQ_Y,Resource::InputParam::PosBBQ_Z,
-				Resource::InputParam::BitangentHand, Resource::InputParam::TexCoordHalf, Resource::InputParam::NormalOctTangentAngle
+				std::vector<Resource::InputParam>{ Resource::InputParam::PosBBQ_X, Resource::InputParam::PosBBQ_Y, Resource::InputParam::PosBBQ_Z, Resource::InputParam::BitangentHand },
+				std::vector<Resource::InputParam>{ Resource::InputParam::TexCoordHalf, Resource::InputParam::NormalOctTangentAngle }
 			};
+		}
 		if (pack == PackMethod::None)
+		{
+			if (positionOnly)
+				return { std::vector<Resource::InputParam>{ Resource::InputParam::Pos3D } };
 			return
 			{
-				Resource::InputParam::Pos3D, Resource::InputParam::TexCoord,
-				Resource::InputParam::Normal, Resource::InputParam::TangentPacked
+				std::vector<Resource::InputParam>
+				{
+					Resource::InputParam::Pos3D,
+					Resource::InputParam::TexCoord, Resource::InputParam::Normal, Resource::InputParam::TangentPacked
+				}
 			};
+		}
 
-		std::vector<Resource::InputParam> layout;
-		layout.reserve(3);
+		std::array<std::vector<Resource::InputParam>, 2> layout;
 		if (pack & PackMethod::Position_BBQ)
 		{
-			layout.emplace_back(Resource::InputParam::PosBBQ_X);
-			layout.emplace_back(Resource::InputParam::PosBBQ_Y);
-			layout.emplace_back(Resource::InputParam::PosBBQ_Z);
+			layout.front().emplace_back(Resource::InputParam::PosBBQ_X);
+			layout.front().emplace_back(Resource::InputParam::PosBBQ_Y);
+			layout.front().emplace_back(Resource::InputParam::PosBBQ_Z);
 			if (pack & (PackMethod::NormalTangent_DualOct | PackMethod::NormalTangent_OctAngle | PackMethod::NormalTangent_OctDiamond))
-				layout.emplace_back(Resource::InputParam::BitangentHand);
+				layout.front().emplace_back(Resource::InputParam::BitangentHand);
 		}
 		else if (pack & PackMethod::Position_Half)
 		{
-			layout.emplace_back(Resource::InputParam::PosHalf_X);
-			layout.emplace_back(Resource::InputParam::PosHalf_Y);
-			layout.emplace_back(Resource::InputParam::PosHalf_Z);
+			layout.front().emplace_back(Resource::InputParam::PosHalf_X);
+			layout.front().emplace_back(Resource::InputParam::PosHalf_Y);
+			layout.front().emplace_back(Resource::InputParam::PosHalf_Z);
 			if (pack & (PackMethod::NormalTangent_DualOct | PackMethod::NormalTangent_OctAngle | PackMethod::NormalTangent_OctDiamond))
-				layout.emplace_back(Resource::InputParam::BitangentHand);
+				layout.front().emplace_back(Resource::InputParam::BitangentHand);
 		}
 		else
-			layout.emplace_back(Resource::InputParam::Pos3D);
+			layout.front().emplace_back(Resource::InputParam::Pos3D);
 
+		if (positionOnly)
+			return layout;
+
+		auto& attributesStream = layout.at((pack & PackMethod::SplitPositionStream) != 0);
 		if (pack & PackMethod::UV_Half)
-			layout.emplace_back(Resource::InputParam::TexCoordHalf);
+			attributesStream.emplace_back(Resource::InputParam::TexCoordHalf);
 		else if (pack & PackMethod::UV_UNorm)
-			layout.emplace_back(Resource::InputParam::TexCoordNorm);
+			attributesStream.emplace_back(Resource::InputParam::TexCoordNorm);
 		else
-			layout.emplace_back(Resource::InputParam::TexCoord);
+			attributesStream.emplace_back(Resource::InputParam::TexCoord);
 
 		if (pack & PackMethod::NormalTangent_DualOct)
 		{
-			layout.emplace_back(Resource::InputParam::NormalTangentDualOct);
+			attributesStream.emplace_back(Resource::InputParam::NormalTangentDualOct);
 			if ((pack & (PackMethod::Position_Half | PackMethod::Position_BBQ)) == 0)
-				layout.emplace_back(Resource::InputParam::BitangentHand);
+				attributesStream.emplace_back(Resource::InputParam::BitangentHand);
 		}
 		else if (pack & (PackMethod::NormalTangent_OctAngle | PackMethod::NormalTangent_OctDiamond))
 		{
-			layout.emplace_back(Resource::InputParam::NormalOctTangentAngle);
+			attributesStream.emplace_back(Resource::InputParam::NormalOctTangentAngle);
 			if ((pack & (PackMethod::Position_Half | PackMethod::Position_BBQ)) == 0)
-				layout.emplace_back(Resource::InputParam::BitangentHand);
+				attributesStream.emplace_back(Resource::InputParam::BitangentHand);
 		}
 		else
 		{
-			layout.emplace_back(Resource::InputParam::Normal);
-			layout.emplace_back(Resource::InputParam::TangentPacked);
+			attributesStream.emplace_back(Resource::InputParam::Normal);
+			attributesStream.emplace_back(Resource::InputParam::TangentPacked);
 		}
 		return layout;
 	}

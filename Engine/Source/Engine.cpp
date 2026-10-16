@@ -50,7 +50,7 @@ namespace ZE
 		GFX::Device& dev = graphics.GetDevice();
 		Settings::RenderSize = GFX::CalculateRenderSize(dev, Settings::DisplaySize, Settings::Upscaler, UINT32_MAX);
 
-		ZE_EXPECT_RET_FAILED_CODE(assets, Data::AssetsStreamer::Create(dev, params.VertexLayout);
+		ZE_EXPECT_RET_FAILED_CODE(assets, Data::AssetsStreamer::Create(dev, params.VertexLayout));
 		ZE_EXPECT_RET_FAILED_CODE(audioDev, SFX::Device::Create());
 
 		if (params.CustomRendererDesc)

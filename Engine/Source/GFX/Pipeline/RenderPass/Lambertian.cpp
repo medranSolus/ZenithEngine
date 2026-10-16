@@ -62,7 +62,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 
 			Resource::PipelineStateDesc psoDesc = {};
 			psoDesc.FormatDS = formatDS;
-			psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
+			psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), false);
 			ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LambertVS" + vsPermSuffix, buildData.ShaderCache));
 			psoDesc.RenderTargetsCount = 3 + isMotion + isReactive;
 			psoDesc.FormatsRT[0] = formatNormal;
@@ -130,7 +130,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Lambertian
 		Resource::PipelineStateDesc psoDesc = {};
 		ZE_CODE_RET_FAILED_EXPECT(psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), true), buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), true);
 		ZE_PSO_SET_NAME(psoDesc, "LambertianDepth");
 		ZE_EXPECT_RET_FAILED(passData->StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 

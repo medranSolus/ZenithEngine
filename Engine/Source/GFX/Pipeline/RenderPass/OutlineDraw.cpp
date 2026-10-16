@@ -41,7 +41,7 @@ namespace ZE::GFX::Pipeline::RenderPass::OutlineDraw
 		psoDesc.DepthStencil = Resource::DepthStencilMode::StencilWrite;
 		psoDesc.Culling = Resource::CullMode::None;
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), true);
 		ZE_PSO_SET_NAME(psoDesc, "OutlineDrawStencil");
 		ZE_EXPECT_RET_FAILED(passData->StateStencil, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 

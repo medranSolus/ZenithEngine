@@ -43,7 +43,7 @@ namespace ZE::GFX::Pipeline::RenderPass::Wireframe
 		psoDesc.FormatsRT[0] = formatRT;
 		psoDesc.FormatDS = formatDS;
 		psoDesc.Topology = Resource::TopologyType::Line;
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
+		psoDesc.InputLayout.front().emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "Wireframe");
 		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, buildData.BindingLib.GetSchema(passData->BindingIndex)));
 

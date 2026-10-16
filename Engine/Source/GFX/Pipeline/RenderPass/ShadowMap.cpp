@@ -35,13 +35,14 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMap
 		Resource::PipelineStateDesc psoDesc = {};
 		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "LambertDepthVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), true), buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), true);
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapDepth");
 		ZE_EXPECT_RET_FAILED_CODE(passData.StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
 		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "LambertVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), false), buildData.ShaderCache));
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatRT;
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), false);
 
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows

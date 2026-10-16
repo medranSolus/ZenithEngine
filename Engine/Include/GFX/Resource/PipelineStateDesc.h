@@ -30,7 +30,7 @@ namespace ZE::GFX::Resource
 		U8 RenderTargetsCount = 0;
 		PixelFormat FormatsRT[8];
 		PixelFormat FormatDS = PixelFormat::Unknown;
-		std::vector<InputParam> InputLayout;
+		std::array<std::vector<InputParam>, 2> InputLayout;
 		// Wireframe | DepthClip | RelaxedRasterOrder | ConservativeRaser
 		std::bitset<4> Flags = 1;
 #if _ZE_DEBUG_GFX_NAMES

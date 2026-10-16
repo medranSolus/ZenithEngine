@@ -9,7 +9,7 @@ namespace ZE::RHI::DX11::Resource
 		bufferDesc.Usage = usage;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.MiscFlags = 0;
-		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + vertexCount * vertexSize);
+		bufferDesc.ByteWidth = Utils::SafeCast<UINT>(Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT) + vertexCount * (vertexSizes.front() + vertexSizes.at(1)));
 		bufferDesc.StructureByteStride = 0;
 
 		if (indexCount)
@@ -32,7 +32,8 @@ namespace ZE::RHI::DX11::Resource
 	Expected<Mesh> Mesh::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshData& data) noexcept
 	{
 		Mesh mesh = {};
-		mesh.vertexSize = data.VertexSize;
+		mesh.vertexSizes.front() = data.VertexSize - data.VertexSizeSecondStream;
+		mesh.vertexSizes.at(1) = data.VertexSizeSecondStream;
 		mesh.vertexCount = data.VertexCount;
 		mesh.indexCount = data.IndexCount;
 		mesh.options = data.Options;
@@ -58,7 +59,8 @@ namespace ZE::RHI::DX11::Resource
 	Expected<Mesh> Mesh::Create(GFX::Device& dev, GFX::DiskManager& disk, const GFX::Resource::MeshFileData& data, GFX::GFile& file) noexcept
 	{
 		Mesh mesh = {};
-		mesh.vertexSize = data.VertexSize;
+		mesh.vertexSizes.front() = data.VertexSize - data.VertexSizeSecondStream;
+		mesh.vertexSizes.at(1) = data.VertexSizeSecondStream;
 		mesh.vertexCount = data.VertexCount;
 		mesh.indexCount = data.IndexCount;
 		mesh.options = data.Options;
@@ -89,7 +91,9 @@ namespace ZE::RHI::DX11::Resource
 		IDeviceContext* ctx = cl.Get().dx11.GetContext();
 
 		const U32 offset = Math::AlignUp(indexCount * GetIndexSize(), GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
-		ctx->IASetVertexBuffers(0, 1, buffer.GetAddressOf(), &vertexSize, &offset);
+		std::array<U32, 2> offsets = { offset, offset + vertexSizes.front() * vertexCount };
+		std::array<IBuffer*, 2> buffers = { buffer.Get(), buffer.Get() };
+		ctx->IASetVertexBuffers(0, 1 + IsSecondStreamPresent(), buffers.data(), vertexSizes.data(), offsets.data());
 
 		if (IsIndexBufferPresent())
 		{

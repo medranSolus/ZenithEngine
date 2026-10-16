@@ -3,10 +3,12 @@
 
 namespace ZE::RHI::DX12::Resource
 {
-	Expected<U32> Mesh::CreateMesh(Device& device, U32 vertexCount, U16 vertexSize, U32 indexCount) noexcept
+	Expected<U32> Mesh::CreateMesh(Device& device, U32 vertexCount, U16 vertexSize, U16 vertexSizeSecondStream, U32 indexCount) noexcept
 	{
-		vertexView.SizeInBytes = vertexCount * vertexSize;
-		vertexView.StrideInBytes = vertexSize;
+		vertexViews.front().StrideInBytes = vertexSize - vertexSizeSecondStream;
+		vertexViews.front().SizeInBytes = vertexCount * vertexViews.front().StrideInBytes;
+		vertexViews.at(1).StrideInBytes = vertexSizeSecondStream;
+		vertexViews.at(1).SizeInBytes = vertexCount * vertexSizeSecondStream;
 
 		if (indexCount)
 		{
@@ -21,12 +23,13 @@ namespace ZE::RHI::DX12::Resource
 
 		const U32 indexOffset = GetIndexOffset();
 		const U32 vertexOffset = Math::AlignUp(indexView.SizeInBytes + indexOffset, GFX::Resource::MeshData::VERTEX_BUFFER_ALIGNMENT);
-		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + vertexView.SizeInBytes);
+		const D3D12_RESOURCE_DESC1 desc = device.GetBufferDesc(vertexOffset + vertexViews.front().SizeInBytes + vertexViews.at(1).SizeInBytes);
 		ZE_EXPECT_RET_FAILED(info, device.CreateBuffer(desc, false));
 		GarbageCollector::Get().MarkActive(device, info.Handle);
 
 		indexView.BufferLocation = info.Resource->GetGPUVirtualAddress() + indexOffset;
-		vertexView.BufferLocation = indexView.BufferLocation + vertexOffset - indexOffset;
+		vertexViews.front().BufferLocation = indexView.BufferLocation + vertexOffset - indexOffset;
+		vertexViews.at(1).BufferLocation = vertexViews.front().BufferLocation + vertexViews.front().SizeInBytes;
 		ZE_DX_SET_ID(info.Resource, "Mesh geometry buffer");
 
 		return Utils::SafeCast<U32>(desc.Width);
@@ -45,7 +48,7 @@ namespace ZE::RHI::DX12::Resource
 		Mesh mesh = {};
 		mesh.options = data.Options;
 		U32 bufferSize = 0;
-		ZE_EXPECT_RET_FAILED(bufferSize, mesh.CreateMesh(device, data.VertexCount, data.VertexSize, data.IndexCount));
+		ZE_EXPECT_RET_FAILED(bufferSize, mesh.CreateMesh(device, data.VertexCount, data.VertexSize, data.VertexSizeSecondStream, data.IndexCount));
 
 		if (device.IsGpuUploadHeap())
 		{
@@ -68,7 +71,7 @@ namespace ZE::RHI::DX12::Resource
 		Mesh mesh = {};
 		mesh.options = data.Options;
 		U32 bufferSize = 0;
-		ZE_EXPECT_RET_FAILED(bufferSize, mesh.CreateMesh(device, data.VertexCount, data.VertexSize, data.IndexCount));
+		ZE_EXPECT_RET_FAILED(bufferSize, mesh.CreateMesh(device, data.VertexCount, data.VertexSize, data.VertexSizeSecondStream, data.IndexCount));
 
 		disk.Get().dx12.AddFileBufferRequest(mesh.info.Resource.Get(), file, data.MeshDataOffset, data.SourceBytes, data.Compression, bufferSize, true);
 		return mesh;
@@ -91,7 +94,7 @@ namespace ZE::RHI::DX12::Resource
 	void Mesh::Draw(GFX::Device& dev, GFX::CommandList& cl) const noexcept
 	{
 		IGraphicsCommandList* list = cl.Get().dx12.GetList();
-		list->IASetVertexBuffers(0, 1, &vertexView);
+		list->IASetVertexBuffers(0, 1 + IsSecondStreamPresent(), vertexViews.data());
 		if (IsIndexBufferPresent())
 		{
 			list->IASetIndexBuffer(&indexView);

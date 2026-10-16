@@ -37,7 +37,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.VS, "ShadowCubeDepthVS" + Vertex::DecodeShaderSuffix(buildData.Assets.GetVertexLayout(), true), buildData.ShaderCache));
 		ZE_CODE_RET_FAILED(psoDesc.SetShader(dev, psoDesc.GS, "ShadowCubeDepthGS", buildData.ShaderCache));
 		psoDesc.FormatDS = formatDS;
-		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout());
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), true);
 		ZE_PSO_SET_NAME(psoDesc, "ShadowMapCubeDepth");
 		ZE_EXPECT_RET_FAILED_CODE(passData.StateDepth, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 
@@ -46,6 +46,7 @@ namespace ZE::GFX::Pipeline::RenderPass::ShadowMapCube
 		psoDesc.RenderTargetsCount = 6;
 		for (U8 i = 0; i < psoDesc.RenderTargetsCount; ++i)
 			psoDesc.FormatsRT[i] = formatRT;
+		psoDesc.InputLayout = Vertex::GetLayout(buildData.Assets.GetVertexLayout(), false);
 
 		const std::string shaderName = "ShadowPS";
 		// Ignore flag UseSpecular as it does not have impact on shadows

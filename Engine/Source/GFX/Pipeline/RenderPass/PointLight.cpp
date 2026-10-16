@@ -53,7 +53,7 @@ namespace ZE::GFX::Pipeline::RenderPass::PointLight
 		psoDesc.SetDepthClip(false);
 		psoDesc.RenderTargetsCount = 1;
 		psoDesc.FormatsRT[0] = formatLighting;
-		psoDesc.InputLayout.emplace_back(Resource::InputParam::Pos3D);
+		psoDesc.InputLayout.front().emplace_back(Resource::InputParam::Pos3D);
 		ZE_PSO_SET_NAME(psoDesc, "PointLight");
 		ZE_EXPECT_RET_FAILED(passData->State, Resource::PipelineStateGfx::Create(dev, psoDesc, schema));
 

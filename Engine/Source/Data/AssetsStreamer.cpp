@@ -480,7 +480,10 @@ namespace ZE::Data
 				GFX::Resource::MeshData meshData = {};
 				meshData.VertexCount = mesh.mNumVertices;
 				meshData.IndexCount = mesh.mNumFaces * 3;
-				meshData.VertexSize = GFX::Vertex::GetVertexSize(vertexLayout);
+				meshData.VertexSize = GFX::Vertex::GetVertexSize(vertexLayout, false);
+
+				const bool splitPosition = vertexLayout & GFX::Vertex::PackMethod::SplitPositionStream;
+				meshData.VertexSizeSecondStream = splitPosition ? meshData.VertexSize - GFX::Vertex::GetVertexSize(vertexLayout, true) : 0;
 
 				// Gather index data and parse it into continuous array
 				Task<void> indexTask;
@@ -527,16 +530,52 @@ namespace ZE::Data
 				}
 
 				U8* vertices = meshData.PackedMesh.get() + vertexOffset;
-				for (U32 i = 0; i < mesh.mNumVertices; ++i)
+				if (splitPosition)
 				{
-					GFX::Vertex::PackData(vertices, vertexLayout,
-						*reinterpret_cast<Float3*>(mesh.mVertices + i),
-						*reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i),
-						*reinterpret_cast<Float3*>(mesh.mNormals + i),
-						*reinterpret_cast<Float3*>(mesh.mTangents + i),
-						*reinterpret_cast<Float3*>(mesh.mBitangents + i),
-						&boxCenter, &boxHalfSize);
-					vertices += meshData.VertexSize;
+					// Pack position + attributes into split streams
+					const U32 positionSize = meshData.VertexSize - meshData.VertexSizeSecondStream;
+
+					Task<void> attributesPack = Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
+						[&mesh, layout = vertexLayout](U8* vertices, U16 attributesSize) noexcept
+						{
+							for (U32 i = 0; i < mesh.mNumVertices; ++i)
+							{
+								GFX::Vertex::PackAttributesData(vertices, layout,
+									*reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i),
+									*reinterpret_cast<Float3*>(mesh.mNormals + i),
+									*reinterpret_cast<Float3*>(mesh.mTangents + i),
+									*reinterpret_cast<Float3*>(mesh.mBitangents + i));
+								vertices += attributesSize;
+							}
+						}, vertices + positionSize * meshData.VertexCount, meshData.VertexSizeSecondStream);
+
+					for (U32 i = 0; i < mesh.mNumVertices; ++i)
+					{
+						GFX::Vertex::PackPositionData(vertices, vertexLayout,
+							*reinterpret_cast<Float3*>(mesh.mVertices + i),
+							*reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i),
+							*reinterpret_cast<Float3*>(mesh.mNormals + i),
+							*reinterpret_cast<Float3*>(mesh.mTangents + i),
+							*reinterpret_cast<Float3*>(mesh.mBitangents + i),
+							&boxCenter, &boxHalfSize);
+						vertices += positionSize;
+					}
+
+					co_await attributesPack;
+				}
+				else
+				{
+					for (U32 i = 0; i < mesh.mNumVertices; ++i)
+					{
+						GFX::Vertex::PackData(vertices, vertexLayout,
+							*reinterpret_cast<Float3*>(mesh.mVertices + i),
+							*reinterpret_cast<Float2*>(mesh.mTextureCoords[0] + i),
+							*reinterpret_cast<Float3*>(mesh.mNormals + i),
+							*reinterpret_cast<Float3*>(mesh.mTangents + i),
+							*reinterpret_cast<Float3*>(mesh.mBitangents + i),
+							&boxCenter, &boxHalfSize);
+						vertices += meshData.VertexSize;
+					}
 				}
 
 				// Load parsed mesh data into correct mesh and start it's upload to GPU

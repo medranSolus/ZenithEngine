@@ -178,22 +178,25 @@ namespace ZE::RHI::DX12::Resource
 		}
 
 		// Input Layout
-		stateDesc.InputLayout.NumElements = Utils::SafeCast<U32>(desc.InputLayout.size());
+		stateDesc.InputLayout.NumElements = Utils::SafeCast<U32>(desc.InputLayout.front().size() + desc.InputLayout.at(1).size());
 		std::vector<D3D12_INPUT_ELEMENT_DESC> inputElements(stateDesc.InputLayout.NumElements);
 		if (stateDesc.InputLayout.NumElements)
 		{
 			stateDesc.InputLayout.pInputElementDescs = inputElements.data();
-			for (U32 i = 0; i < stateDesc.InputLayout.NumElements; ++i)
+			for (U32 i = 0, slot = 0; const auto& layoutStream : desc.InputLayout)
 			{
-				GFX::Resource::InputParam paramType = desc.InputLayout.at(i);
-				auto& element = inputElements.at(i);
-				element.SemanticName = GFX::Resource::GetInputSemantic(paramType);
-				element.SemanticIndex = 0;
-				element.Format = DX::GetDXFormat(GFX::Resource::GetInputFormat(paramType));
-				element.InputSlot = 0;
-				element.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
-				element.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
-				element.InstanceDataStepRate = 0;
+				for (const auto& paramType : layoutStream)
+				{
+					auto& element = inputElements.at(i++);
+					element.SemanticName = GFX::Resource::GetInputSemantic(paramType);
+					element.SemanticIndex = 0;
+					element.Format = DX::GetDXFormat(GFX::Resource::GetInputFormat(paramType));
+					element.InputSlot = slot;
+					element.AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+					element.InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA;
+					element.InstanceDataStepRate = 0;
+				}
+				++slot;
 			}
 		}
 		else

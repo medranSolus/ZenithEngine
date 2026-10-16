@@ -2242,7 +2242,7 @@ namespace ZE::GFX::Pipeline
 										passInfo.Exec = pass.GetDesc().Execute;
 										bool update = false;
 										ZE_EXPECT_RET_FAILED_CODE(update, SetupPassData(dev, graph, buildData, signalUploadWait, pass, i, passInfo.Data.ExecData));
-										cascadeUpdate |= update;
+										cascadeUpdate |= update | buildData.FrameBufferUpdatePending;
 										// If some pass requires to force framebuffer reload
 										framebufferUpdate |= buildData.FrameBufferUpdatePending;
 

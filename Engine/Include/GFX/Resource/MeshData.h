@@ -26,6 +26,8 @@ namespace ZE::GFX::Resource
 		U32 VertexCount = 0;
 		U32 IndexCount = 0;
 		U16 VertexSize = 0;
+		// If vertices are split into separate streams, this is the size of the vertex attributes packed into second one (VertexSize holds size of the whole data)
+		U16 VertexSizeSecondStream = 0;
 		MeshOptions Options = Base(MeshOption::None);
 	};
 
@@ -37,6 +39,7 @@ namespace ZE::GFX::Resource
 		U32 IndexCount = 0;
 		U32 SourceBytes = 0;
 		U16 VertexSize = 0;
+		U16 VertexSizeSecondStream = 0;
 		MeshOptions Options = Base(MeshOption::None);
 		IO::CompressionFormat Compression = IO::CompressionFormat::None;
 	};
