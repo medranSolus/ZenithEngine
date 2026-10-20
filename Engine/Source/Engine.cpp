@@ -224,10 +224,12 @@ namespace ZE
 #ifdef USE_PIX
 					if (Settings::GetGfxApi() == GfxApiType::DX12)
 					{
+						ImGui::BeginDisabled(!Settings::IsEnabledPIXAttaching());
 						if (ImGui::Button("PIX capture"))
 							flags[Flags::PixCapture] = true;
 						if (ImGui::IsItemHovered())
 							ImGui::SetTooltip("Perform GPU capture and save it to file \"capture.wpix\". DX12 only.");
+						ImGui::EndDisabled();
 					}
 #endif
 					ImGui::NewLine();
