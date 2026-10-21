@@ -112,6 +112,15 @@ namespace ZE::Intrin
 #endif
 	}
 
+	void Pause() noexcept
+	{
+#if _ZE_COMPILER_MSVC || _ZE_COMPILER_CLANG || _ZE_COMPILER_GCC
+		_mm_pause();
+#else
+#	error Unsupported compiler!
+#endif
+	}
+
 	U8 CountBitsSet(U64 val) noexcept
 	{
 #if __cplusplus >= 202002L

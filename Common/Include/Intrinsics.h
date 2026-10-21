@@ -24,6 +24,9 @@ namespace ZE::Intrin
 	void FenceLoad() noexcept;
 	void FenceMemory() noexcept;
 
+	// Quick pause in the CPU execution
+	void Pause() noexcept;
+
 	// Returns number of bits set to 1 in 64 bit integer
 	U8 CountBitsSet(U64 val) noexcept;
 	// Returns number of bits set to 1 in 32 bit integer
