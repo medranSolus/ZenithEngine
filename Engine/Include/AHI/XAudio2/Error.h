@@ -23,5 +23,9 @@ namespace ZE::AHI::XAudio2
 #define ZE_XA2_ERROR(hr) ZE::AHI::XAudio2::Error::Make(hr)
 // Check result of the call returning HRESULT and if failed return said error
 #define ZE_XA2_RET_FAILED(call) do { HRESULT __hr = (call); if (FAILED(__hr)) { ZE_BREAK(); return ZE_XA2_ERROR(__hr); } } while (false)
-// Check result of the call returning HRESULT and if failed return said error wrapped in std::unexpected
+// Check result of the call returning HRESULT and if failed return said error in coroutine
+#define ZE_XA2_RET_FAILED_CORO(call) do { HRESULT __hr = (call); if (FAILED(__hr)) { ZE_BREAK(); co_return ZE_XA2_ERROR(__hr); } } while (false)
+// Check result of the call returning HRESULT and if failed return said error (wrapped in std::unexpected)
 #define ZE_XA2_RET_FAILED_EXPECT(call) do { HRESULT __hr = (call); if (FAILED(__hr)) { ZE_BREAK(); return std::unexpected(ZE_XA2_ERROR(__hr)); } } while (false)
+// Check result of the call returning HRESULT and if failed return said error in coroutine (wrapped in std::unexpected)
+#define ZE_XA2_RET_FAILED_EXPECT_CORO(call) do { HRESULT __hr = (call); if (FAILED(__hr)) { ZE_BREAK(); co_return std::unexpected(ZE_XA2_ERROR(__hr)); } } while (false)

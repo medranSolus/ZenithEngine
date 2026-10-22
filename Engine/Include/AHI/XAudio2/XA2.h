@@ -34,7 +34,7 @@ namespace ZE::AHI::XAudio2
 	constexpr float GetPitchLevel(float semitones) noexcept;
 
 	// Common point for creating source voice
-	Expected<IXAudio2SourceVoice*> CreateSourceVoice(IXAudio2* dev, const SFX::AudioDesc& desc, IXAudio2SubmixVoice* voiceGroup = nullptr) noexcept;
+	Expected<IXAudio2SourceVoice*> CreateSourceVoice(IXAudio2* dev, const SFX::AudioDesc& desc, IXAudio2SubmixVoice* voiceGroup, IXAudio2VoiceCallback* callback = nullptr) noexcept;
 
 #pragma region Functions
 	constexpr U32 ComputeSampleRate(U32 sampleRate) noexcept

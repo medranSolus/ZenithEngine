@@ -5,7 +5,10 @@ namespace ZE::AHI::XAudio2
 	Track::~Track()
 	{
 		if (sourceVoice)
+		{
+			Pause();
 			sourceVoice->DestroyVoice();
+		}
 	}
 
 	Expected<Track> Track::Create(SFX::Device& dev, const SFX::AudioBuffer& data, const SFX::SoundGroup* group) noexcept

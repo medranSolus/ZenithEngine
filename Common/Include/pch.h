@@ -272,6 +272,11 @@
 #include "SFX/FileError.h"
 
 /*
+* SFX/AudioBuffer.h
+*/
+#include "SFX/StreamState.h"
+
+/*
 * Standard headers, remove if appears above
 */
 #include <algorithm>

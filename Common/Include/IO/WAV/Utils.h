@@ -17,6 +17,4 @@ namespace ZE::IO::WAV
 
 	// Load and parse WAV file information from disk. Returns file handle pointing at the start of the sample data
 	Expected<SFX::AudioDesc> ParseFileInfo(File& file, U64& dataStartOffset, U64 currentOffset = 0) noexcept;
-	// Load sample data, must first call ParseFileInfo to get the buffer size and then allocate memory for it
-	Status LoadSampleData(File& file, U64 dataStartOffset, U8* sampleBuffer, U32 blockSize, U32 writeOffset) noexcept;
 }

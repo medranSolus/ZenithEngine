@@ -25,7 +25,7 @@ namespace ZE::SFX
 			U64 dataStart = 0;
 			ZE_EXPECT_RET_FAILED(buffer.Desc, IO::WAV::ParseFileInfo(file, dataStart, startOffset));
 			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
-			ZE_CODE_RET_FAILED_EXPECT(IO::WAV::LoadSampleData(file, dataStart, buffer.Samples.get(), buffer.Desc.Bytes, 0));
+			ZE_CODE_RET_FAILED_EXPECT(file.Read(buffer.Samples.get(), buffer.Desc.Bytes, dataStart));
 			break;
 		}
 		case FileSourceType::Flac:

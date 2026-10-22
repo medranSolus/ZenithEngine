@@ -117,13 +117,4 @@ namespace ZE::IO::WAV
 		return buffer;
 #undef ZE_WAV_CHECK_READ
 	}
-
-	Status LoadSampleData(File& file, U64 dataStartOffset, U8* sampleBuffer, U32 blockSize, U32 writeOffset) noexcept
-	{
-		ZE_PERF_GUARD("Read WAV ASYNC+");
-		ZE_ASSERT(sampleBuffer && blockSize, "Buffer must be allocated before loading sample data!");
-		ZE_ASSERT(blockSize + writeOffset <= blockSize, "Reading beyond buffer bounds!");
-
-		return file.Read(sampleBuffer + writeOffset, blockSize, dataStartOffset);
-	}
 }
