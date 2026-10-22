@@ -81,8 +81,7 @@ namespace ZE
 			// Check if task can be started, otherwise skip
 			if (promise->TryClaimExecution())
 				handle.resume();
-			if (handle.done())
-				promise->DecrementRef();
+			promise->DecrementRef();
 		}
 	}
 

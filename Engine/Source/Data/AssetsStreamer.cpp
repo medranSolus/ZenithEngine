@@ -627,7 +627,7 @@ namespace ZE::Data
 				// Decals: $mat.gltf.alphaMode
 
 				// Get diffuse texture
-				Task<void> loadDiffuse(std::noop_coroutine());
+				Task<void> loadDiffuse;
 				if (material.GetTexture(aiTextureType_DIFFUSE, 0, &texFile) == aiReturn_SUCCESS)
 				{
 					loadDiffuse = Settings::GetThreadPool().Schedule(ThreadPriority::Normal,
@@ -646,7 +646,7 @@ namespace ZE::Data
 				}
 
 				// Get normal map texture
-				Task<void> loadNormal(std::noop_coroutine());
+				Task<void> loadNormal;
 				if (material.GetTexture(aiTextureType_NORMALS, 0, &texFile) == aiReturn_SUCCESS)
 				{
 					loadNormal = Settings::GetThreadPool().Schedule(ThreadPriority::Normal,

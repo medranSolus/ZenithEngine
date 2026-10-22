@@ -78,5 +78,8 @@ namespace ZE
 		flags = 0;
 		frameIndex = UINT64_MAX;
 		backbufferCount = 0;
+#if _ZE_MODE_DEBUG
+		ZE_ASSERT(CoroDebugGuard::AllocatedCoros.size() == 0, "Not all coroutine frames has been detroyed properly!");
+#endif
 	}
 }

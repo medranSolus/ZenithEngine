@@ -2,6 +2,7 @@
 #include "BasicTypes.h"
 #include <coroutine>
 #include <memory>
+#include <set>
 
 namespace ZE
 {
@@ -34,6 +35,16 @@ namespace ZE
 #pragma endregion
 
 #pragma region Promise declaration
+#if _ZE_MODE_DEBUG
+	// Debug check if all coroutine frames has been deleted before ending application
+	struct CoroDebugGuard
+	{
+		static inline UA64 AllocID = 0;
+		static inline std::shared_mutex AllocMutex;
+		static inline std::set<U64> AllocatedCoros;
+	};
+#endif
+
 	// Base type for all promises that avoids information about return parameter
 	struct PromiseBase
 	{
@@ -53,15 +64,19 @@ namespace ZE
 			template <typename P>
 			constexpr std::coroutine_handle<> await_suspend(std::coroutine_handle<P> h) noexcept;
 		};
+#if _ZE_MODE_DEBUG
+		U64 AllocID = 0;
+#endif
 
-		PromiseBase() = default;
+		constexpr PromiseBase() noexcept;
 		ZE_CLASS_DEFAULT(PromiseBase);
-		virtual ~PromiseBase() = default;
+		virtual ~PromiseBase();
 
 		constexpr std::suspend_always initial_suspend() const noexcept { return {}; }
 		constexpr void unhandled_exception() const noexcept { /*std::current_exception();*/ }
 		constexpr FinalAwaiter final_suspend() const noexcept { return {}; }
 
+		virtual void IncrementRef() noexcept = 0;
 		virtual void DecrementRef() noexcept = 0;
 		// When succedes, you must execute coroutine yourself
 		virtual bool TryClaimExecution() noexcept = 0;
@@ -117,7 +132,7 @@ namespace ZE
 	public:
 		struct promise_type final : public PromiseReturnBase<R>
 		{
-			UA8 RefCount = 1;
+			UA8 RefCount = 2;
 			std::atomic<PromiseBase::ExecutionState> State = PromiseBase::ExecutionState::NotStarted;
 			std::atomic<std::coroutine_handle<>> Awaiter = {};
 
@@ -126,6 +141,8 @@ namespace ZE
 			virtual ~promise_type() = default;
 
 			constexpr Task<R> get_return_object() noexcept { return Task<R>{ HandleType::from_promise(*this) }; }
+
+			constexpr void IncrementRef() noexcept override { RefCount.fetch_add(1, std::memory_order_release); }
 
 			constexpr void DecrementRef() noexcept override;
 			constexpr bool TryClaimExecution() noexcept override;
@@ -148,7 +165,7 @@ namespace ZE
 
 		constexpr HandleType GetHandle() const noexcept { return handle; }
 		// Allow for thread pool to have reference to promise memory
-		constexpr void SetThreadPoolOwnership() noexcept { if (handle) handle.promise().RefCount.fetch_add(1, std::memory_order_release); }
+		constexpr void SetThreadPoolOwnership() noexcept { if (handle) handle.promise().IncrementRef(); }
 
 		constexpr void Release() noexcept;
 
@@ -176,6 +193,23 @@ namespace ZE
 	};
 
 #pragma region Functions
+	constexpr PromiseBase::PromiseBase() noexcept
+	{
+#if _ZE_MODE_DEBUG
+		AllocID = CoroDebugGuard::AllocID++;
+		LockGuardRW lock(CoroDebugGuard::AllocMutex);
+		CoroDebugGuard::AllocatedCoros.emplace(AllocID);
+#endif
+	}
+
+	inline PromiseBase::~PromiseBase()
+	{
+#if _ZE_MODE_DEBUG
+		LockGuardRW lock(CoroDebugGuard::AllocMutex);
+		CoroDebugGuard::AllocatedCoros.erase(AllocID);
+#endif
+	}
+
 	template <typename P>
 	constexpr std::coroutine_handle<> PromiseBase::FinalAwaiter::await_suspend(std::coroutine_handle<P> h) noexcept
 	{
@@ -187,6 +221,9 @@ namespace ZE
 		// Signal completion to any thread waiting in Get()
 		promise.State.store(PromiseBase::ExecutionState::Completed, std::memory_order_seq_cst);
 		promise.State.notify_all();
+
+		// If noone left waiting for promise, then just delete everything
+		promise.DecrementRef();
 
 		// Resume awaiting coroutine (symmetric transfer)
 		if (continuation)
@@ -215,15 +252,17 @@ namespace ZE
 	template <typename R>
 	constexpr std::coroutine_handle<> Task<R>::Awaiter::await_suspend(std::coroutine_handle<> awaitingHandle) noexcept
 	{
+		auto& promise = Handle.promise();
+
 		// Register for symmetric transfer
-		Handle.promise().Awaiter.store(awaitingHandle, std::memory_order_seq_cst);
+		promise.Awaiter.store(awaitingHandle, std::memory_order_seq_cst);
 
 		// Check if task is not being already executed
-		if (Handle.promise().TryClaimExecution())
+		if (promise.TryClaimExecution())
 			return Handle;
 
 		// Double check if the worker thread hit FinalAwaiter while we assiging Awaiter
-		if (Handle.promise().State.load(std::memory_order_seq_cst) == PromiseBase::ExecutionState::Completed)
+		if (promise.State.load(std::memory_order_seq_cst) == PromiseBase::ExecutionState::Completed)
 			return awaitingHandle;
 
 		return std::noop_coroutine();
