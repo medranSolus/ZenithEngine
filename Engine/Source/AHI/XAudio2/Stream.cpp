@@ -21,7 +21,7 @@ namespace ZE::AHI::XAudio2
 			return false;
 		}
 
-		// Register into the fixed table slot using modulo 4
+		// Register into the fixed table slot
 		Data->WaitTable.at(BufferIdx % SFX::StreamState::BUFFER_COUNT) = h;
 
 		Data->WaitLock.Unlock();
@@ -58,7 +58,12 @@ namespace ZE::AHI::XAudio2
 	void Stream::StreamCallback::OnBufferEnd(void* bufferCtx) noexcept
 	{
 		if (!data->Alive)
+		{
+			// In case of rewind position call
+			--data->NextSubmitBufferIdx;
+			data->NextSubmitBufferIdx.notify_one();
 			return;
+		}
 
 		Settings::GetThreadPool().Schedule(ThreadPriority::High,
 			[](std::shared_ptr<StreamData> data, U64 bufferIdx) noexcept -> Task<void>
@@ -170,14 +175,20 @@ namespace ZE::AHI::XAudio2
 
 	Task<Status> Stream::ResetPosition(bool autoPlay) noexcept
 	{
-		// TODO: causes hitches in audio and memory leaks in coroutines
-
 		Pause();
 		data->Alive = false;
 		data->AbortAllWaiters();
-		data->NextSubmitBufferIdx = 0;
-
+		data->NextSubmitBufferIdx = SFX::StreamState::BUFFER_COUNT;
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
+
+		// Wait quickly till all buffers "ended" after flush
+		U64 awaitingBuffers = SFX::StreamState::BUFFER_COUNT;
+		do
+		{
+			data->NextSubmitBufferIdx.wait(awaitingBuffers);
+			awaitingBuffers = data->NextSubmitBufferIdx;
+		} while (awaitingBuffers);
+		data->NextSubmitBufferIdx = 0;
 		data->Alive = true;
 
 		// Rewind and load initial data

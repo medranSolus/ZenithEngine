@@ -2,7 +2,7 @@
 
 namespace ZE::AHI::XAudio2
 {
-	Expected<IXAudio2SourceVoice*> CreateSourceVoice(IXAudio2* dev, const SFX::AudioDesc& desc, IXAudio2SubmixVoice* voiceGroup) noexcept
+	Expected<IXAudio2SourceVoice*> CreateSourceVoice(IXAudio2* dev, const SFX::AudioDesc& desc, IXAudio2SubmixVoice* voiceGroup, IXAudio2VoiceCallback* callback) noexcept
 	{
 		ZE_ASSERT(desc.Bytes <= XAUDIO2_MAX_BUFFER_BYTES, "Audio data too large!");
 
@@ -22,7 +22,7 @@ namespace ZE::AHI::XAudio2
 		XAUDIO2_SEND_DESCRIPTOR sendDest = { 0, voiceGroup };
 		XAUDIO2_VOICE_SENDS sendList = { 1, &sendDest };
 		ZE_XA2_RET_FAILED_EXPECT(dev->CreateSourceVoice(&src, &format.Format, 0,
-			XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, voiceGroup ? &sendList : nullptr, nullptr));
+			XAUDIO2_DEFAULT_FREQ_RATIO, callback, voiceGroup ? &sendList : nullptr, nullptr));
 		return src;
 	}
 }
