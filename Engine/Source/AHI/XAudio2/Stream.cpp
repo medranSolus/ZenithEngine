@@ -175,11 +175,15 @@ namespace ZE::AHI::XAudio2
 
 	Task<Status> Stream::ResetPosition(bool autoPlay) noexcept
 	{
-		Pause();
 		data->Alive = false;
+		Pause();
 		data->AbortAllWaiters();
 		data->NextSubmitBufferIdx = SFX::StreamState::BUFFER_COUNT;
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
+
+		// Rewind and load initial data
+		ZE_CODE_RET_FAILED_CORO(SFX::RewindToBegining(data->StateInfo));
+		ZE_CODE_RET_FAILED_CORO(co_await SFX::ReadNextChunk(data->StateInfo, *data->FileHandle.get(), data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get()));
 
 		// Wait quickly till all buffers "ended" after flush
 		U64 awaitingBuffers = SFX::StreamState::BUFFER_COUNT;
@@ -188,13 +192,8 @@ namespace ZE::AHI::XAudio2
 			data->NextSubmitBufferIdx.wait(awaitingBuffers);
 			awaitingBuffers = data->NextSubmitBufferIdx;
 		} while (awaitingBuffers);
-		data->NextSubmitBufferIdx = 0;
 		data->Alive = true;
-
-		// Rewind and load initial data
-		ZE_CODE_RET_FAILED_CORO(SFX::RewindToBegining(data->StateInfo));
-		ZE_CODE_RET_FAILED_CORO(co_await SFX::ReadNextChunk(data->StateInfo, *data->FileHandle.get(), data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get()));
-
+		
 		ZE_CODE_RET_FAILED_CORO(SubmitInitialBuffers());
 		if (autoPlay)
 			Resume();
