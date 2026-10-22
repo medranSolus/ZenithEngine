@@ -24,7 +24,6 @@ namespace ZE::AHI::XAudio2
 			Ptr<IXAudio2SourceVoice> SourceVoice;
 
 			UA64 NextSubmitBufferIdx = 0;
-			UA64 NextLoadedBufferIdx = 0;
 			BoolAtom Alive = true;
 			std::array<std::coroutine_handle<>, SFX::StreamState::BUFFER_COUNT> WaitTable;
 			SpinLock WaitLock;

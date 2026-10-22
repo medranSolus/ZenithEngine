@@ -87,7 +87,7 @@ namespace ZE::AHI::XAudio2
 					buffer.LoopBegin = 0;
 					buffer.LoopLength = 0;
 					buffer.LoopCount = 0;
-					buffer.pContext = nullptr;
+					buffer.pContext = reinterpret_cast<void*>(bufferIdx + SFX::StreamState::BUFFER_COUNT); // Set which next buffer to load in this region
 
 					// Optional wait till this index turn or return if stream is being destroyed
 					if (!co_await StreamData::Awaiter{ data.get(), bufferIdx })
@@ -114,7 +114,7 @@ namespace ZE::AHI::XAudio2
 				if (h)
 					h.resume();
 				co_return;
-			}, data, data->NextLoadedBufferIdx++);
+			}, data, reinterpret_cast<U64>(bufferCtx));
 	}
 
 	Status Stream::SubmitInitialBuffers() noexcept
@@ -128,9 +128,9 @@ namespace ZE::AHI::XAudio2
 		buffer.LoopBegin = 0;
 		buffer.LoopLength = 0;
 		buffer.LoopCount = 0;
-		buffer.pContext = nullptr;
 		for (U8 i = 0; i < SFX::StreamState::BUFFER_COUNT; ++i)
 		{
+			buffer.pContext = reinterpret_cast<void*>(i);
 			ZE_XA2_RET_FAILED(data->SourceVoice->SubmitSourceBuffer(&buffer, nullptr));
 			buffer.pAudioData += data->StateInfo.AudioBlockSize;
 		}
@@ -175,7 +175,6 @@ namespace ZE::AHI::XAudio2
 		Pause();
 		data->Alive = false;
 		data->AbortAllWaiters();
-		data->NextLoadedBufferIdx = 0;
 		data->NextSubmitBufferIdx = 0;
 
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
