@@ -460,6 +460,7 @@ if(${ZE_COMPILER_MSVC})
 		/wd4255 # Would otherwise force declaration of func(void) when no arguments are specified
 		/wd4263 # A class function definition has the same name as a virtual function in a base class but not the same number or type of arguments
 		/wd4265 # Class with virtual functions does not have virutal destructor
+		/wd4324 # Structure was padded due to alignment specifier
 		/wd4355 # 'this' used in base member initializer list
 		/wd4365 # Signed/unsigned mismatch
 		/wd4464 # Relative include path contains '..'

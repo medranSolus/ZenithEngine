@@ -3,10 +3,14 @@
 
 namespace ZE
 {
-    // Fast test-and-set spin lock for small code sections
-    class SpinLock final
+    // Cache line size boundary for spin lock memory safety
+#define ZE_SPIN_LOCK_CACHE_LINE_SIZE 64
+
+    // Fast test-and-test-and-set spin lock for small code sections
+    class alignas(ZE_SPIN_LOCK_CACHE_LINE_SIZE) SpinLock final
     {
         BoolAtom locked = false;
+        U8 cachePadding[ZE_SPIN_LOCK_CACHE_LINE_SIZE - sizeof(BoolAtom)]; // Padding to not invalidate cache line with writes to adjacent locations
 
     public:
         SpinLock() = default;
@@ -18,4 +22,5 @@ namespace ZE
 
         void Lock() noexcept;
     };
+    static_assert(sizeof(SpinLock) == ZE_SPIN_LOCK_CACHE_LINE_SIZE, "Invalid padding of the SpinLock!");
 }

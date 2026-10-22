@@ -8,7 +8,7 @@ namespace ZE
         while (true)
         {
             // Read-only spin (prevents cache line invalidation storms)
-            if (!locked.load(std::memory_order_relaxed))
+            if (!IsLocked())
             {
                 // Try to acquire exclusive access
                 if (!locked.exchange(true, std::memory_order_acquire))
