@@ -28,8 +28,8 @@ namespace ZE::SFX
 
 	// Get audio file description from any file region on disk for async streaming
 	Expected<StreamState> LoadStreamFileInfo(IO::File& file, U64 startOffset, FileSourceType type, AudioDesc& audioInfo) noexcept;
-	// Asynchronously load next chunk in stream to the memory
-	Task<Status> ReadNextChunk(StreamState& state, IO::File& file, U32 readSize, U8* destBuffer) noexcept;
+	// Asynchronously load next chunk in stream to the memory (can return EOF if looping is not enabled)
+	Task<Status> ReadNextChunk(StreamState& state, IO::File& file, U32 readSize, U8* destBuffer, bool loopAudio) noexcept;
 	// Move current stream position to the begining of the track
 	Status RewindToBegining(StreamState& state) noexcept;
 }

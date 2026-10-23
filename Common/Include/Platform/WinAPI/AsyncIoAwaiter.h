@@ -69,7 +69,11 @@ namespace ZE::Platform::WinAPI
     constexpr Status AsyncIoAwaiter<IS_READ, BuffBtr>::await_resume() const noexcept
     {
         if (Overlapped.Error)
+        {
+            if (Overlapped.Error.value() == ERROR_HANDLE_EOF)
+                return IO::EofResult::Make(0);
             return Overlapped.Error;
+        }
 
         if (Size != Overlapped.BytesTransferred)
             return IO::EofResult::Make(Overlapped.BytesTransferred);

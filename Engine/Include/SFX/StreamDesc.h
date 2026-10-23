@@ -9,6 +9,7 @@ namespace ZE::SFX
 		std::shared_ptr<IO::File> FileHandle;
 		U64 FileStart = 0;
 		FileSourceType SourceType = FileSourceType::Unknown;
+		bool LoopAudio = false;
 		const SoundGroup* Group = nullptr;
 	};
 }

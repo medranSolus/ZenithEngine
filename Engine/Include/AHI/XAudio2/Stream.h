@@ -20,11 +20,13 @@ namespace ZE::AHI::XAudio2
 
 			std::unique_ptr<U8[]> RingBuffer;
 			std::shared_ptr<IO::File> FileHandle;
+			bool EnableLoop = false;
 			SFX::StreamState StateInfo = {};
 			Ptr<IXAudio2SourceVoice> SourceVoice;
 
 			UA64 NextSubmitBufferIdx = 0;
 			BoolAtom Alive = true;
+			UA8 FinishedBuffers = 0;
 			std::array<std::coroutine_handle<>, SFX::StreamState::BUFFER_COUNT> WaitTable;
 			SpinLock WaitLock;
 
@@ -47,7 +49,7 @@ namespace ZE::AHI::XAudio2
 			void OnStreamEnd() noexcept override {}
 			void OnBufferStart(void* bufferCtx) noexcept override {}
 			void OnLoopEnd(void* bufferCtx) noexcept override {}
-			void OnVoiceError(void* bufferCtx, HRESULT error) noexcept override {}
+			void OnVoiceError(void* bufferCtx, HRESULT error) noexcept override { ZE_CODE_ERROR(ZE_XA2_ERROR(error), "Error while playing stream number " + std::to_string(reinterpret_cast<U64>(bufferCtx))); }
 
 			void OnBufferEnd(void* bufferCtx) noexcept override;
 		};
@@ -64,12 +66,14 @@ namespace ZE::AHI::XAudio2
 
 		static Expected<Stream> Create(SFX::Device& dev, const SFX::StreamDesc& desc) noexcept;
 
-		void SetVolume(float decibels) noexcept { data->SourceVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW); }
-		void SetPitch(float semitones) noexcept { data->SourceVoice->SetFrequencyRatio(GetPitchLevel(semitones), XAUDIO2_COMMIT_NOW); }
+		void SetVolume(float decibels) noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW); }
+		void SetPitch(float semitones) noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->SetFrequencyRatio(GetPitchLevel(semitones), XAUDIO2_COMMIT_NOW); }
 
-		void Resume() noexcept { data->SourceVoice->Start(0, XAUDIO2_COMMIT_NOW); }
-		void Pause() noexcept { data->SourceVoice->Stop(0, XAUDIO2_COMMIT_NOW); }
+		void Resume() noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->Start(0, XAUDIO2_COMMIT_NOW); }
+		void Pause() noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->Stop(0, XAUDIO2_COMMIT_NOW); }
 
-		Task<Status> ResetPosition(bool autoPlay) noexcept;
+		bool IsLooping() const noexcept { ZE_ASSERT(data, "Not initialized!"); return data->EnableLoop; }
+
+		Task<Status> ResetPosition(bool autoPlay, bool enableLoop) noexcept;
 	};
 }

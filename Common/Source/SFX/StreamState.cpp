@@ -233,7 +233,7 @@ namespace ZE::SFX
 		return state;
 	}
 
-	Task<Status> ReadNextChunk(StreamState& state, IO::File& file, U32 readSize, U8* destBuffer) noexcept
+	Task<Status> ReadNextChunk(StreamState& state, IO::File& file, U32 readSize, U8* destBuffer, bool loopAudio) noexcept
 	{
 		ZE_ASSERT(destBuffer, "Empty output buffer!");
 
@@ -254,12 +254,19 @@ namespace ZE::SFX
 				if (IO::EofResult::IsEOF(stat))
 				{
 					U32 bytesRead = IO::EofResult::GetRealBytes(stat);
-					readSize -= bytesRead;
-
-					stat = co_await file.ReadAsync(destBuffer + bytesRead, readSize, state.WAV.DataStart);
-					if (stat)
+					if (loopAudio)
+					{
+						readSize -= bytesRead;
+						stat = co_await file.ReadAsync(destBuffer + bytesRead, readSize, state.WAV.DataStart);
+						if (stat)
+							co_return stat;
+						state.WAV.CurrentPosition = state.WAV.DataStart + readSize;
+					}
+					else
+					{
+						state.WAV.CurrentPosition += bytesRead;
 						co_return stat;
-					state.WAV.CurrentPosition = state.WAV.DataStart + readSize;
+					}
 				}
 				else
 					co_return stat;

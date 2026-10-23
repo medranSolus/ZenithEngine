@@ -30,6 +30,8 @@ namespace ZE::SFX
 		constexpr void Resume() noexcept { ZE_AHI_BACKEND_CALL(Resume); }
 		constexpr void Pause() noexcept { ZE_AHI_BACKEND_CALL(Pause); }
 
-		Task<Status> ResetPosition(bool autoPlay) noexcept { ZE_AHI_BACKEND_CALL_RET(ResetPosition, autoPlay); }
+		bool IsLooping() const noexcept { ZE_AHI_BACKEND_CALL_RET(IsLooping); }
+
+		Task<Status> ResetPosition(bool autoPlay, bool enableLoop) noexcept { ZE_AHI_BACKEND_CALL_RET(ResetPosition, autoPlay, enableLoop); }
 	};
 }
