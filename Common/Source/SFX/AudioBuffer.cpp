@@ -1,15 +1,13 @@
 #include "SFX/AudioBuffer.h"
 #include "SFX/FileError.h"
+#include "SFX/FileUtils.h"
 #include "IO/WAV/Utils.h"
-ZE_WARNING_PUSH
-#include "vorbis/vorbisfile.h"
-#include "opusfile.h"
-ZE_WARNING_POP
 
 namespace ZE::SFX
 {
 	Expected<AudioBuffer> LoadFile(IO::File& file, U64 startOffset, U64 regionSize, FileSourceType type) noexcept
 	{
+		U32 writeOffset = 0;
 		AudioBuffer buffer = {};
 		switch (type)
 		{
@@ -25,7 +23,20 @@ namespace ZE::SFX
 			U64 dataStart = 0;
 			ZE_EXPECT_RET_FAILED(buffer.Desc, IO::WAV::ParseFileInfo(file, dataStart, startOffset));
 			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
-			ZE_CODE_RET_FAILED_EXPECT(file.Read(buffer.Samples.get(), buffer.Desc.Bytes, dataStart));
+			
+			Status stat = file.Read(buffer.Samples.get(), buffer.Desc.Bytes, dataStart);
+			if (stat)
+			{
+				if (IO::EofResult::IsEOF(stat))
+				{
+					writeOffset = IO::EofResult::GetRealBytes(stat);
+					ZE_WARNING("While reading WAV file expected " + std::to_string(buffer.Desc.Bytes) + " bytes but got only " + std::to_string(writeOffset));
+				}
+				else
+					return std::unexpected(stat);
+			}
+			else
+				writeOffset = buffer.Desc.Bytes;
 			break;
 		}
 		case FileSourceType::Flac:
@@ -209,6 +220,7 @@ namespace ZE::SFX
 				if (!ctx.Code)
 					FLAC__stream_decoder_process_until_end_of_stream(decoder);
 				FLAC__stream_decoder_finish(decoder);
+				writeOffset = ctx.WriteOffset;
 			}
 			else
 				ctx.Code = ZE_FLAC_DECODER_INIT_ERROR(initStatus);
@@ -276,136 +288,21 @@ namespace ZE::SFX
 			ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(&ctx, &decoder, nullptr, 0, decoder.callbacks)));
 			if (!ctx.Code)
 			{
-				vorbis_info* streamInfo = ov_info(&decoder, -1);
-				if (streamInfo && streamInfo->channels <= 8 && streamInfo->channels > 0)
+				auto expDesc = FileUtils::GetOggVorbisInfo(decoder);
+				if (expDesc)
 				{
-					buffer.Desc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
-					// But requires remapping to correct order
-					buffer.Desc.Channels = SFX::GetDefaultMask(Utils::SafeCast<U8>(streamInfo->channels));
-					buffer.Desc.BitsPerSample = 32;
-					buffer.Desc.IsFloat = true;
+					buffer.Desc = std::move(*expDesc);
+					buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
-					S64 samples = ov_pcm_total(&decoder, -1);
-					if (samples > 0)
-					{
-						buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * streamInfo->channels);
-						buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
-
-						// Create final interleaved channel mappings
-						U8 channelMapping[8] = {};
-						switch (streamInfo->channels)
-						{
-						default:
-						case 1:
-						case 2:
-						case 4:
-						{
-							// Channel order is the same
-							for (U8 i = 0; i < Utils::SafeCast<U8>(streamInfo->channels); ++i)
-								channelMapping[i] = i;
-							break;
-						}
-						case 3:
-						case 5:
-						case 6:
-						case 7:
-						case 8:
-						{
-							// All require swapping FC and FR order
-							channelMapping[0] = 0;
-							channelMapping[1] = 2;
-							channelMapping[2] = 1;
-
-							switch (streamInfo->channels)
-							{
-							default:
-							case 3:
-								// Source: FL, FC, FR
-								// Dest:   FL, FR, FC
-								break;
-							case 5:
-							{
-								// Source: FL, FC, FR, BL, BR
-								// Dest:   FL, FR, FC, BL, BR
-								channelMapping[3] = 3;
-								channelMapping[4] = 4;
-								break;
-							}
-							case 6:
-							{
-								// Source: FL, FC, FR, BL, BR, LFE
-								// Dest:   FL, FR, FC, LFE, BL, BR
-								channelMapping[3] = 4;
-								channelMapping[4] = 5;
-								channelMapping[5] = 3;
-								break;
-							}
-							case 7:
-							{
-								// Source: FL, FC, FR, SL, SR, BC, LFE
-								// Dest:   FL, FR, FC, LFE, BC, SL, SR
-								channelMapping[3] = 5;
-								channelMapping[4] = 6;
-								channelMapping[5] = 4;
-								channelMapping[6] = 3;
-								break;
-							}
-							case 8:
-							{
-								// Source: FL, FC, FR, SL, SR, BL, BR, LFE
-								// Dest:   FL, FR, FC, LFE, BL, BR, SL, SR
-								channelMapping[3] = 6;
-								channelMapping[4] = 7;
-								channelMapping[5] = 4;
-								channelMapping[6] = 5;
-								channelMapping[7] = 3;
-								break;
-							}
-							}
-							break;
-						}
-						}
-
-						S64 samplesRead = 0;
-						U32 writeOffset = 0;
-						float* interleavedSamples = reinterpret_cast<float*>(buffer.Samples.get());
-						do
-						{
-							int currentStream = 0;
-							float** readSamples = nullptr;
-							samplesRead = ov_read_float(&decoder, reinterpret_cast<float***>(&readSamples), 4096, &currentStream);
-							if (samplesRead > 0 && readSamples)
-							{
-								for (S64 i = 0; i < samplesRead; ++i)
-								{
-									for (int c = 0; c < streamInfo->channels; ++c)
-										interleavedSamples[channelMapping[c]] = readSamples[c][i];
-									interleavedSamples += streamInfo->channels;
-									writeOffset += streamInfo->channels * sizeof(float);
-								}
-							}
-							else if (samplesRead == OV_HOLE)
-								samplesRead = 1;
-							else if (samplesRead < 0)
-								ctx.Code = ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samplesRead));
-						} while (samplesRead > 0);
-						ZE_ASSERT(buffer.Desc.Bytes >= writeOffset, "Shouldn't happen!");
-
-						// Re-fit buffer to proper size
-						if (writeOffset < buffer.Desc.Bytes)
-						{
-							auto audioBuffer = std::make_shared_for_overwrite<U8[]>(writeOffset);
-							std::memcpy(audioBuffer.get(), buffer.Samples.get(), writeOffset);
-							buffer.Samples = std::move(audioBuffer);
-							buffer.Desc.Bytes = writeOffset;
-							samples = writeOffset / (2 * streamInfo->channels);
-						}
-					}
+					auto expWriteBytes = FileUtils::ReadOggVorbis(decoder, buffer.Desc.Bytes,
+						buffer.Desc.Channels, reinterpret_cast<float*>(buffer.Samples.get()));
+					if (expWriteBytes)
+						writeOffset = *expWriteBytes;
 					else
-						ctx.Code = ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples));
+						ctx.Code = expWriteBytes.error();
 				}
 				else
-					ctx.Code = ZE_VORBIS_ERROR(OV_FALSE);
+					ctx.Code = expDesc.error();
 				ov_clear(&decoder);
 			}
 
@@ -470,102 +367,21 @@ namespace ZE::SFX
 			OggOpusFile* decoder = op_open_callbacks(&ctx, &opusCallbacks, nullptr, 0, &error);
 			if (decoder)
 			{
-				ZE_ASSERT(op_link_count(decoder) == 1, "By default only single link streams are supported!");
-				
-				S64 samples = op_pcm_total(decoder, -1);
-				if (samples > 0)
+				auto expDesc = FileUtils::GetOggOpusInfo(decoder);
+				if (expDesc)
 				{
-					U8 channelCount = Utils::SafeCast<U8>(op_channel_count(decoder, -1));
-
-					buffer.Desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * channelCount);
-					buffer.Desc.SampleRate = 48000;
-					buffer.Desc.Channels = GetDefaultMask(channelCount);
-					buffer.Desc.BitsPerSample = 32;
-					buffer.Desc.IsFloat = true;
+					buffer.Desc = std::move(*expDesc);
 					buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
-					S32 samplesRead = 0;
-					S32 bufferSpace = Utils::SafeCast<S32>(samples * channelCount);
-					float* interleavedSamples = reinterpret_cast<float*>(buffer.Samples.get());
-					do
-					{
-						samplesRead = op_read_float(decoder, interleavedSamples, bufferSpace, nullptr);
-						if (samplesRead > 0)
-						{
-							S32 offset = samplesRead * channelCount;
-							bufferSpace -= offset;
-							interleavedSamples += offset;
-						}
-						else if (samplesRead == OP_HOLE)
-							samplesRead = 1;
-						else if (samplesRead < 0)
-							ctx.Code = ZE_OPUS_ERROR(samplesRead);
-					} while (samplesRead > 0);
-
-					// Change to expected interleaving of samples (same order as for vorbis)
-					switch (channelCount)
-					{
-					default:
-					case 1:
-					case 2:
-					case 4:
-						// Same channel order
-						break;
-					case 3:
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					{
-						interleavedSamples = reinterpret_cast<float*>(buffer.Samples.get());
-						for (S64 i = 0; i < samples; ++i)
-						{
-							// All require swapping FC and FR order
-							std::swap(interleavedSamples[1], interleavedSamples[2]);
-
-							switch (channelCount)
-							{
-							default:
-							case 3:
-							case 5:
-								break;
-							case 6:
-							{
-								float lfe = interleavedSamples[3];
-								interleavedSamples[3] = interleavedSamples[4];
-								interleavedSamples[4] = interleavedSamples[5];
-								interleavedSamples[5] = lfe;
-								break;
-							}
-							case 7:
-							{
-								float sr = interleavedSamples[4];
-								interleavedSamples[4] = interleavedSamples[5];
-								interleavedSamples[5] = interleavedSamples[3];
-								interleavedSamples[3] = interleavedSamples[6];
-								interleavedSamples[6] = sr;
-								break;
-							}
-							case 8:
-							{
-								float sr = interleavedSamples[4];
-								interleavedSamples[4] = interleavedSamples[5];
-								interleavedSamples[5] = interleavedSamples[6];
-								interleavedSamples[6] = interleavedSamples[3];
-								interleavedSamples[3] = interleavedSamples[7];
-								interleavedSamples[7] = sr;
-								break;
-							}
-							}
-							interleavedSamples += channelCount;
-						}
-						break;
-					}
-					}
+					auto expWriteBytes = FileUtils::ReadOggOpus(decoder, buffer.Desc.Bytes,
+						buffer.Desc.Channels, reinterpret_cast<float*>(buffer.Samples.get()));
+					if (expWriteBytes)
+						writeOffset = *expWriteBytes;
+					else
+						ctx.Code = expWriteBytes.error();
 				}
 				else
-					ctx.Code = ZE_OPUS_ERROR(Utils::SafeCast<S32>(samples));
-
+					ctx.Code = expDesc.error();
 				op_free(decoder);
 			}
 			else
@@ -575,6 +391,15 @@ namespace ZE::SFX
 				return std::unexpected(ctx.Code);
 			break;
 		}
+		}
+
+		// Re-fit buffer to proper size
+		if (writeOffset < buffer.Desc.Bytes)
+		{
+			auto audioBuffer = std::make_shared_for_overwrite<U8[]>(writeOffset);
+			std::memcpy(audioBuffer.get(), buffer.Samples.get(), writeOffset);
+			buffer.Samples = std::move(audioBuffer);
+			buffer.Desc.Bytes = writeOffset;
 		}
 		return buffer;
 	}
