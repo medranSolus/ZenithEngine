@@ -232,79 +232,16 @@ namespace ZE::SFX
 		}
 		case FileSourceType::OggVorbis:
 		{
-			struct OggVorbisCtx
-			{
-				IO::File& File;
-				U64 RegionSize = 0;
-				Status Code;
-				U64 ReadOffset = 0;
-			};
+			FileUtils::OggVorbisCtx ctx = {};
+			ZE_EXPECT_RET_FAILED(ctx, FileUtils::GetOggVorbisCtx(file, regionSize, buffer.Desc));
+			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
-			OggVorbisCtx ctx = { file, regionSize };
-			OggVorbis_File decoder = {};
-			decoder.callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
-				{
-					ZE_ASSERT(ctx, "Empty vorbis file context!");
-
-					auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
-					U32 bytes = Utils::SafeCast<U32>(size * count);
-					context.Code = context.File.Read(buffer, bytes, context.ReadOffset);
-
-					if (context.Code)
-					{
-						if (IO::EofResult::IsEOF(context.Code))
-						{
-							bytes = IO::EofResult::GetRealBytes(context.Code);
-							context.ReadOffset += bytes;
-							count = bytes / size;
-							context.Code = {};
-						}
-						else
-							count = 0;
-					}
-					else
-						context.ReadOffset += bytes;
-					return count;
-				};
-			decoder.callbacks.seek_func = [](void* ctx, ogg_int64_t offset, int whence) noexcept -> int
-				{
-					ZE_ASSERT(ctx, "Empty vorbis file context!");
-
-					auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
-					if (whence == SEEK_END)
-						offset = context.RegionSize - offset;
-					else if (whence == SEEK_CUR)
-						offset += context.ReadOffset;
-					context.ReadOffset = Utils::SafeCast<U64>(offset);
-					return 0;
-				};
-			decoder.callbacks.close_func = nullptr;
-			decoder.callbacks.tell_func = [](void* ctx) noexcept -> long
-				{
-					ZE_ASSERT(ctx, "Empty vorbis file context!");
-					return Utils::SafeCast<long>(reinterpret_cast<OggVorbisCtx*>(ctx)->ReadOffset);
-				};
-
-			ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(&ctx, &decoder, nullptr, 0, decoder.callbacks)));
-			if (!ctx.Code)
-			{
-				auto expDesc = FileUtils::GetOggVorbisInfo(decoder);
-				if (expDesc)
-				{
-					buffer.Desc = std::move(*expDesc);
-					buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
-
-					auto expWriteBytes = FileUtils::ReadOggVorbis(decoder, buffer.Desc.Bytes,
-						buffer.Desc.Channels, reinterpret_cast<float*>(buffer.Samples.get()));
-					if (expWriteBytes)
-						writeOffset = *expWriteBytes;
-					else
-						ctx.Code = expWriteBytes.error();
-				}
-				else
-					ctx.Code = expDesc.error();
-				ov_clear(&decoder);
-			}
+			auto expWriteBytes = FileUtils::ReadOggVorbis(ctx, buffer.Desc.Bytes, reinterpret_cast<float*>(buffer.Samples.get()));
+			if (expWriteBytes)
+				writeOffset = *expWriteBytes;
+			else
+				ctx.Code = expWriteBytes.error();
+			ov_clear(&ctx.Decoder);
 
 			if (ctx.Code)
 				return std::unexpected(ctx.Code);
@@ -312,80 +249,16 @@ namespace ZE::SFX
 		}
 		case FileSourceType::OggOpus:
 		{
-			struct OggOpusCtx
-			{
-				IO::File& File;
-				U64 RegionSize = 0;
-				Status Code;
-				U64 ReadOffset = 0;
-			};
+			FileUtils::OggOpusCtx ctx = {};
+			ZE_EXPECT_RET_FAILED(ctx, FileUtils::GetOggOpusCtx(file, regionSize, buffer.Desc));
+			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
-			OggOpusCtx ctx = { file, regionSize };
-			OpusFileCallbacks opusCallbacks = {};
-			opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bytes) noexcept -> int
-				{
-					ZE_ASSERT(ctx, "Empty opus file context!");
-
-					auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
-					context.Code = context.File.Read(buffer, Utils::SafeCast<U32>(bytes), context.ReadOffset);
-
-					if (context.Code)
-					{
-						if (IO::EofResult::IsEOF(context.Code))
-						{
-							bytes = Utils::SafeCast<int>(IO::EofResult::GetRealBytes(context.Code));
-							context.ReadOffset += bytes;
-							context.Code = {};
-						}
-						else
-							bytes = 0;
-					}
-					else
-						context.ReadOffset += bytes;
-					return bytes;
-				};
-			opusCallbacks.seek = [](void* ctx, opus_int64 offset, int whence) noexcept -> int
-				{
-					ZE_ASSERT(ctx, "Empty opus file context!");
-
-					auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
-					if (whence == SEEK_END)
-						offset = context.RegionSize - offset;
-					else if (whence == SEEK_CUR)
-						offset += context.ReadOffset;
-					context.ReadOffset = Utils::SafeCast<U64>(offset);
-					return 0;
-				};
-			opusCallbacks.tell = [](void* ctx) noexcept -> opus_int64
-				{
-					ZE_ASSERT(ctx, "Empty opus file context!");
-					return Utils::SafeCast<opus_int64>(reinterpret_cast<OggOpusCtx*>(ctx)->ReadOffset);
-				};
-			opusCallbacks.close = nullptr;
-
-			int error = 0;
-			OggOpusFile* decoder = op_open_callbacks(&ctx, &opusCallbacks, nullptr, 0, &error);
-			if (decoder)
-			{
-				auto expDesc = FileUtils::GetOggOpusInfo(decoder);
-				if (expDesc)
-				{
-					buffer.Desc = std::move(*expDesc);
-					buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
-
-					auto expWriteBytes = FileUtils::ReadOggOpus(decoder, buffer.Desc.Bytes,
-						buffer.Desc.Channels, reinterpret_cast<float*>(buffer.Samples.get()));
-					if (expWriteBytes)
-						writeOffset = *expWriteBytes;
-					else
-						ctx.Code = expWriteBytes.error();
-				}
-				else
-					ctx.Code = expDesc.error();
-				op_free(decoder);
-			}
+			auto expWriteBytes = FileUtils::ReadOggOpus(ctx, buffer.Desc.Bytes, reinterpret_cast<float*>(buffer.Samples.get()));
+			if (expWriteBytes)
+				writeOffset = *expWriteBytes;
 			else
-				ctx.Code = ZE_OPUS_ERROR(error);
+				ctx.Code = expWriteBytes.error();
+			op_free(ctx.Decoder);
 
 			if (ctx.Code)
 				return std::unexpected(ctx.Code);

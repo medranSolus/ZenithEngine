@@ -2,34 +2,84 @@
 
 namespace ZE::SFX::FileUtils
 {
-	Expected<AudioDesc> GetOggVorbisInfo(OggVorbis_File& decoder) noexcept
+	Expected<OggVorbisCtx> GetOggVorbisCtx(IO::File& file, U64 regionSize, AudioDesc& audioDesc) noexcept
 	{
-		vorbis_info* streamInfo = ov_info(&decoder, -1);
+		OggVorbisCtx ctx = { &file, regionSize };
+		ctx.Decoder.callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
+			{
+				ZE_ASSERT(ctx, "Empty vorbis file context!");
+
+				auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
+				ZE_ASSERT(context.File, "Empty vorbis file handle!");
+
+				U32 bytes = Utils::SafeCast<U32>(size * count);
+				context.Code = context.File->Read(buffer, bytes, context.ReadOffset);
+
+				if (context.Code)
+				{
+					if (IO::EofResult::IsEOF(context.Code))
+					{
+						bytes = IO::EofResult::GetRealBytes(context.Code);
+						context.ReadOffset += bytes;
+						count = bytes / size;
+						context.Code = {};
+					}
+					else
+						count = 0;
+				}
+				else
+					context.ReadOffset += bytes;
+				return count;
+			};
+		ctx.Decoder.callbacks.seek_func = [](void* ctx, ogg_int64_t offset, int whence) noexcept -> int
+			{
+				ZE_ASSERT(ctx, "Empty vorbis file context!");
+
+				auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
+				if (whence == SEEK_END)
+					offset = context.RegionSize - offset;
+				else if (whence == SEEK_CUR)
+					offset += context.ReadOffset;
+				context.ReadOffset = Utils::SafeCast<U64>(offset);
+				return 0;
+			};
+		ctx.Decoder.callbacks.close_func = nullptr;
+		ctx.Decoder.callbacks.tell_func = [](void* ctx) noexcept -> long
+			{
+				ZE_ASSERT(ctx, "Empty vorbis file context!");
+				return Utils::SafeCast<long>(reinterpret_cast<OggVorbisCtx*>(ctx)->ReadOffset);
+			};
+
+		ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(&ctx, &ctx.Decoder, nullptr, 0, ctx.Decoder.callbacks)));
+		ZE_CODE_RET_FAILED_EXPECT(ctx.Code);
+
+		vorbis_info* streamInfo = ov_info(&ctx.Decoder, -1);
 		if (!streamInfo || streamInfo->channels > 8 && streamInfo->channels <= 0)
 			return std::unexpected(ZE_VORBIS_ERROR(OV_FALSE));
 
-		S64 samples = ov_pcm_total(&decoder, -1);
+		ctx.ChannelCount = Utils::SafeCast<U8>(streamInfo->channels);
+		S64 samples = ov_pcm_total(&ctx.Decoder, -1);
 		if (samples < 0)
 			return std::unexpected(ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples)));
 
-		AudioDesc desc = {};
-		desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * streamInfo->channels);
-		desc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
+		audioDesc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * ctx.ChannelCount);
+		audioDesc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
 		// But requires remapping to correct order
-		desc.Channels = SFX::GetDefaultMask(Utils::SafeCast<U8>(streamInfo->channels));
-		desc.BitsPerSample = 32;
-		desc.IsFloat = true;
-		return desc;
+		audioDesc.Channels = SFX::GetDefaultMask(ctx.ChannelCount);
+		audioDesc.BitsPerSample = 32;
+		audioDesc.IsFloat = true;
+
+		return ctx;
 	}
 
-	Expected<U32> ReadOggVorbis(OggVorbis_File& decoder, U32 bytes, ChannelMask mask, float* interleavedSamples) noexcept
+	Expected<U32> ReadOggVorbis(OggVorbisCtx& ctx, U32 bytes, float* interleavedSamples) noexcept
 	{
+		ZE_ASSERT(ctx.Decoder.callbacks.read_func, "Empty decoder handle!");
 		ZE_ASSERT(interleavedSamples, "Empty output samples buffer!");
-		const U8 channelCount = Intrin::CountBitsSet(static_cast<U32>(mask));
 
 		// Create final interleaved channel mappings
 		U8 channelMapping[8] = {};
-		switch (channelCount)
+		switch (ctx.ChannelCount)
 		{
 		default:
 		case 1:
@@ -37,7 +87,7 @@ namespace ZE::SFX::FileUtils
 		case 4:
 		{
 			// Channel order is the same
-			for (U8 i = 0; i < channelCount; ++i)
+			for (U8 i = 0; i < ctx.ChannelCount; ++i)
 				channelMapping[i] = i;
 			break;
 		}
@@ -52,7 +102,7 @@ namespace ZE::SFX::FileUtils
 			channelMapping[1] = 2;
 			channelMapping[2] = 1;
 
-			switch (channelCount)
+			switch (ctx.ChannelCount)
 			{
 			default:
 			case 3:
@@ -102,24 +152,24 @@ namespace ZE::SFX::FileUtils
 		}
 		}
 
-		S32 requestedSamples = bytes / (sizeof(float) * channelCount);
+		S32 requestedSamples = bytes / (sizeof(float) * ctx.ChannelCount);
 		S32 samplesReadCount = 0;
 		U32 writeOffset = 0;
 		do
 		{
 			int currentStream = 0;
 			float** readSamples = nullptr;
-			samplesReadCount = ov_read_float(&decoder, reinterpret_cast<float***>(&readSamples), requestedSamples, &currentStream);
+			samplesReadCount = ov_read_float(&ctx.Decoder, reinterpret_cast<float***>(&readSamples), requestedSamples, &currentStream);
 
 			if (samplesReadCount > 0 && readSamples)
 			{
 				requestedSamples -= samplesReadCount;
-				writeOffset += samplesReadCount * channelCount * sizeof(float);
+				writeOffset += samplesReadCount * ctx.ChannelCount * sizeof(float);
 				for (S64 i = 0; i < samplesReadCount; ++i)
 				{
-					for (U8 c = 0; c < channelCount; ++c)
+					for (U8 c = 0; c < ctx.ChannelCount; ++c)
 						interleavedSamples[channelMapping[c]] = readSamples[c][i];
-					interleavedSamples += channelCount;
+					interleavedSamples += ctx.ChannelCount;
 				}
 			}
 			else if (samplesReadCount == OV_HOLE)
@@ -132,31 +182,77 @@ namespace ZE::SFX::FileUtils
 		return writeOffset;
 	}
 
-	Expected<AudioDesc> GetOggOpusInfo(OggOpusFile* decoder) noexcept
+	Expected<OggOpusCtx> GetOggOpusCtx(IO::File& file, U64 regionSize, AudioDesc& audioDesc) noexcept
 	{
-		ZE_ASSERT(decoder, "Empty decoder handle!");
-		ZE_ASSERT(op_link_count(decoder) == 1, "By default only single link streams are supported!");
+		OggOpusCtx ctx = { &file, regionSize };
+		OpusFileCallbacks opusCallbacks = {};
+		opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bytes) noexcept -> int
+			{
+				ZE_ASSERT(ctx, "Empty opus file context!");
 
-		U8 channelCount = Utils::SafeCast<U8>(op_channel_count(decoder, -1));
-		S64 samples = op_pcm_total(decoder, -1);
+				auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
+				ZE_ASSERT(context.File, "Empty opus file handle!");
+				context.Code = context.File->Read(buffer, Utils::SafeCast<U32>(bytes), context.ReadOffset);
+
+				if (context.Code)
+				{
+					if (IO::EofResult::IsEOF(context.Code))
+					{
+						bytes = Utils::SafeCast<int>(IO::EofResult::GetRealBytes(context.Code));
+						context.ReadOffset += bytes;
+						context.Code = {};
+					}
+					else
+						bytes = 0;
+				}
+				else
+					context.ReadOffset += bytes;
+				return bytes;
+			};
+		opusCallbacks.seek = [](void* ctx, opus_int64 offset, int whence) noexcept -> int
+			{
+				ZE_ASSERT(ctx, "Empty opus file context!");
+
+				auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
+				if (whence == SEEK_END)
+					offset = context.RegionSize - offset;
+				else if (whence == SEEK_CUR)
+					offset += context.ReadOffset;
+				context.ReadOffset = Utils::SafeCast<U64>(offset);
+				return 0;
+			};
+		opusCallbacks.tell = [](void* ctx) noexcept -> opus_int64
+			{
+				ZE_ASSERT(ctx, "Empty opus file context!");
+				return Utils::SafeCast<opus_int64>(reinterpret_cast<OggOpusCtx*>(ctx)->ReadOffset);
+			};
+		opusCallbacks.close = nullptr;
+
+		int error = 0;
+		ctx.Decoder = op_open_callbacks(&ctx, &opusCallbacks, nullptr, 0, &error);
+		if (!ctx.Decoder)
+			return std::unexpected(ZE_OPUS_ERROR(error));
+		ZE_ASSERT(op_link_count(ctx.Decoder) == 1, "By default only single link streams are supported!");
+
+		ctx.ChannelCount = Utils::SafeCast<U8>(op_channel_count(ctx.Decoder, -1));
+		S64 samples = op_pcm_total(ctx.Decoder, -1);
 		if (samples < 0)
 			return std::unexpected(ZE_OPUS_ERROR(Utils::SafeCast<S32>(samples)));
 
-		AudioDesc desc = {};
-		desc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * channelCount);
-		desc.SampleRate = 48000;
+		audioDesc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * ctx.ChannelCount);
+		audioDesc.SampleRate = 48000;
 		// But requires remapping to correct order
-		desc.Channels = GetDefaultMask(channelCount);
-		desc.BitsPerSample = 32;
-		desc.IsFloat = true;
-		return desc;
+		audioDesc.Channels = GetDefaultMask(ctx.ChannelCount);
+		audioDesc.BitsPerSample = 32;
+		audioDesc.IsFloat = true;
+
+		return ctx;
 	}
 
-	Expected<U32> ReadOggOpus(OggOpusFile* decoder, U32 bytes, ChannelMask mask, float* interleavedSamples) noexcept
+	Expected<U32> ReadOggOpus(OggOpusCtx& ctx, U32 bytes, float* interleavedSamples) noexcept
 	{
-		ZE_ASSERT(decoder, "Empty decoder handle!");
+		ZE_ASSERT(ctx.Decoder, "Empty decoder handle!");
 		ZE_ASSERT(interleavedSamples, "Empty output samples buffer!");
-		const U8 channelCount = Intrin::CountBitsSet(static_cast<U32>(mask));
 
 		S32 bufferSpace = bytes / sizeof(float);
 		S32 samplesReadCount = 0;
@@ -164,10 +260,10 @@ namespace ZE::SFX::FileUtils
 		float* readSamples = interleavedSamples;
 		do
 		{
-			samplesReadCount = op_read_float(decoder, readSamples, bufferSpace, nullptr);
+			samplesReadCount = op_read_float(ctx.Decoder, readSamples, bufferSpace, nullptr);
 			if (samplesReadCount > 0)
 			{
-				S32 offset = samplesReadCount * channelCount;
+				S32 offset = samplesReadCount * ctx.ChannelCount;
 				bufferSpace -= offset;
 				readSamples += offset;
 				writeOffset += offset * sizeof(float);
@@ -179,7 +275,7 @@ namespace ZE::SFX::FileUtils
 		} while (samplesReadCount > 0 && bufferSpace > 0);
 
 		// Change to expected interleaving of samples (same order as for vorbis)
-		switch (channelCount)
+		switch (ctx.ChannelCount)
 		{
 		default:
 		case 1:
@@ -193,12 +289,12 @@ namespace ZE::SFX::FileUtils
 		case 7:
 		case 8:
 		{
-			for (S64 i = 0, samples = bytes / (sizeof(float) * channelCount); i < samples; ++i)
+			for (S64 i = 0, samples = bytes / (sizeof(float) * ctx.ChannelCount); i < samples; ++i)
 			{
 				// All require swapping FC and FR order
 				std::swap(interleavedSamples[1], interleavedSamples[2]);
 
-				switch (channelCount)
+				switch (ctx.ChannelCount)
 				{
 				default:
 				case 3:
@@ -232,7 +328,7 @@ namespace ZE::SFX::FileUtils
 					break;
 				}
 				}
-				interleavedSamples += channelCount;
+				interleavedSamples += ctx.ChannelCount;
 			}
 			break;
 		}

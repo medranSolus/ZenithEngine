@@ -272,7 +272,18 @@
 #include "SFX/FileError.h"
 
 /*
+* Ptr.h
+* vorbis/vorbisfile.h
+* opusfile.h
+*/
+#include "SFX/FileUtils.h"
+
+/*
 * SFX/AudioBuffer.h
+*** Ptr.h
+*** vorbis/vorbisfile.h
+*** opusfile.h
+* SFX/FileUtils.h
 */
 #include "SFX/StreamState.h"
 

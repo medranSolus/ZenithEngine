@@ -81,7 +81,7 @@ namespace ZE::AHI::XAudio2
 
 				U32 audioSize = data->StateInfo.AudioBlockSize;
 				U8* writeRegion = data->RingBuffer.get() + data->StateInfo.AudioBlockSize * (bufferIdx % SFX::StreamState::BUFFER_COUNT);
-				Status stat = co_await SFX::ReadNextChunk(data->StateInfo, *data->FileHandle.get(), audioSize, writeRegion, data->EnableLoop);
+				Status stat = co_await SFX::ReadNextChunk(data->StateInfo, audioSize, writeRegion, data->EnableLoop);
 				if (stat)
 				{
 					if (IO::EofResult::IsEOF(stat) && !data->EnableLoop)
@@ -180,7 +180,8 @@ namespace ZE::AHI::XAudio2
 
 		// Get basic info about audio file
 		SFX::AudioDesc audioInfo = {};
-		ZE_EXPECT_RET_FAILED(audioStream.data->StateInfo, SFX::LoadStreamFileInfo(*desc.FileHandle.get(), desc.FileStart, desc.SourceType, audioInfo));
+		ZE_EXPECT_RET_FAILED(audioStream.data->StateInfo, SFX::LoadStreamFileInfo(*desc.FileHandle.get(),
+			desc.FileStart, desc.RegionSize, desc.SourceType, audioInfo));
 
 		audioStream.data->EnableLoop = desc.LoopAudio;
 		audioStream.data->FileHandle = desc.FileHandle;
@@ -189,8 +190,9 @@ namespace ZE::AHI::XAudio2
 		ZE_EXPECT_RET_FAILED(audioStream.data->SourceVoice, CreateSourceVoice(dev.Get().xa2.GetDevice(), audioInfo, desc.Group ? desc.Group->Get().xa2.GetVoice() : nullptr, audioStream.callback.get()));
 
 		// Read whole initial data (blocking call)
-		Status stat = SFX::ReadNextChunk(audioStream.data->StateInfo, *desc.FileHandle.get(),
-			audioStream.data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT, audioStream.data->RingBuffer.get(), desc.LoopAudio).Get();
+		Status stat = SFX::ReadNextChunk(audioStream.data->StateInfo,
+			audioStream.data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT,
+			audioStream.data->RingBuffer.get(), desc.LoopAudio).Get();
 		if (stat)
 		{
 			if (IO::EofResult::IsEOF(stat))
@@ -216,7 +218,7 @@ namespace ZE::AHI::XAudio2
 
 		// Rewind and load initial data
 		ZE_CODE_RET_FAILED_CORO(SFX::RewindToBegining(data->StateInfo));
-		ZE_CODE_RET_FAILED_CORO(co_await SFX::ReadNextChunk(data->StateInfo, *data->FileHandle.get(),
+		ZE_CODE_RET_FAILED_CORO(co_await SFX::ReadNextChunk(data->StateInfo,
 			data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get(), data->EnableLoop));
 
 		// Wait quickly till all buffers "ended" after flush
