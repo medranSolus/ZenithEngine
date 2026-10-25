@@ -155,8 +155,8 @@ namespace ZE
 		{
 			HandleType Handle;
 
-			constexpr bool await_ready() const noexcept { return Handle.promise().State.load(std::memory_order_acquire) == PromiseBase::ExecutionState::Completed; }
-			constexpr R await_resume() noexcept { return Handle.promise().ExtractResult(); }
+			constexpr bool await_ready() const noexcept { return Handle ? Handle.promise().State.load(std::memory_order_acquire) == PromiseBase::ExecutionState::Completed : true; }
+			constexpr R await_resume() noexcept { return Handle ? Handle.promise().ExtractResult() : R(); }
 
 			constexpr std::coroutine_handle<> await_suspend(std::coroutine_handle<> awaitingHandle) noexcept;
 		};
