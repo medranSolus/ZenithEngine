@@ -46,9 +46,10 @@ namespace ZE::AHI::XAudio2
 
 			void OnVoiceProcessingPassStart(U32 bytesRequired) noexcept override {}
 			void OnVoiceProcessingPassEnd() noexcept override {}
-			void OnStreamEnd() noexcept override {}
 			void OnBufferStart(void* bufferCtx) noexcept override {}
 			void OnLoopEnd(void* bufferCtx) noexcept override {}
+
+			void OnStreamEnd() noexcept override { data->Alive = false; data->FinishedBuffers = SFX::StreamState::BUFFER_COUNT; }
 			void OnVoiceError(void* bufferCtx, HRESULT error) noexcept override { ZE_CODE_ERROR(ZE_XA2_ERROR(error), "Error while playing stream number " + std::to_string(reinterpret_cast<U64>(bufferCtx))); }
 
 			void OnBufferEnd(void* bufferCtx) noexcept override;

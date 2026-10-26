@@ -79,9 +79,9 @@ namespace ZE::AHI::XAudio2
 					co_return;
 				ZE_ASSERT(data->NextSubmitBufferIdx <= bufferIdx, "Buffer has been submitted twice!");
 
-				U32 audioSize = data->StateInfo.AudioBlockSize;
-				U8* writeRegion = data->RingBuffer.get() + data->StateInfo.AudioBlockSize * (bufferIdx % SFX::StreamState::BUFFER_COUNT);
-				Status stat = co_await SFX::ReadNextChunk(data->StateInfo, audioSize, writeRegion, data->EnableLoop);
+				U32 audioSize = data->StateInfo.GetBlockSize();
+				U8* writeRegion = data->RingBuffer.get() + data->StateInfo.GetBlockSize() * (bufferIdx % SFX::StreamState::BUFFER_COUNT);
+				Status stat = co_await data->StateInfo.ReadNextChunk(audioSize, writeRegion, data->EnableLoop);
 				if (stat)
 				{
 					if (IO::EofResult::IsEOF(stat) && !data->EnableLoop)
@@ -101,7 +101,7 @@ namespace ZE::AHI::XAudio2
 				{
 					// Prepare buffer submission
 					XAUDIO2_BUFFER buffer = {};
-					buffer.Flags = audioSize != data->StateInfo.AudioBlockSize ? XAUDIO2_END_OF_STREAM : 0;
+					buffer.Flags = !data->EnableLoop && data->StateInfo.IsStreamEnd() ? XAUDIO2_END_OF_STREAM : 0;
 					buffer.AudioBytes = audioSize;
 					buffer.pAudioData = writeRegion;
 					buffer.PlayBegin = 0;
@@ -147,7 +147,7 @@ namespace ZE::AHI::XAudio2
 	{		
 		XAUDIO2_BUFFER buffer = {};
 		buffer.Flags = 0;
-		buffer.AudioBytes = data->StateInfo.AudioBlockSize;
+		buffer.AudioBytes = data->StateInfo.GetBlockSize();
 		buffer.pAudioData = data->RingBuffer.get();
 		buffer.PlayBegin = 0;
 		buffer.PlayLength = 0;
@@ -158,7 +158,7 @@ namespace ZE::AHI::XAudio2
 		{
 			buffer.pContext = reinterpret_cast<void*>(i);
 			ZE_XA2_RET_FAILED(data->SourceVoice->SubmitSourceBuffer(&buffer, nullptr));
-			buffer.pAudioData += data->StateInfo.AudioBlockSize;
+			buffer.pAudioData += data->StateInfo.GetBlockSize();
 		}
 		return {};
 	}
@@ -180,18 +180,17 @@ namespace ZE::AHI::XAudio2
 
 		// Get basic info about audio file
 		SFX::AudioDesc audioInfo = {};
-		ZE_EXPECT_RET_FAILED(audioStream.data->StateInfo, SFX::LoadStreamFileInfo(*desc.FileHandle.get(),
+		ZE_EXPECT_RET_FAILED(audioStream.data->StateInfo, SFX::StreamState::Create(*desc.FileHandle.get(),
 			desc.FileStart, desc.RegionSize, desc.SourceType, audioInfo));
 
 		audioStream.data->EnableLoop = desc.LoopAudio;
 		audioStream.data->FileHandle = desc.FileHandle;
-		audioStream.data->RingBuffer = std::make_unique_for_overwrite<U8[]>(audioStream.data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT);
+		audioStream.data->RingBuffer = std::make_unique_for_overwrite<U8[]>(audioStream.data->StateInfo.GetBlockSize() * SFX::StreamState::BUFFER_COUNT);
 		audioStream.callback = std::make_unique<StreamCallback>(audioStream.data);
 		ZE_EXPECT_RET_FAILED(audioStream.data->SourceVoice, CreateSourceVoice(dev.Get().xa2.GetDevice(), audioInfo, desc.Group ? desc.Group->Get().xa2.GetVoice() : nullptr, audioStream.callback.get()));
 
 		// Read whole initial data (blocking call)
-		Status stat = SFX::ReadNextChunk(audioStream.data->StateInfo,
-			audioStream.data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT,
+		Status stat = audioStream.data->StateInfo.ReadNextChunk(audioStream.data->StateInfo.GetBlockSize() * SFX::StreamState::BUFFER_COUNT,
 			audioStream.data->RingBuffer.get(), desc.LoopAudio).Get();
 		if (stat)
 		{
@@ -217,9 +216,8 @@ namespace ZE::AHI::XAudio2
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
 
 		// Rewind and load initial data
-		ZE_CODE_RET_FAILED_CORO(SFX::RewindToBegining(data->StateInfo));
-		ZE_CODE_RET_FAILED_CORO(co_await SFX::ReadNextChunk(data->StateInfo,
-			data->StateInfo.AudioBlockSize * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get(), data->EnableLoop));
+		ZE_CODE_RET_FAILED_CORO(data->StateInfo.RewindToBegining());
+		ZE_CODE_RET_FAILED_CORO(co_await data->StateInfo.ReadNextChunk(data->StateInfo.GetBlockSize() * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get(), data->EnableLoop));
 
 		// Wait quickly till all buffers "ended" after flush
 		U8 awaitingBuffers = 0;

@@ -6,9 +6,9 @@ namespace ZE::SFX
 {
 	void StreamState::MoveFrom(StreamState&& state) noexcept
 	{
-		AudioBlockSize = state.AudioBlockSize;
-		SourceType = state.SourceType;
-		switch (SourceType)
+		audioBlockSize = state.audioBlockSize;
+		sourceType = state.sourceType;
+		switch (sourceType)
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
@@ -16,32 +16,93 @@ namespace ZE::SFX
 			break;
 		case FileSourceType::WAV:
 		{
-			WAV = std::move(state.WAV);
+			wav = std::move(state.wav);
 			break;
 		}
 		case FileSourceType::Flac:
 		{
-			Flac = std::move(state.Flac);
+			flac = std::move(state.flac);
 			break;
 		}
 		case FileSourceType::OggVorbis:
 		{
-			OggVorbis = std::move(state.OggVorbis);
+			oggVorbis = std::move(state.oggVorbis);
 			break;
 		}
 		case FileSourceType::OggOpus:
 		{
-			OggOpus = std::move(state.OggOpus);
+			oggOpus = std::move(state.oggOpus);
 			break;
 		}
 		}
 	}
 
-	Expected<StreamState> LoadStreamFileInfo(IO::File& file, U64 startOffset,
-		U64 regionSize, FileSourceType type, AudioDesc& audioInfo) noexcept
+	void StreamState::Release() noexcept
+	{
+		switch (sourceType)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case FileSourceType::Unknown:
+		case FileSourceType::WAV:
+		case FileSourceType::Flac:
+			break;
+		case FileSourceType::OggVorbis:
+		{
+			if (oggOpus.Decoder)
+			{
+				ov_clear(oggVorbis.Decoder);
+				oggVorbis.Decoder = nullptr;
+			}
+			break;
+		}
+		case FileSourceType::OggOpus:
+		{
+			if (oggOpus.Decoder)
+			{
+				op_free(oggOpus.Decoder);
+				oggOpus.Decoder = nullptr;
+			}
+			break;
+		}
+		}
+	}
+
+	StreamState::~StreamState()
+	{
+		switch (sourceType)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case FileSourceType::Unknown:
+			break;
+		case FileSourceType::WAV:
+		{
+			wav.~StateWAV();
+			break;
+		}
+		case FileSourceType::Flac:
+		{
+			flac.~StateFlac();
+			break;
+		}
+		case FileSourceType::OggVorbis:
+		{
+			oggVorbis.~OggVorbisCtx();
+			break;
+		}
+		case FileSourceType::OggOpus:
+		{
+			oggOpus.~OggOpusCtx();
+			break;
+		}
+		}
+	}
+
+	Expected<StreamState> StreamState::Create(IO::File& file, U64 startOffset, U64 regionSize, FileSourceType type, AudioDesc& audioInfo) noexcept
 	{
 		StreamState state = {};
-		state.SourceType = type;
+		state.sourceType = type;
 		switch (type)
 		{
 		default:
@@ -53,12 +114,15 @@ namespace ZE::SFX
 		}
 		case FileSourceType::WAV:
 		{
-			ZE_EXPECT_RET_FAILED(audioInfo, IO::WAV::ParseFileInfo(file, state.WAV.DataStart, startOffset));
-			state.WAV.File = &file;
+			new (&state.wav)StreamState::StateWAV;
+			ZE_EXPECT_RET_FAILED(audioInfo, IO::WAV::ParseFileInfo(file, state.wav.DataStart, startOffset));
+			state.wav.File = &file;
+			state.wav.FileEnd = startOffset + regionSize;
 			break;
 		}
 		case FileSourceType::Flac:
 		{
+			new (&state.flac)StreamState::StateFlac;
 			FLAC__StreamDecoder* decoder = FLAC__stream_decoder_new();
 			if (!decoder)
 			{
@@ -247,30 +311,32 @@ namespace ZE::SFX
 				FLAC__stream_decoder_delete(decoder);
 				return std::unexpected(ctx.Code);
 			}
-			state.Flac.Decoder = decoder;
+			state.flac.Decoder = decoder;
 			break;
 		}
 		case FileSourceType::OggVorbis:
 		{
-			ZE_EXPECT_RET_FAILED(state.OggVorbis.Ctx, FileUtils::GetOggVorbisCtx(file, regionSize, audioInfo));
+			new (&state.oggVorbis)FileUtils::OggVorbisCtx;
+			ZE_EXPECT_RET_FAILED(state.oggVorbis, FileUtils::GetOggVorbisCtx(file, startOffset + regionSize, audioInfo));
 			break;
 		}
 		case FileSourceType::OggOpus:
 		{
-			ZE_EXPECT_RET_FAILED(state.OggOpus.Ctx, FileUtils::GetOggOpusCtx(file, regionSize, audioInfo));
+			new (&state.oggOpus)FileUtils::OggOpusCtx;
+			ZE_EXPECT_RET_FAILED(state.oggOpus, FileUtils::GetOggOpusCtx(file, startOffset + regionSize, audioInfo));
 			break;
 		}
 		}
-		state.AudioBlockSize = Math::DivideRoundUp<U8>(audioInfo.BitsPerSample, 8) * Intrin::CountBitsSet(static_cast<U32>(audioInfo.Channels));
-		state.AudioBlockSize = (StreamState::MAX_BUFFER_SIZE / state.AudioBlockSize) * state.AudioBlockSize;
+		state.audioBlockSize = Math::DivideRoundUp<U8>(audioInfo.BitsPerSample, 8) * Intrin::CountBitsSet(static_cast<U32>(audioInfo.Channels));
+		state.audioBlockSize = (StreamState::MAX_BUFFER_SIZE / state.audioBlockSize) * state.audioBlockSize;
 		return state;
 	}
 
-	Task<Status> ReadNextChunk(StreamState& state, U32 readSize, U8* destBuffer, bool loopAudio) noexcept
+	Task<Status> StreamState::ReadNextChunk(U32 readSize, U8* destBuffer, bool loopAudio) noexcept
 	{
 		ZE_ASSERT(destBuffer, "Empty output buffer!");
 
-		switch (state.SourceType)
+		switch (sourceType)
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
@@ -281,8 +347,8 @@ namespace ZE::SFX
 		}
 		case FileSourceType::WAV:
 		{
-			ZE_ASSERT(state.WAV.File, "WAV ctx not initialized!");
-			Status stat = co_await state.WAV.File->ReadAsync(destBuffer, readSize, state.WAV.DataStart + state.WAV.CurrentPosition);
+			ZE_ASSERT(wav.File, "WAV ctx not initialized!");
+			Status stat = co_await wav.File->ReadAsync(destBuffer, readSize, wav.DataStart + wav.CurrentPosition);
 			if (stat)
 			{
 				if (IO::EofResult::IsEOF(stat))
@@ -291,14 +357,14 @@ namespace ZE::SFX
 					if (loopAudio)
 					{
 						readSize -= bytesRead;
-						stat = co_await state.WAV.File->ReadAsync(destBuffer + bytesRead, readSize, state.WAV.DataStart);
+						stat = co_await wav.File->ReadAsync(destBuffer + bytesRead, readSize, wav.DataStart);
 						if (stat)
 							co_return stat;
-						state.WAV.CurrentPosition = state.WAV.DataStart + readSize;
+						wav.CurrentPosition = wav.DataStart + readSize;
 					}
 					else
 					{
-						state.WAV.CurrentPosition += bytesRead;
+						wav.CurrentPosition += bytesRead;
 						co_return stat;
 					}
 				}
@@ -306,7 +372,7 @@ namespace ZE::SFX
 					co_return stat;
 			}
 			else
-				state.WAV.CurrentPosition += readSize;
+				wav.CurrentPosition += readSize;
 			break;
 		}
 		case FileSourceType::Flac:
@@ -315,19 +381,19 @@ namespace ZE::SFX
 		}
 		case FileSourceType::OggVorbis:
 		{
-			ZE_ASSERT(state.OggVorbis.Ctx.Decoder.callbacks.read_func, "Ogg vorbis ctx not initialized!");
+			ZE_ASSERT(oggVorbis.Decoder, "Ogg vorbis ctx not initialized!");
 
 			U32 bytesRead = 0;
-			ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggVorbis(state.OggVorbis.Ctx,
+			ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggVorbis(oggVorbis,
 				readSize, reinterpret_cast<float*>(destBuffer)));
 			if (bytesRead < readSize)
 			{
 				if (loopAudio)
 				{
-					ZE_CODE_RET_FAILED_CORO(RewindToBegining(state));
+					ZE_CODE_RET_FAILED_CORO(RewindToBegining());
 
 					readSize -= bytesRead;
-					ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggVorbis(state.OggVorbis.Ctx,
+					ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggVorbis(oggVorbis,
 						readSize, reinterpret_cast<float*>(destBuffer + bytesRead)));
 					if (bytesRead != readSize)
 						co_return IO::EofResult::Make(bytesRead);
@@ -339,19 +405,19 @@ namespace ZE::SFX
 		}
 		case FileSourceType::OggOpus:
 		{
-			ZE_ASSERT(state.OggOpus.Ctx.Decoder, "Ogg opus ctx not initialized!");
+			ZE_ASSERT(oggOpus.Decoder, "Ogg opus ctx not initialized!");
 
 			U32 bytesRead = 0;
-			ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggOpus(state.OggOpus.Ctx,
+			ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggOpus(oggOpus,
 				readSize, reinterpret_cast<float*>(destBuffer)));
 			if (bytesRead < readSize)
 			{
 				if (loopAudio)
 				{
-					ZE_CODE_RET_FAILED_CORO(RewindToBegining(state));
+					ZE_CODE_RET_FAILED_CORO(RewindToBegining());
 
 					readSize -= bytesRead;
-					ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggOpus(state.OggOpus.Ctx,
+					ZE_EXPECT_RET_FAILED_CODE_CORO(bytesRead, FileUtils::ReadOggOpus(oggOpus,
 						readSize, reinterpret_cast<float*>(destBuffer + bytesRead)));
 					if (bytesRead != readSize)
 						co_return IO::EofResult::Make(bytesRead);
@@ -365,9 +431,9 @@ namespace ZE::SFX
 		co_return Status{};
 	}
 
-	Status RewindToBegining(StreamState& state) noexcept
+	Status StreamState::RewindToBegining() noexcept
 	{
-		switch (state.SourceType)
+		switch (sourceType)
 		{
 		default:
 			ZE_ENUM_UNHANDLED();
@@ -378,27 +444,61 @@ namespace ZE::SFX
 		}
 		case FileSourceType::WAV:
 		{
-			ZE_ASSERT(state.WAV.File, "WAV ctx not initialized!");
-			state.WAV.CurrentPosition = state.WAV.DataStart;
+			ZE_ASSERT(wav.File, "WAV ctx not initialized!");
+			wav.CurrentPosition = wav.DataStart;
 			break;
 		}
 		case FileSourceType::Flac:
 		{
-			if (!FLAC__stream_decoder_seek_absolute(state.Flac.Decoder, 0))
+			if (!FLAC__stream_decoder_seek_absolute(flac.Decoder, 0))
 			{
-				if (FLAC__stream_decoder_get_state(state.Flac.Decoder) == FLAC__STREAM_DECODER_SEEK_ERROR)
-					FLAC__stream_decoder_flush(state.Flac.Decoder);
+				if (FLAC__stream_decoder_get_state(flac.Decoder) == FLAC__STREAM_DECODER_SEEK_ERROR)
+					FLAC__stream_decoder_flush(flac.Decoder);
 				//return ZE_FLAC_DECODER_ERROR(); // Get decoder error from state
 			}
 			break;
 		}
 		case FileSourceType::OggVorbis:
-			ZE_ASSERT(state.OggVorbis.Ctx.Decoder.callbacks.read_func, "Ogg vorbis ctx not initialized!");
-			return ZE_VORBIS_ERROR(ov_pcm_seek(&state.OggVorbis.Ctx.Decoder, 0));
+		{
+			ZE_ASSERT(oggVorbis.Decoder, "Ogg vorbis ctx not initialized!");
+			return ZE_VORBIS_ERROR(ov_pcm_seek(oggVorbis.Decoder, 0));
+		}
 		case FileSourceType::OggOpus:
-			ZE_ASSERT(state.OggOpus.Ctx.Decoder, "Ogg opus ctx not initialized!");
-			return ZE_OPUS_ERROR(op_pcm_seek(state.OggOpus.Ctx.Decoder, 0));
+		{
+			ZE_ASSERT(oggOpus.Decoder, "Ogg opus ctx not initialized!");
+			return ZE_OPUS_ERROR(op_pcm_seek(oggOpus.Decoder, 0));
+		}
 		}
 		return {};
+	}
+
+	bool StreamState::IsStreamEnd() const noexcept
+	{
+		switch (sourceType)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case FileSourceType::Unknown:
+			return true;
+		case FileSourceType::WAV:
+		{
+			ZE_ASSERT(wav.File, "WAV ctx not initialized!");
+			return wav.CurrentPosition == wav.FileEnd;
+		}
+		case FileSourceType::Flac:
+		{
+			return true;
+		}
+		case FileSourceType::OggVorbis:
+		{
+			ZE_ASSERT(oggVorbis.Decoder, "Ogg vorbis ctx not initialized!");
+			return oggVorbis.IoCtx->ReadOffset == oggVorbis.IoCtx->FileEnd;
+		}
+		case FileSourceType::OggOpus:
+		{
+			ZE_ASSERT(oggOpus.Decoder, "Ogg opus ctx not initialized!");
+			return oggOpus.IoCtx->ReadOffset == oggVorbis.IoCtx->FileEnd;
+		}
+		}
 	}
 }
