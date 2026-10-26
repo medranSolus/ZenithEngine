@@ -233,35 +233,35 @@ namespace ZE::SFX
 		case FileSourceType::OggVorbis:
 		{
 			FileUtils::OggVorbisCtx ctx = {};
-			ZE_EXPECT_RET_FAILED(ctx, FileUtils::GetOggVorbisCtx(file, regionSize, buffer.Desc));
+			ZE_EXPECT_RET_FAILED(ctx, FileUtils::GetOggVorbisCtx(file, startOffset + regionSize, buffer.Desc));
 			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
 			auto expWriteBytes = FileUtils::ReadOggVorbis(ctx, buffer.Desc.Bytes, reinterpret_cast<float*>(buffer.Samples.get()));
 			if (expWriteBytes)
 				writeOffset = *expWriteBytes;
 			else
-				ctx.Code = expWriteBytes.error();
-			ov_clear(&ctx.Decoder);
+				ctx.IoCtx->Code = expWriteBytes.error();
+			ov_clear(ctx.Decoder);
 
-			if (ctx.Code)
-				return std::unexpected(ctx.Code);
+			if (ctx.IoCtx->Code)
+				return std::unexpected(ctx.IoCtx->Code);
 			break;
 		}
 		case FileSourceType::OggOpus:
 		{
 			FileUtils::OggOpusCtx ctx = {};
-			ZE_EXPECT_RET_FAILED(ctx, FileUtils::GetOggOpusCtx(file, regionSize, buffer.Desc));
+			ZE_EXPECT_RET_FAILED(ctx, FileUtils::GetOggOpusCtx(file, startOffset + regionSize, buffer.Desc));
 			buffer.Samples = std::make_shared_for_overwrite<U8[]>(buffer.Desc.Bytes);
 
 			auto expWriteBytes = FileUtils::ReadOggOpus(ctx, buffer.Desc.Bytes, reinterpret_cast<float*>(buffer.Samples.get()));
 			if (expWriteBytes)
 				writeOffset = *expWriteBytes;
 			else
-				ctx.Code = expWriteBytes.error();
+				ctx.IoCtx->Code = expWriteBytes.error();
 			op_free(ctx.Decoder);
 
-			if (ctx.Code)
-				return std::unexpected(ctx.Code);
+			if (ctx.IoCtx->Code)
+				return std::unexpected(ctx.IoCtx->Code);
 			break;
 		}
 		}

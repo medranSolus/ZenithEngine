@@ -1,15 +1,17 @@
 #include "SFX/FileUtils.h"
+#include "SFX/FileError.h"
 
 namespace ZE::SFX::FileUtils
 {
-	Expected<OggVorbisCtx> GetOggVorbisCtx(IO::File& file, U64 regionSize, AudioDesc& audioDesc) noexcept
+	Expected<OggVorbisCtx> GetOggVorbisCtx(IO::File& file, U64 regionEnd, AudioDesc& audioDesc) noexcept
 	{
-		OggVorbisCtx ctx = { &file, regionSize };
-		ctx.Decoder.callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
+		OggVorbisCtx ctx = { std::make_unique<OggVorbisCtx::CallbackCtx>(&file, regionEnd) };
+		ctx.Decoder = &ctx.IoCtx->Decoder;
+		ctx.Decoder->callbacks.read_func = [](void* buffer, size_t size, size_t count, void* ctx) noexcept -> size_t
 			{
 				ZE_ASSERT(ctx, "Empty vorbis file context!");
 
-				auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
+				auto& context = *reinterpret_cast<OggVorbisCtx::CallbackCtx*>(ctx);
 				ZE_ASSERT(context.File, "Empty vorbis file handle!");
 
 				U32 bytes = Utils::SafeCast<U32>(size * count);
@@ -31,34 +33,33 @@ namespace ZE::SFX::FileUtils
 					context.ReadOffset += bytes;
 				return count;
 			};
-		ctx.Decoder.callbacks.seek_func = [](void* ctx, ogg_int64_t offset, int whence) noexcept -> int
+		ctx.Decoder->callbacks.seek_func = [](void* ctx, ogg_int64_t offset, int whence) noexcept -> int
 			{
 				ZE_ASSERT(ctx, "Empty vorbis file context!");
 
-				auto& context = *reinterpret_cast<OggVorbisCtx*>(ctx);
+				auto& context = *reinterpret_cast<OggVorbisCtx::CallbackCtx*>(ctx);
 				if (whence == SEEK_END)
-					offset = context.RegionSize - offset;
+					offset = context.FileEnd - offset;
 				else if (whence == SEEK_CUR)
 					offset += context.ReadOffset;
 				context.ReadOffset = Utils::SafeCast<U64>(offset);
 				return 0;
 			};
-		ctx.Decoder.callbacks.close_func = nullptr;
-		ctx.Decoder.callbacks.tell_func = [](void* ctx) noexcept -> long
+		ctx.Decoder->callbacks.close_func = nullptr;
+		ctx.Decoder->callbacks.tell_func = [](void* ctx) noexcept -> long
 			{
 				ZE_ASSERT(ctx, "Empty vorbis file context!");
-				return Utils::SafeCast<long>(reinterpret_cast<OggVorbisCtx*>(ctx)->ReadOffset);
+				return Utils::SafeCast<long>(reinterpret_cast<OggVorbisCtx::CallbackCtx*>(ctx)->ReadOffset);
 			};
 
-		ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(&ctx, &ctx.Decoder, nullptr, 0, ctx.Decoder.callbacks)));
-		ZE_CODE_RET_FAILED_EXPECT(ctx.Code);
+		ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(ctx.IoCtx.get(), ctx.Decoder, nullptr, 0, ctx.Decoder->callbacks)));
 
-		vorbis_info* streamInfo = ov_info(&ctx.Decoder, -1);
+		vorbis_info* streamInfo = ov_info(ctx.Decoder, -1);
 		if (!streamInfo || streamInfo->channels > 8 && streamInfo->channels <= 0)
 			return std::unexpected(ZE_VORBIS_ERROR(OV_FALSE));
 
 		ctx.ChannelCount = Utils::SafeCast<U8>(streamInfo->channels);
-		S64 samples = ov_pcm_total(&ctx.Decoder, -1);
+		S64 samples = ov_pcm_total(ctx.Decoder, -1);
 		if (samples < 0)
 			return std::unexpected(ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples)));
 
@@ -74,7 +75,7 @@ namespace ZE::SFX::FileUtils
 
 	Expected<U32> ReadOggVorbis(OggVorbisCtx& ctx, U32 bytes, float* interleavedSamples) noexcept
 	{
-		ZE_ASSERT(ctx.Decoder.callbacks.read_func, "Empty decoder handle!");
+		ZE_ASSERT(ctx.Decoder, "Empty decoder handle!");
 		ZE_ASSERT(interleavedSamples, "Empty output samples buffer!");
 
 		// Create final interleaved channel mappings
@@ -159,7 +160,7 @@ namespace ZE::SFX::FileUtils
 		{
 			int currentStream = 0;
 			float** readSamples = nullptr;
-			samplesReadCount = ov_read_float(&ctx.Decoder, reinterpret_cast<float***>(&readSamples), requestedSamples, &currentStream);
+			samplesReadCount = ov_read_float(ctx.Decoder, reinterpret_cast<float***>(&readSamples), requestedSamples, &currentStream);
 
 			if (samplesReadCount > 0 && readSamples)
 			{
@@ -182,15 +183,15 @@ namespace ZE::SFX::FileUtils
 		return writeOffset;
 	}
 
-	Expected<OggOpusCtx> GetOggOpusCtx(IO::File& file, U64 regionSize, AudioDesc& audioDesc) noexcept
+	Expected<OggOpusCtx> GetOggOpusCtx(IO::File& file, U64 regionEnd, AudioDesc& audioDesc) noexcept
 	{
-		OggOpusCtx ctx = { &file, regionSize };
+		OggOpusCtx ctx = { std::make_unique<OggOpusCtx::CallbackCtx>(&file, regionEnd) };
 		OpusFileCallbacks opusCallbacks = {};
 		opusCallbacks.read = [](void* ctx, unsigned char* buffer, int bytes) noexcept -> int
 			{
 				ZE_ASSERT(ctx, "Empty opus file context!");
 
-				auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
+				auto& context = *reinterpret_cast<OggOpusCtx::CallbackCtx*>(ctx);
 				ZE_ASSERT(context.File, "Empty opus file handle!");
 				context.Code = context.File->Read(buffer, Utils::SafeCast<U32>(bytes), context.ReadOffset);
 
@@ -213,9 +214,9 @@ namespace ZE::SFX::FileUtils
 			{
 				ZE_ASSERT(ctx, "Empty opus file context!");
 
-				auto& context = *reinterpret_cast<OggOpusCtx*>(ctx);
+				auto& context = *reinterpret_cast<OggOpusCtx::CallbackCtx*>(ctx);
 				if (whence == SEEK_END)
-					offset = context.RegionSize - offset;
+					offset = context.FileEnd - offset;
 				else if (whence == SEEK_CUR)
 					offset += context.ReadOffset;
 				context.ReadOffset = Utils::SafeCast<U64>(offset);
@@ -224,12 +225,12 @@ namespace ZE::SFX::FileUtils
 		opusCallbacks.tell = [](void* ctx) noexcept -> opus_int64
 			{
 				ZE_ASSERT(ctx, "Empty opus file context!");
-				return Utils::SafeCast<opus_int64>(reinterpret_cast<OggOpusCtx*>(ctx)->ReadOffset);
+				return Utils::SafeCast<opus_int64>(reinterpret_cast<OggOpusCtx::CallbackCtx*>(ctx)->ReadOffset);
 			};
 		opusCallbacks.close = nullptr;
 
 		int error = 0;
-		ctx.Decoder = op_open_callbacks(&ctx, &opusCallbacks, nullptr, 0, &error);
+		ctx.Decoder = op_open_callbacks(ctx.IoCtx.get(), &opusCallbacks, nullptr, 0, &error);
 		if (!ctx.Decoder)
 			return std::unexpected(ZE_OPUS_ERROR(error));
 		ZE_ASSERT(op_link_count(ctx.Decoder) == 1, "By default only single link streams are supported!");
