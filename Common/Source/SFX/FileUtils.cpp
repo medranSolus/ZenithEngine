@@ -55,21 +55,30 @@ namespace ZE::SFX::FileUtils
 		ZE_CODE_RET_FAILED_EXPECT(ZE_VORBIS_ERROR(ov_open_callbacks(ctx.IoCtx.get(), ctx.Decoder, nullptr, 0, ctx.Decoder->callbacks)));
 
 		vorbis_info* streamInfo = ov_info(ctx.Decoder, -1);
-		if (!streamInfo || streamInfo->channels > 8 && streamInfo->channels <= 0)
-			return std::unexpected(ZE_VORBIS_ERROR(OV_FALSE));
-
+		if (streamInfo && streamInfo->channels <= 8 && streamInfo->channels > 0)
+		{
 		ctx.ChannelCount = Utils::SafeCast<U8>(streamInfo->channels);
 		S64 samples = ov_pcm_total(ctx.Decoder, -1);
-		if (samples < 0)
-			return std::unexpected(ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples)));
-
+			if (samples > 0)
+			{
 		audioDesc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * ctx.ChannelCount);
 		audioDesc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
 		// But requires remapping to correct order
 		audioDesc.Channels = SFX::GetDefaultMask(ctx.ChannelCount);
 		audioDesc.BitsPerSample = 32;
 		audioDesc.IsFloat = true;
+			}
+			else
+				ctx.IoCtx->Code = ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples));
+		}
+		else
+			ctx.IoCtx->Code = ZE_VORBIS_ERROR(OV_FALSE);
 
+		if (ctx.IoCtx->Code)
+		{
+			ov_clear(ctx.Decoder);
+			return std::unexpected(ctx.IoCtx->Code);
+		}
 		return ctx;
 	}
 
@@ -238,7 +247,10 @@ namespace ZE::SFX::FileUtils
 		ctx.ChannelCount = Utils::SafeCast<U8>(op_channel_count(ctx.Decoder, -1));
 		S64 samples = op_pcm_total(ctx.Decoder, -1);
 		if (samples < 0)
+		{
+			op_free(ctx.Decoder);
 			return std::unexpected(ZE_OPUS_ERROR(Utils::SafeCast<S32>(samples)));
+		}
 
 		audioDesc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * ctx.ChannelCount);
 		audioDesc.SampleRate = 48000;
