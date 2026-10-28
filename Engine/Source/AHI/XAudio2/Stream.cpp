@@ -68,16 +68,18 @@ namespace ZE::AHI::XAudio2
 		Settings::GetThreadPool().Schedule(ThreadPriority::High,
 			[](std::shared_ptr<StreamData> data, U64 bufferIdx) noexcept -> Task<void>
 			{
+				ZE_ASSERT(data->NextSubmitBufferIdx <= bufferIdx, "Buffer has been submitted twice!");
+
 				auto endSubmission = [&data]() noexcept -> void
 					{
+						++data->NextSubmitBufferIdx;
 						++data->FinishedBuffers;
 						data->FinishedBuffers.notify_one();
 					};
 
-				// Early return if stream has been destroyed
-				if (!data->Alive)
-					co_return;
-				ZE_ASSERT(data->NextSubmitBufferIdx <= bufferIdx, "Buffer has been submitted twice!");
+				// Wait with reading till it's this buffer turn or return early if stream is wrapping up
+				if (!co_await StreamData::Awaiter{ data.get(), bufferIdx })
+					co_return endSubmission();
 
 				U32 audioSize = data->StateInfo.GetBlockSize();
 				U8* writeRegion = data->RingBuffer.get() + data->StateInfo.GetBlockSize() * (bufferIdx % SFX::StreamState::BUFFER_COUNT);
@@ -111,28 +113,24 @@ namespace ZE::AHI::XAudio2
 					buffer.LoopCount = 0;
 					buffer.pContext = reinterpret_cast<void*>(bufferIdx + SFX::StreamState::BUFFER_COUNT); // Set which next buffer to load in this region
 
-					// Optional wait till this index turn or return if stream is being destroyed
-					if (!co_await StreamData::Awaiter{ data.get(), bufferIdx })
-						co_return endSubmission();
-
-					// Indicate for others that stream has ended
-					if (buffer.Flags)
-						data->Alive = false;
-
 					HRESULT hr = data->SourceVoice->SubmitSourceBuffer(&buffer, nullptr);
 					if (FAILED(hr))
 					{
 						ZE_CODE_ERROR(ZE_XA2_ERROR(hr), "Error submitting buffer to the stream! Buffer index: " + std::to_string(bufferIdx));
 					}
+
+					// Indicate for others that stream has ended
+					if (buffer.Flags)
+						data->Alive = false;
 				}
-				// Lasy check if should ignore everything and exit
+				const U64 nextTask = ++data->NextSubmitBufferIdx;
+
+				// Last check if should ignore everything and exit
 				if (!data->Alive)
 					co_return;
 
 				// Advance and resume any awaiting tasks if any
 				data->WaitLock.Lock();
-				U64 nextTask = ++data->NextSubmitBufferIdx;
-
 				std::coroutine_handle<> h = data->WaitTable.at(nextTask % SFX::StreamState::BUFFER_COUNT);
 				data->WaitTable.at(nextTask % SFX::StreamState::BUFFER_COUNT) = nullptr;
 				data->WaitLock.Unlock();
