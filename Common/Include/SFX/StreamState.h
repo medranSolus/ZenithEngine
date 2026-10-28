@@ -19,10 +19,6 @@ namespace ZE::SFX
 			U64 CurrentPosition;
 			U64 FileEnd;
 		};
-		struct StateFlac
-		{
-			FLAC__StreamDecoder* Decoder;
-		};
 
 		// Usable part of the MAX_BUFFER_SIZE that ring buffer should be allocated with
 		U32 audioBlockSize = 0;
@@ -30,7 +26,7 @@ namespace ZE::SFX
 		union
 		{
 			StateWAV wav;
-			StateFlac flac;
+			FileUtils::FlacCtx flac;
 			FileUtils::OggVorbisCtx oggVorbis;
 			FileUtils::OggOpusCtx oggOpus;
 		};
@@ -53,7 +49,7 @@ namespace ZE::SFX
 		// Asynchronously load next chunk in stream to the memory (can return EOF if looping is not enabled)
 		Task<Status> ReadNextChunk(U32 readSize, U8* destBuffer, bool loopAudio) noexcept;
 		// Move current stream position to the begining of the track
-		Status RewindToBegining() noexcept;
+		Status RewindToBegining(bool flushPendingAudio) noexcept;
 		// Check if all samples data has been loaded already
 		bool IsStreamEnd() const noexcept;
 	};

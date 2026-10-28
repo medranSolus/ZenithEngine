@@ -272,15 +272,9 @@
 #include "SFX/FileError.h"
 
 /*
-* Ptr.h
-* vorbis/vorbisfile.h
-* opusfile.h
-*/
-#include "SFX/FileUtils.h"
-
-/*
 * SFX/AudioBuffer.h
 *** Ptr.h
+*** FLAC/stream_decoder.h
 *** vorbis/vorbisfile.h
 *** opusfile.h
 * SFX/FileUtils.h

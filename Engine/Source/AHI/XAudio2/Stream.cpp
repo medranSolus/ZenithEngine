@@ -214,7 +214,7 @@ namespace ZE::AHI::XAudio2
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
 
 		// Rewind and load initial data
-		ZE_CODE_RET_FAILED_CORO(data->StateInfo.RewindToBegining());
+		ZE_CODE_RET_FAILED_CORO(data->StateInfo.RewindToBegining(true));
 		ZE_CODE_RET_FAILED_CORO(co_await data->StateInfo.ReadNextChunk(data->StateInfo.GetBlockSize() * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get(), data->EnableLoop));
 
 		// Wait quickly till all buffers "ended" after flush

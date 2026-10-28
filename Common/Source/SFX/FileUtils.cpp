@@ -57,16 +57,16 @@ namespace ZE::SFX::FileUtils
 		vorbis_info* streamInfo = ov_info(ctx.Decoder, -1);
 		if (streamInfo && streamInfo->channels <= 8 && streamInfo->channels > 0)
 		{
-		ctx.ChannelCount = Utils::SafeCast<U8>(streamInfo->channels);
-		S64 samples = ov_pcm_total(ctx.Decoder, -1);
+			ctx.ChannelCount = Utils::SafeCast<U8>(streamInfo->channels);
+			S64 samples = ov_pcm_total(ctx.Decoder, -1);
 			if (samples > 0)
 			{
-		audioDesc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * ctx.ChannelCount);
-		audioDesc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
-		// But requires remapping to correct order
-		audioDesc.Channels = SFX::GetDefaultMask(ctx.ChannelCount);
-		audioDesc.BitsPerSample = 32;
-		audioDesc.IsFloat = true;
+				audioDesc.Bytes = Utils::SafeCast<U32>(samples * sizeof(float) * ctx.ChannelCount);
+				audioDesc.SampleRate = Utils::SafeCast<U32>(streamInfo->rate);
+				// But requires remapping to correct order
+				audioDesc.Channels = SFX::GetDefaultMask(ctx.ChannelCount);
+				audioDesc.BitsPerSample = 32;
+				audioDesc.IsFloat = true;
 			}
 			else
 				ctx.IoCtx->Code = ZE_VORBIS_ERROR(Utils::SafeCast<S32>(samples));
@@ -347,5 +347,199 @@ namespace ZE::SFX::FileUtils
 		}
 		}
 		return writeOffset;
+	}
+
+	Expected<FlacCtx> GetFlacCtx(IO::File& file, U64 startOffset, U64 regionSize, AudioDesc& audioDesc) noexcept
+	{
+		FlacCtx ctx = { std::make_unique<FlacCtx::CallbackCtx>(&file, startOffset + regionSize, regionSize) };
+		ctx.Decoder = FLAC__stream_decoder_new();
+		if (!ctx.Decoder)
+		{
+			ZE_FAIL("Failed to create FLAC decoder!");
+			return std::unexpected(ZE_FLAC_DECODER_INIT_ERROR(FLAC__STREAM_DECODER_INIT_STATUS_MEMORY_ALLOCATION_ERROR));
+		}
+		FLAC__stream_decoder_set_md5_checking(ctx.Decoder, _ZE_MODE_DEBUG);
+		FLAC__stream_decoder_set_metadata_respond(ctx.Decoder, FLAC__METADATA_TYPE_STREAMINFO);
+		FLAC__stream_decoder_set_metadata_respond(ctx.Decoder, FLAC__METADATA_TYPE_VORBIS_COMMENT);
+
+		FLAC__StreamDecoderReadCallback read = [](const FLAC__StreamDecoder* decoder, FLAC__byte buffer[], size_t* bytes, void* ctx) noexcept -> FLAC__StreamDecoderReadStatus
+			{
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+				ZE_ASSERT(bytes, "Empty FLAC byte count!");
+				ZE_ASSERT(buffer, "Empty FLAC output buffer!");
+
+				if (*bytes > 0)
+				{
+					auto& context = *reinterpret_cast<FlacCtx::CallbackCtx*>(ctx);
+					context.Code = context.File->Read(buffer, Utils::SafeCast<U32>(*bytes), context.ReadOffset);
+
+					if (context.Code)
+					{
+						if (IO::EofResult::IsEOF(context.Code))
+						{
+							*bytes = IO::EofResult::GetRealBytes(context.Code);
+							context.Code = {};
+							context.ReadOffset += *bytes;
+							return FLAC__STREAM_DECODER_READ_STATUS_END_OF_STREAM;
+						}
+						return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+					}
+					context.ReadOffset += *bytes;
+					return FLAC__STREAM_DECODER_READ_STATUS_CONTINUE;
+				}
+				return FLAC__STREAM_DECODER_READ_STATUS_ABORT;
+			};
+		FLAC__StreamDecoderSeekCallback seek = [](const FLAC__StreamDecoder* decoder, FLAC__uint64 offset, void* ctx) noexcept -> FLAC__StreamDecoderSeekStatus
+			{
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+
+				reinterpret_cast<FlacCtx::CallbackCtx*>(ctx)->ReadOffset = offset;
+				return FLAC__STREAM_DECODER_SEEK_STATUS_OK;
+			};
+		FLAC__StreamDecoderTellCallback tell = [](const FLAC__StreamDecoder* decoder, FLAC__uint64* offset, void* ctx) noexcept -> FLAC__StreamDecoderTellStatus
+			{
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+				ZE_ASSERT(offset, "Empty FLAC offset!");
+
+				*offset = reinterpret_cast<FlacCtx::CallbackCtx*>(ctx)->ReadOffset;
+				return FLAC__STREAM_DECODER_TELL_STATUS_OK;
+			};
+		FLAC__StreamDecoderLengthCallback length = [](const FLAC__StreamDecoder* decoder, FLAC__uint64* streamLen, void* ctx) noexcept -> FLAC__StreamDecoderLengthStatus
+			{
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+				ZE_ASSERT(streamLen, "Empty stream length!");
+
+				*streamLen = reinterpret_cast<FlacCtx::CallbackCtx*>(ctx)->RegionSize;
+				return FLAC__STREAM_DECODER_LENGTH_STATUS_OK;
+			};
+		FLAC__StreamDecoderEofCallback eof = [](const FLAC__StreamDecoder* decoder, void* ctx) noexcept -> FLAC__bool
+			{
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+
+				auto& context = *reinterpret_cast<FlacCtx::CallbackCtx*>(ctx);
+				return context.ReadOffset >= context.FileEnd;
+			};
+		FLAC__StreamDecoderWriteCallback write = [](const FLAC__StreamDecoder* decoder, const FLAC__Frame* frame, const FLAC__int32* const buffer[], void* ctx) noexcept -> FLAC__StreamDecoderWriteStatus
+			{
+				ZE_ASSERT(frame, "Empty FLAC frame!");
+				ZE_ASSERT(buffer, "Empty FLAC buffer!");
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+
+				auto& context = *reinterpret_cast<FlacCtx::CallbackCtx*>(ctx);
+				const U8 sampleChannelBytes = Math::DivideRoundUp<U8>(context.Desc.BitsPerSample, 8);
+				const U32 sampleBytes = sampleChannelBytes * context.ChannelCount;
+
+				// Get any data from last frame that did not fit into the buffer
+				if (context.RolloverBuffer.size())
+				{
+					context.WriteOffset = std::min(Utils::SafeCast<U32>(context.RolloverBuffer.size()), context.BufferSize);
+					std::memcpy(context.OutBuffer, context.RolloverBuffer.data(), context.WriteOffset);
+					context.RolloverBuffer.resize(context.RolloverBuffer.size() - context.WriteOffset);
+				}
+
+				// Copy into interleaved format
+				U32 i = 0;
+				for (; i < frame->header.blocksize; ++i)
+				{
+					// Move into data cache
+					if (context.WriteOffset + sampleBytes > context.BufferSize)
+					{
+						context.WriteOffset = Utils::SafeCast<U32>(context.RolloverBuffer.size());
+						context.RolloverBuffer.resize(context.WriteOffset + (frame->header.blocksize - i) * sampleBytes);
+						break;
+					}
+					for (U8 j = 0; j < context.ChannelCount; ++j)
+					{
+						std::memcpy(context.OutBuffer + context.WriteOffset, buffer[j] + i, sampleChannelBytes);
+						context.WriteOffset += sampleChannelBytes;
+					}
+				}
+
+				// Copy remainder of frame into the cache for later decoding
+				for (; i < frame->header.blocksize; ++i)
+				{
+					for (U8 j = 0; j < context.ChannelCount; ++j)
+					{
+						std::memcpy(context.RolloverBuffer.data() + context.WriteOffset, buffer[j] + i, sampleChannelBytes);
+						context.WriteOffset += sampleChannelBytes;
+					}
+				}
+				return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
+			};
+		FLAC__StreamDecoderMetadataCallback metadata = [](const FLAC__StreamDecoder* decoder, const FLAC__StreamMetadata* metadata, void* ctx) noexcept -> void
+			{
+				ZE_ASSERT(metadata, "Empty FLAC metadata!");
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+
+				switch (metadata->type)
+				{
+				default:
+					break;
+				case FLAC__METADATA_TYPE_STREAMINFO:
+				{
+					auto& context = *reinterpret_cast<FlacCtx::CallbackCtx*>(ctx);
+
+					context.ChannelCount = Utils::SafeCast<U8>(metadata->data.stream_info.channels);
+					context.Desc.Bytes = Utils::SafeCast<U32>(metadata->data.stream_info.total_samples * context.ChannelCount * Math::DivideRoundUp(metadata->data.stream_info.bits_per_sample, 8U));
+					context.Desc.SampleRate = metadata->data.stream_info.sample_rate;
+					context.Desc.BitsPerSample = Utils::SafeCast<U8>(metadata->data.stream_info.bits_per_sample);
+					context.Desc.IsFloat = false;
+					break;
+				}
+				case FLAC__METADATA_TYPE_VORBIS_COMMENT:
+				{
+					for (U32 i = 0; i < metadata->data.vorbis_comment.num_comments; ++i)
+					{
+						auto& comment = metadata->data.vorbis_comment.comments[i];
+						// Parse channel mask
+						ChannelMask mask = Utils::ParseVorbisChannelMask(reinterpret_cast<const char*>(comment.entry), comment.length);
+						if (mask != 0)
+						{
+							reinterpret_cast<FlacCtx::CallbackCtx*>(ctx)->Desc.Channels = mask;
+							break;
+						}
+					}
+					break;
+				}
+				}
+			};
+		FLAC__StreamDecoderErrorCallback error = [](const FLAC__StreamDecoder* decoder, FLAC__StreamDecoderErrorStatus status, void* ctx) noexcept -> void
+			{
+				ZE_ASSERT(ctx, "Empty FLAC context!");
+				// Just save the error for retrieval later
+				auto& context = *reinterpret_cast<FlacCtx::CallbackCtx*>(ctx);
+				if (context.Code)
+				{
+					ZE_CODE_ERROR(context.Code, "Previous Flac decoder error");
+				}
+				context.Code = ZE_FLAC_DECODER_ERROR(status);
+			};
+
+		ZE_WARNING_DISABLE_MSVC(5039);
+		FLAC__StreamDecoderInitStatus initStatus = FLAC__stream_decoder_init_stream(ctx.Decoder, read, seek, tell, length, eof, write, metadata, error, ctx.IoCtx.get());
+		if (initStatus == FLAC__STREAM_DECODER_INIT_STATUS_OK)
+		{
+			FLAC__stream_decoder_process_until_end_of_metadata(ctx.Decoder);
+			// Won't be needed further on
+			FLAC__stream_decoder_set_metadata_ignore_all(ctx.Decoder);
+
+			audioDesc = ctx.IoCtx->Desc;
+			if (audioDesc.Channels == 0)
+			{
+				// Fallback when no channel mask is provided
+				audioDesc.Channels = GetDefaultMask(ctx.IoCtx->ChannelCount);
+				if (audioDesc.Channels == 0)
+					ctx.IoCtx->Code = ZE_FLAC_DECODER_ERROR(FLAC__STREAM_DECODER_ERROR_STATUS_BAD_METADATA);
+			}
+		}
+		else
+			ctx.IoCtx->Code = ZE_FLAC_DECODER_INIT_ERROR(initStatus);
+
+		if (ctx.IoCtx->Code)
+		{
+			FLAC__stream_decoder_delete(ctx.Decoder);
+			return std::unexpected(ctx.IoCtx->Code);
+		}
+		return ctx;
 	}
 }
