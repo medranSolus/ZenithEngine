@@ -25,8 +25,5 @@ namespace ZE::AHI::XAudio2
 
 		Status Play(U32 loopCount) noexcept;
 		Status Stop() noexcept;
-
-		// Audio API Internal
-
 	};
 }

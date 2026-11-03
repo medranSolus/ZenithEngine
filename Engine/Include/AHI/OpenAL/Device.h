@@ -1,17 +1,61 @@
 #pragma once
+#include "Error.h"
+#include "OpenALExtensions.h"
 
 namespace ZE::AHI::OpenAL
 {
 	class Device final
 	{
+		Ptr<ALCdevice> device;
+		Ptr<ALCcontext> context;
+
+#define X(ext) + 1
+		static constexpr U16 KNOWN_AL_EXTENSION_COUNT = ZE_AL_EXT_LIST;
+#undef X
+#define X(ext) + 1
+		static constexpr U16 KNOWN_ALC_EXTENSION_COUNT = ZE_ALC_EXT_LIST;
+#undef X
+		static constexpr U16 KNOWN_EXTENSION_COUNT = KNOWN_AL_EXTENSION_COUNT + KNOWN_ALC_EXTENSION_COUNT;
+
+		std::bitset<KNOWN_EXTENSION_COUNT + 1> supportedExtensions;
+
+		template<U64 SIZE>
+		static constexpr U16 GetExtensionIndex(const char(&extName)[SIZE]) noexcept;
+
 	public:
 		Device() = default;
 		ZE_CLASS_MOVE(Device);
-		~Device() = default;
+		~Device();
 
 		static Expected<Device> Create(U32 sampleRate) noexcept;
 
+		void SetVolume(float decibels) noexcept { alListenerf(AL_GAIN, GetVolumeLevel(decibels)); ZE_AL_CHECK("Failed to set listener volume"); }
+
 		// Audio API Internal
 
+		// Only to be used on static strings
+		template<U64 SIZE>
+		constexpr bool IsExtensionSupported(const char(&extName)[SIZE]) const noexcept { return supportedExtensions[GetExtensionIndex<SIZE>(extName)]; }
+
+		constexpr ALCdevice* GetDevice() const noexcept { return device; }
+		constexpr ALCcontext* GetContext() const noexcept { return context; }
 	};
+
+#pragma region Functions
+	template<U64 SIZE>
+	constexpr U16 Device::GetExtensionIndex(const char(&extName)[SIZE]) noexcept
+	{
+		// __COUNTER__ is supported on MSVC, GCC and Clang, on other compilers should find alternative
+		constexpr U16 COUNTER_BASE = __COUNTER__ + 1;
+
+		switch (Utils::GetStringHash(extName, SIZE))
+		{
+#define X(ext) case Utils::GetStringHash(#ext, sizeof(#ext)): return __COUNTER__ - COUNTER_BASE;
+			ZE_OAL_EXT_LIST
+#undef X
+		default:
+			return KNOWN_EXTENSION_COUNT;
+		}
+	}
+#pragma endregion
 }
