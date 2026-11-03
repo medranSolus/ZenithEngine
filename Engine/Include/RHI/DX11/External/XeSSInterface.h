@@ -9,18 +9,15 @@ namespace ZE::RHI::DX11::External
 {
 	class XeSSInterface final
 	{
-		xess_context_handle_t ctx = nullptr;
+		Move<xess_context_handle_t, nullptr> ctx;
 		bool ctxInit = false;
 
 		void Destroy() noexcept;
-		void MoveFrom(XeSSInterface&& xess) noexcept;
 		Status CreateCtx(Device& dev) noexcept;
 
 	public:
 		XeSSInterface() = default;
-		ZE_CLASS_NO_COPY(XeSSInterface);
-		XeSSInterface(XeSSInterface&& xess) noexcept { MoveFrom(std::move(xess)); }
-		XeSSInterface& operator=(XeSSInterface&& xess) noexcept { Destroy(); MoveFrom(std::move(xess)); return *this; }
+		ZE_CLASS_MOVE(XeSSInterface);
 		~XeSSInterface() { Destroy(); }
 
 		static Expected<XeSSInterface> Create(GFX::Device& dev) noexcept;

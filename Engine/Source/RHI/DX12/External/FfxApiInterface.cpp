@@ -204,25 +204,13 @@ namespace ZE::RHI::DX12::External
 		return false;
 	}
 
-	void FfxApiInterface::Destroy() noexcept
+	FfxApiInterface::~FfxApiInterface()
 	{
 		if (ffxApiDll)
 		{
 			[[maybe_unused]] const BOOL res = FreeLibrary(ffxApiDll);
 			ZE_ASSERT(res, "Error unloading amd_fidelityfx_loader_dx12.dll!");
 		}
-	}
-
-	void FfxApiInterface::MoveFrom(FfxApiInterface&& ffxInt) noexcept
-	{
-		ffxApiDll = std::exchange(ffxInt.ffxApiDll, nullptr);
-		ffxCreateContext = ffxInt.ffxCreateContext;
-		ffxFunctions = std::move(ffxInt.ffxFunctions);
-		device = std::move(ffxInt.device);
-		ringBuffer = std::move(ffxInt.ringBuffer);
-		aliasableResources = std::move(ffxInt.aliasableResources);
-		effectAllocs = std::move(ffxInt.effectAllocs);
-		newAliasableRegion = std::move(ffxInt.newAliasableRegion);
 	}
 
 	Expected<FfxApiInterface> FfxApiInterface::Create(GFX::Device& dev) noexcept

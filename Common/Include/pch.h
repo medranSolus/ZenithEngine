@@ -88,6 +88,10 @@
 #include "MathLight.h"
 
 /*
+*/
+#include "Move.h"
+
+/*
 * BasicTypes.h
 * bitset
 * map

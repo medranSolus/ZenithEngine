@@ -38,15 +38,9 @@ namespace ZE::RHI::DX12::External
 			GarbageCollector::Get().Register(GarbageCollector::Get().MarkInactive(descInfo.Handle), std::move(descInfo));
 	}
 
-	void XeSSInterface::MoveFrom(XeSSInterface&& xess) noexcept
-	{
-		ctx = std::exchange(xess.ctx, nullptr);
-		descInfo = std::move(xess.descInfo);
-	}
-
 	Status XeSSInterface::CreateCtx(Device& dev) noexcept
 	{
-		ZE_XESS_LOG_RET_FAILED(xessD3D12CreateContext(dev.GetDevice(), &ctx),
+		ZE_XESS_LOG_RET_FAILED(xessD3D12CreateContext(dev.GetDevice(), &static_cast<xess_context_handle_t&>(ctx)),
 			"Error creating XeSS D3D12 context!");
 
 		ZE_XESS_LOG_RET_FAILED(xessSetLoggingCallback(ctx,

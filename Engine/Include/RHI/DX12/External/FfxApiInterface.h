@@ -16,7 +16,7 @@ namespace ZE::RHI::DX12::External
 			U64 nextOffset = 0;
 		};
 
-		HMODULE ffxApiDll = nullptr;
+		Move<HMODULE, nullptr> ffxApiDll;
 		PfnFfxCreateContext ffxCreateContext = nullptr;
 		GFX::External::FfxApiFunctions ffxFunctions = {};
 
@@ -36,15 +36,11 @@ namespace ZE::RHI::DX12::External
 
 		ResourceAllocation* AcquireRegion(U32 effectId) noexcept;
 		bool RemoveAllocation(U32 effectId, U64 bytes) noexcept;
-		void Destroy() noexcept;
-		void MoveFrom(FfxApiInterface&& ffxInt) noexcept;
 
 	public:
 		FfxApiInterface() = default;
-		ZE_CLASS_NO_COPY(FfxApiInterface);
-		FfxApiInterface(FfxApiInterface&& ffxInt) noexcept { MoveFrom(std::move(ffxInt)); }
-		FfxApiInterface& operator=(FfxApiInterface&& ffxInt) noexcept { Destroy(); MoveFrom(std::move(ffxInt)); return *this; }
-		~FfxApiInterface() { Destroy(); }
+		ZE_CLASS_MOVE(FfxApiInterface);
+		~FfxApiInterface();
 
 		static Expected<FfxApiInterface> Create(GFX::Device& dev) noexcept;
 

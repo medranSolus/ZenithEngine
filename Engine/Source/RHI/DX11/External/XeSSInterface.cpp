@@ -37,15 +37,9 @@ namespace ZE::RHI::DX11::External
 		ctxInit = false;
 	}
 
-	void XeSSInterface::MoveFrom(XeSSInterface&& xess) noexcept
-	{
-		ctx = std::exchange(xess.ctx, nullptr);
-		ctxInit = xess.ctxInit;
-	}
-
 	Status XeSSInterface::CreateCtx(Device& dev) noexcept
 	{
-		ZE_XESS_LOG_RET_FAILED(xessD3D11CreateContext(dev.GetDevice(), &ctx),
+		ZE_XESS_LOG_RET_FAILED(xessD3D11CreateContext(dev.GetDevice(), &static_cast<xess_context_handle_t&>(ctx)),
 			"Error creating XeSS D3D11 context!");
 
 		ZE_XESS_LOG_RET_FAILED(xessSetLoggingCallback(ctx,

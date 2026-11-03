@@ -17,16 +17,10 @@ namespace ZE::RHI::DX12::External
 	{
 		DX::ComPtr<IDevice> srcDev;
 
-		void MoveFrom(NgxInterface&& ngx) noexcept { srcDev = std::exchange(ngx.srcDev, nullptr); }
-
-		void Destroy() noexcept;
-
 	public:
 		NgxInterface() = default;
-		ZE_CLASS_NO_COPY(NgxInterface);
-		NgxInterface(NgxInterface&& ngx) noexcept { MoveFrom(std::move(ngx)); }
-		NgxInterface& operator=(NgxInterface&& ngx) noexcept { Destroy(); MoveFrom(std::move(ngx));  return *this; }
-		~NgxInterface() { Destroy(); }
+		ZE_CLASS_MOVE(NgxInterface);
+		~NgxInterface();
 
 		static Expected<NgxInterface> Create(GFX::Device& dev, const NVSDK_NGX_FeatureCommonInfo& info) noexcept;
 

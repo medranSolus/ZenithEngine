@@ -5,15 +5,10 @@ ZE_WARNING_POP
 
 namespace ZE::RHI::DX11::External
 {
-	void ImGuiBackendData::Destroy() noexcept
+	ImGuiBackendData::~ImGuiBackendData()
 	{
 		if (created)
 			ImGui_ImplDX11_Shutdown();
-	}
-
-	void ImGuiBackendData::MoveFrom(ImGuiBackendData&& backend) noexcept
-	{
-		created = std::exchange(backend.created, false);
 	}
 
 	Expected<ImGuiBackendData> ImGuiBackendData::Create(GFX::Device& dev, PixelFormat outputFormat) noexcept

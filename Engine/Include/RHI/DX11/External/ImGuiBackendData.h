@@ -5,17 +5,12 @@ namespace ZE::RHI::DX11::External
 {
 	class ImGuiBackendData final
 	{
-		bool created = false;
-
-		void Destroy() noexcept;
-		void MoveFrom(ImGuiBackendData&& backend) noexcept;
+		Move<bool, false> created;
 
 	public:
 		ImGuiBackendData() = default;
-		ZE_CLASS_NO_COPY(ImGuiBackendData);
-		ImGuiBackendData(ImGuiBackendData&& backend) noexcept { MoveFrom(std::move(backend)); }
-		ImGuiBackendData& operator=(ImGuiBackendData&& backend) noexcept { Destroy(); MoveFrom(std::move(backend)); return *this; }
-		~ImGuiBackendData() { Destroy(); }
+		ZE_CLASS_MOVE(ImGuiBackendData);
+		~ImGuiBackendData();
 
 		static Expected<ImGuiBackendData> Create(GFX::Device& dev, PixelFormat outputFormat) noexcept;
 

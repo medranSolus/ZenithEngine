@@ -3,7 +3,7 @@
 
 namespace ZE::RHI::DX11::External
 {
-	void NgxInterface::Destroy() noexcept
+	NgxInterface::~NgxInterface()
 	{
 		if (srcDev)
 		{
