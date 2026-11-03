@@ -30,5 +30,8 @@ namespace ZE
 
 		operator const T&() const noexcept { return value; }
 		operator T&() noexcept { return value; }
+
+		T* operator &() noexcept { return &value; }
+		const T* operator &() const noexcept { return &value; }
 	};
 }

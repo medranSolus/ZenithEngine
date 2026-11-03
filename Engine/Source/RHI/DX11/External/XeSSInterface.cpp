@@ -39,7 +39,7 @@ namespace ZE::RHI::DX11::External
 
 	Status XeSSInterface::CreateCtx(Device& dev) noexcept
 	{
-		ZE_XESS_LOG_RET_FAILED(xessD3D11CreateContext(dev.GetDevice(), &static_cast<xess_context_handle_t&>(ctx)),
+		ZE_XESS_LOG_RET_FAILED(xessD3D11CreateContext(dev.GetDevice(), &ctx),
 			"Error creating XeSS D3D11 context!");
 
 		ZE_XESS_LOG_RET_FAILED(xessSetLoggingCallback(ctx,
