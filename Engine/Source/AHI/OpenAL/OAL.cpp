@@ -1,0 +1,197 @@
+#include "AHI/OpenAL/OAL.h"
+#include "AHI/OpenAL/Device.h"
+
+namespace ZE::AHI::OpenAL
+{
+#pragma region Extension functions
+#if AL_EXT_debug
+	LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT;
+	LPALOBJECTLABELEXT alObjectLabelEXT;
+#endif
+
+	void LoadExtensions(Device& dev) noexcept
+	{
+#if _ZE_DEBUG_AUDIO_API
+		if (dev.IsExtensionSupported("AL_EXT_debug"))
+		{
+			alDebugMessageCallbackEXT = reinterpret_cast<LPALDEBUGMESSAGECALLBACKEXT>(alGetProcAddress("alDebugMessageCallbackEXT"));
+			alObjectLabelEXT = reinterpret_cast<LPALOBJECTLABELEXT>(alGetProcAddress("alObjectLabelEXT"));
+		}
+#endif
+	}
+#pragma endregion
+
+	ALenum GetALFormat(Device& dev, SFX::ChannelMask channels, U8 bitsPerSample, bool isFloat) noexcept
+	{
+		ZE_ASSERT(dev.IsExtensionSupported("AL_EXT_float32") || !isFloat,
+			"Required OpenAL AL_EXT_float32 extension is not available!");
+
+		bitsPerSample = Math::AlignUp<U8>(bitsPerSample, 8);
+		switch (channels)
+		{
+		case Base(SFX::SoundChannel::Mono):
+		{
+			switch (bitsPerSample)
+			{
+			case 8:
+				return AL_FORMAT_MONO8;
+			case 16:
+				return AL_FORMAT_MONO16;
+			case 32:
+			{
+				if (isFloat)
+					return AL_FORMAT_MONO_FLOAT32;
+				break;
+			}
+			default:
+				break;
+			}
+			break;
+		}
+		case Base(SFX::SoundChannel::Stereo_2_0):
+		{
+			switch (bitsPerSample)
+			{
+			case 8:
+				return AL_FORMAT_STEREO8;
+			case 16:
+				return AL_FORMAT_STEREO16;
+			case 32:
+			{
+				if (isFloat)
+					return AL_FORMAT_STEREO_FLOAT32;
+				break;
+			}
+			default:
+				break;
+			}
+			break;
+		}
+		default:
+			break;
+		}
+
+		// Multi-channel formats
+		if (dev.IsExtensionSupported("AL_EXT_MCFORMATS"))
+		{
+			switch (channels)
+			{
+			case Base(SFX::SoundChannel::Stereo_4_0):
+			{
+				switch (bitsPerSample)
+				{
+				case 8:
+					return AL_FORMAT_QUAD8;
+				case 16:
+					return AL_FORMAT_QUAD16;
+				case 32:
+				{
+					if (isFloat)
+						return AL_FORMAT_QUAD32;
+					break;
+				}
+				default:
+					break;
+				}
+				break;
+			}
+			case Base(SFX::SoundChannel::Stereo_5_1):
+			{
+				switch (bitsPerSample)
+				{
+				case 8:
+					return AL_FORMAT_51CHN8;
+				case 16:
+					return AL_FORMAT_51CHN16;
+				case 32:
+				{
+					if (isFloat)
+						return AL_FORMAT_51CHN32;
+					break;
+				}
+				default:
+					break;
+				}
+				break;
+			}
+			case Base(SFX::SoundChannel::Stereo_6_1):
+			{
+				switch (bitsPerSample)
+				{
+				case 8:
+					return AL_FORMAT_61CHN8;
+				case 16:
+					return AL_FORMAT_61CHN16;
+				case 32:
+				{
+					if (isFloat)
+						return AL_FORMAT_61CHN32;
+					break;
+				}
+				default:
+					break;
+				}
+				break;
+			}
+			case Base(SFX::SoundChannel::Stereo_7_1):
+			{
+				switch (bitsPerSample)
+				{
+				case 8:
+					return AL_FORMAT_71CHN8;
+				case 16:
+					return AL_FORMAT_71CHN16;
+				case 32:
+				{
+					if (isFloat)
+						return AL_FORMAT_71CHN32;
+					break;
+				}
+				default:
+					break;
+				}
+				break;
+			}
+			case SFX::SoundChannel::BackLeft | SFX::SoundChannel::BackRight:
+			{
+				switch (bitsPerSample)
+				{
+				case 8:
+					return AL_FORMAT_REAR8;
+				case 16:
+					return AL_FORMAT_REAR16;
+				case 32:
+				{
+					if (isFloat)
+						return AL_FORMAT_REAR32;
+					break;
+				}
+				default:
+					break;
+				}
+				break;
+			}
+			default:
+				break;
+			}
+		}
+
+		// Rare 64 bit format
+		if (dev.IsExtensionSupported("AL_EXT_double"))
+		{
+			if (bitsPerSample == 64 && isFloat)
+			{
+				switch (channels)
+				{
+				case Base(SFX::SoundChannel::Mono):
+					return AL_FORMAT_MONO_DOUBLE_EXT;
+				case Base(SFX::SoundChannel::Stereo_2_0):
+					return AL_FORMAT_STEREO_DOUBLE_EXT;
+				default:
+					break;
+				}
+			}
+		}
+		return UINT_MAX;
+	}
+}

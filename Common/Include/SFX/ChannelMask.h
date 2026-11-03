@@ -29,14 +29,14 @@ namespace ZE::SFX
 
 		// Shorthands for typical configurations
 		Mono = FrontCenter,
-		Stereo_2_0 = FrontLeft | FrontRight,
-		Stereo_2_1 = FrontLeft | FrontRight | LowFrequency,
-		Stereo_3_0 = FrontLeft | FrontRight | FrontCenter,
-		Stereo_4_0 = FrontLeft | FrontRight | BackLeft | BackRight,
-		Stereo_5_0 = FrontLeft | FrontRight | FrontCenter | BackLeft | BackRight,
-		Stereo_5_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight,
-		Stereo_6_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackCenter | SideLeft | SideRight,
-		Stereo_7_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight | SideLeft | SideRight,
+		Stereo_2_0 = FrontLeft | FrontRight, // FL, FR
+		Stereo_2_1 = FrontLeft | FrontRight | LowFrequency, // FL, FR, LFE
+		Stereo_3_0 = FrontLeft | FrontRight | FrontCenter, // FL, FR, FC
+		Stereo_4_0 = FrontLeft | FrontRight | BackLeft | BackRight, // FL, FR, BL, BR
+		Stereo_5_0 = FrontLeft | FrontRight | FrontCenter | BackLeft | BackRight, // FL, FR, FC, BL, BR
+		Stereo_5_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight, // FL, FR, FC, LFE, BL, BR
+		Stereo_6_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackCenter | SideLeft | SideRight, // FL, FR, FC, LFE, BC, SL, SR
+		Stereo_7_1 = FrontLeft | FrontRight | FrontCenter | LowFrequency | BackLeft | BackRight | SideLeft | SideRight, // FL, FR, FC, LFE, BL, BR, SL, SR
 	};
 	ZE_ENUM_OPERATORS(SoundChannel, ChannelMask);
 

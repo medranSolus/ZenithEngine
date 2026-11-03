@@ -16,22 +16,22 @@
 #pragma region AL extensions
 // List of required AL extensions, intended for use in X() macro
 #define ZE_AL_EXT_LIST_REQUIRED \
-	X(AL_EXT_float32)	/* Support for 32-bit floating-point audio data [EXT_FORMAT] */ \
-	X(AL_EXT_MCFORMATS)	/* Support for multi-channel audio data [EXT_FORMAT] */
+	X(AL_EXT_float32) /* Support for 32-bit floating-point audio data [EXT_FORMAT] */
 
 // List of AL extensions, used in debug targets, intended for use in X() macro
 #define ZE_AL_EXT_LIST_DEBUG \
 	X(AL_EXT_debug) /* Debugging and error reporting [EXT_DEBUG] */
 
 // List of optional AL extensions, intended for use in X() macro
-#define ZE_AL_EXT_LIST_OPTIONAL
+#define ZE_AL_EXT_LIST_OPTIONAL \
+	X(AL_EXT_double)	/* Support for 64-bit floating-point audio data [EXT_FORMAT] */ \
+	X(AL_EXT_MCFORMATS)	/* Support for multi-channel audio data [EXT_FORMAT] */
 
 // List of currently not used AL extensions, intended for use in X() macro
 #define ZE_AL_EXT_LIST_NOT_USED \
 	X(AL_EXT_ALAW)						/* Support for a-law encoded audio data (mostly telcom) [EXT_FORMAT] */ \
 	X(AL_EXT_BFORMAT)					/* Support for B-Format ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
 	X(AL_EXT_direct_context)			/* Instead of using implicit current context for all functions, use direct context pointer in each call */ \
-	X(AL_EXT_double)					/* Support for 64-bit floating-point audio data [EXT_FORMAT] */ \
 	X(AL_EXT_IMA4)						/* Support IMA4 ADPCM audio data [EXT_FORMAT] */ \
 	X(AL_EXT_MULAW)						/* Support for u-law encoded audio data (mostly telcom) [EXT_FORMAT] */ \
 	X(AL_EXT_MULAW_BFORMAT)				/* Support for u-law B-Format ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \

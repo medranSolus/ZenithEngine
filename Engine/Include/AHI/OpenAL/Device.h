@@ -22,6 +22,8 @@ namespace ZE::AHI::OpenAL
 		template<U64 SIZE>
 		static constexpr U16 GetExtensionIndex(const char(&extName)[SIZE]) noexcept;
 
+		static void MessageCallback(ALenum source, ALenum type, ALuint id, ALenum severity, ALsizei length, const ALchar* message, void* userParam) noexcept;
+
 	public:
 		Device() = default;
 		ZE_CLASS_MOVE(Device);
@@ -59,3 +61,11 @@ namespace ZE::AHI::OpenAL
 	}
 #pragma endregion
 }
+
+#if _ZE_DEBUG_AUDIO_API
+// Set debug name on the AL object. Supported object types: AL_BUFFER_EXT, AL_SOURCE_EXT, AL_FILTER_EXT, AL_EFFECT_EXT, AL_AUXILIARY_EFFECT_SLOT_EXT
+#	define ZE_AL_SET_DEBUG_ID(dev, objectType, object, id) do { if (dev.IsExtensionSupported("AL_EXT_debug")) { std::string __id = id; alObjectLabelEXT(objectType, object, Utils::SafeCast<ALsizei>(__id.length()), __id.c_str()); ZE_AL_CHECK("Failed to AL debug name!"); } } while(false)
+#else
+// Set debug name on the AL object. Supported object types: AL_BUFFER_EXT, AL_SOURCE_EXT, AL_FILTER_EXT, AL_EFFECT_EXT, AL_AUXILIARY_EFFECT_SLOT_EXT
+#	define ZE_AL_SET_DEBUG_ID(dev, objectType, object, id) ((void)0)
+#endif

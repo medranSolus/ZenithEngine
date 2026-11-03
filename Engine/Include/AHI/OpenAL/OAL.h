@@ -1,6 +1,6 @@
 #pragma once
+#include "SFX/ChannelMask.h"
 // Headers needed for OpenAL
-#define AL_ALEXT_PROTOTYPES
 #include "AL/al.h"
 #include "AL/alc.h"
 #include "AL/alext.h"
@@ -12,6 +12,11 @@ namespace ZE::AHI::OpenAL
 	// Get correct volume level accepted by OpenAL
 	constexpr float GetVolumeLevel(float decibels) noexcept;
 
+	// Load supported OpenAL extension's function pointers
+	void LoadExtensions(class Device& dev) noexcept;
+	// Get OpenAL format description of sound data
+	ALenum GetALFormat(class Device& dev, SFX::ChannelMask channels, U8 bitsPerSample, bool isFloat) noexcept;
+
 #pragma region Functions
 	constexpr float GetVolumeLevel(float decibels) noexcept
 	{
@@ -19,5 +24,13 @@ namespace ZE::AHI::OpenAL
 			return 0.0f;
 		return std::powf(10.0f, decibels / 20.0f);
 	}
+#pragma endregion
+
+	// Extensions function pointers loaded at runtime (only used ones)
+#pragma region Extension functions
+#if AL_EXT_debug
+	extern LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT;
+	extern LPALOBJECTLABELEXT alObjectLabelEXT;
+#endif
 #pragma endregion
 }

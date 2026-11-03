@@ -2,6 +2,131 @@
 
 namespace ZE::AHI::OpenAL
 {
+	void Device::MessageCallback(ALenum source, ALenum type, ALuint id, ALenum severity,
+		ALsizei length, const ALchar* message, void* userParam) noexcept
+	{
+#if _ZE_DEBUG_AUDIO_API
+		// Format message properly
+		std::string msg;
+
+		switch (source)
+		{
+		case AL_DEBUG_SOURCE_API_EXT:
+		{
+			msg = "[Source: AL runtime] ";
+			break;
+		}
+		case AL_DEBUG_SOURCE_AUDIO_SYSTEM_EXT:
+		{
+			msg = "[Source: ALC layer] ";
+			break;
+		}
+		case AL_DEBUG_SOURCE_THIRD_PARTY_EXT:
+		{
+			msg = "[Source: 3rd party] ";
+			break;
+		}
+		case AL_DEBUG_SOURCE_APPLICATION_EXT:
+		{
+			msg = "[Source: app] ";
+			break;
+		}
+		case AL_DEBUG_SOURCE_OTHER_EXT:
+		{
+			msg = "[Source: other] ";
+			break;
+		}
+		default:
+		{
+			msg = "[Source: unknown] ";
+			break;
+		}
+		}
+
+		switch (type)
+		{
+		case AL_DEBUG_TYPE_ERROR_EXT:
+		{
+			msg += "[Type: error] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_EXT:
+		{
+			msg += "[Type: deprecated behavior] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_EXT:
+		{
+			msg += "[Type: undefined behavior] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_PORTABILITY_EXT:
+		{
+			msg += "[Type: portability] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_PERFORMANCE_EXT:
+		{
+			msg += "[Type: performance] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_MARKER_EXT:
+		{
+			msg += "[Type: custom marker] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_PUSH_GROUP_EXT:
+		{
+			msg += "[Type: group push] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_POP_GROUP_EXT:
+		{
+			msg += "[Type: group pop] ";
+			break;
+		}
+		case AL_DEBUG_TYPE_OTHER_EXT:
+		{
+			msg += "[Type: other] ";
+			break;
+		}
+		default:
+		{
+			msg += "[Type: unknown] ";
+			break;
+		}
+		}
+
+		// Send final message out
+		msg += message;
+		switch (severity)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case AL_DEBUG_SEVERITY_HIGH_EXT:
+		{
+			Logger::Error("[OpenAL HIGH] " + msg);
+			break;
+		}
+		case AL_DEBUG_SEVERITY_MEDIUM_EXT:
+		{
+			Logger::Warning("[OpenAL MEDIUM] " + msg);
+			break;
+		}
+		case AL_DEBUG_SEVERITY_LOW_EXT:
+		{
+			Logger::Info("[OpenAL LOW] " + msg);
+			break;
+		}
+		case AL_DEBUG_SEVERITY_NOTIFICATION_EXT:
+		{
+			Logger::Info("[OpenAL NOTIFICATION] " + msg);
+			break;
+		}
+		}
+#endif
+	}
+
 	Device::~Device()
 	{
 		if (context)
@@ -56,18 +181,17 @@ namespace ZE::AHI::OpenAL
 			attrList.emplace_back(ALC_FREQUENCY);
 			attrList.emplace_back(static_cast<ALCint>(sampleRate));
 		}
-		if constexpr (_ZE_DEBUG_AUDIO_API)
+#if _ZE_DEBUG_AUDIO_API
+		if (dev.IsExtensionSupported("ALC_EXT_debug"))
 		{
-			if (dev.supportedExtensions[GetExtensionIndex("ALC_EXT_debug")])
-			{
-				attrList.emplace_back(ALC_CONTEXT_FLAGS_EXT);
-				attrList.emplace_back(ALC_CONTEXT_DEBUG_BIT_EXT);
-			}
-			else
-			{
-				ZE_WARNING("ALC_EXT_debug extension is not supported, debug context will not be created");
-			}
+			attrList.emplace_back(ALC_CONTEXT_FLAGS_EXT);
+			attrList.emplace_back(ALC_CONTEXT_DEBUG_BIT_EXT);
 		}
+		else
+		{
+			ZE_WARNING("ALC_EXT_debug extension is not supported, debug context will not be created");
+		}
+#endif
 		attrList.emplace_back(0);
 
 		dev.context = alcCreateContext(dev.device, attrList.data());
@@ -89,6 +213,16 @@ namespace ZE::AHI::OpenAL
 				ZE_LOG_RET_FAILED_EXPECT(ZE_AL_ERROR(AL_INVALID_ENUM), "Required AL extension is not supported: " + std::string(extensionsList.at(i)));
 			}
 		}
+		// Must load extension functions before using any of them
+		LoadExtensions(dev);
+
+#if _ZE_DEBUG_AUDIO_API
+		if (dev.IsExtensionSupported("AL_EXT_debug"))
+		{
+			alDebugMessageCallbackEXT(Device::MessageCallback, nullptr);
+			ZE_AL_CHECK("Failed to set AL debug message callback!");
+		}
+#endif
 
 		return dev;
 	}
