@@ -35,7 +35,7 @@ namespace ZE::RHI::DX11::Resource
 				++slot;
 			}
 
-			ZE_DX_RET_FAILED_EXPECT(device->CreateInputLayout(elements.get(), Utils::SafeCast<UINT>(desc.InputLayout.size()),
+			ZE_DX_RET_FAILED_EXPECT(device->CreateInputLayout(elements.get(), inputElementsCount,
 				bytecode->GetBufferPointer(), bytecode->GetBufferSize(), &state.inputLayout));
 			ZE_DX_SET_ID(state.inputLayout, "Layout_" + desc.DebugName);
 		}
