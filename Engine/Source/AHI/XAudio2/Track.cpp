@@ -23,17 +23,23 @@ namespace ZE::AHI::XAudio2
 
 	Status Track::Play(U32 loopCount) noexcept
 	{
-		XAUDIO2_BUFFER buffer = {};
-		buffer.Flags = XAUDIO2_END_OF_STREAM;
-		buffer.AudioBytes = dataSize;
-		buffer.pAudioData = audioData.get();
-		buffer.PlayBegin = 0;
-		buffer.PlayLength = 0;
-		buffer.LoopBegin = 0;
-		buffer.LoopLength = 0;
-		buffer.LoopCount = loopCount;
-		buffer.pContext = nullptr;
-		ZE_XA2_RET_FAILED(sourceVoice->SubmitSourceBuffer(&buffer, nullptr));
+		XAUDIO2_VOICE_STATE bufferState = {};
+		sourceVoice->GetState(&bufferState, XAUDIO2_VOICE_NOSAMPLESPLAYED);
+
+		if (bufferState.BuffersQueued == 0)
+		{
+			XAUDIO2_BUFFER buffer = {};
+			buffer.Flags = XAUDIO2_END_OF_STREAM;
+			buffer.AudioBytes = dataSize;
+			buffer.pAudioData = audioData.get();
+			buffer.PlayBegin = 0;
+			buffer.PlayLength = 0;
+			buffer.LoopBegin = 0;
+			buffer.LoopLength = 0;
+			buffer.LoopCount = loopCount;
+			buffer.pContext = nullptr;
+			ZE_XA2_RET_FAILED(sourceVoice->SubmitSourceBuffer(&buffer, nullptr));
+		}
 
 		Resume();
 		return {};

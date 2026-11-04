@@ -28,9 +28,8 @@ namespace ZE::AHI::OpenAL
 
 	// Extensions function pointers loaded at runtime (only used ones)
 #pragma region Extension functions
-#if AL_EXT_debug
 	extern LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT;
 	extern LPALOBJECTLABELEXT alObjectLabelEXT;
-#endif
+	extern PFNALBUFFERDATASTATICPROC alBufferDataStatic;
 #pragma endregion
 }

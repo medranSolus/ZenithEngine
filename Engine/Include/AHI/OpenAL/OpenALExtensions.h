@@ -24,41 +24,41 @@
 
 // List of optional AL extensions, intended for use in X() macro
 #define ZE_AL_EXT_LIST_OPTIONAL \
-	X(AL_EXT_double)	/* Support for 64-bit floating-point audio data [EXT_FORMAT] */ \
-	X(AL_EXT_MCFORMATS)	/* Support for multi-channel audio data [EXT_FORMAT] */
+	X(AL_EXT_double)					/* Support for 64-bit floating-point audio data [EXT_FORMAT] */ \
+	X(AL_EXT_MCFORMATS)					/* Support for multi-channel audio data [EXT_FORMAT] */ \
+	X(AL_EXT_STATIC_BUFFER)				/* Allow for referencing audio data outside the scope of OpenAL-managed buffers */ \
+	X(AL_SOFT_direct_channels)			/* Bypass 3D sound and route audio directly to the speakers (creating standard 2D audio) [EXT_3D] */ \
+	X(AL_SOFT_direct_channels_remix)	/* Extend functionality of AL_SOFT_direct_channels and allow for remixing into actual set of speakers [EXT_3D] */ \
+	X(AL_SOFT_source_spatialize)		/* Manual specification whether given source should be spatialized [EXT_3D] */
 
 // List of currently not used AL extensions, intended for use in X() macro
 #define ZE_AL_EXT_LIST_NOT_USED \
-	X(AL_EXT_ALAW)						/* Support for a-law encoded audio data (mostly telcom) [EXT_FORMAT] */ \
-	X(AL_EXT_BFORMAT)					/* Support for B-Format ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
-	X(AL_EXT_direct_context)			/* Instead of using implicit current context for all functions, use direct context pointer in each call */ \
-	X(AL_EXT_IMA4)						/* Support IMA4 ADPCM audio data [EXT_FORMAT] */ \
-	X(AL_EXT_MULAW)						/* Support for u-law encoded audio data (mostly telcom) [EXT_FORMAT] */ \
-	X(AL_EXT_MULAW_BFORMAT)				/* Support for u-law B-Format ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
-	X(AL_EXT_MULAW_MCFORMATS)			/* Support for u-law encoded multi channel-audio data (mostly telcom) [EXT_FORMAT] */ \
-	X(AL_EXT_source_distance_model)		/* Allows for custom distance curves for different sources [EXT_3D] */ \
-	X(AL_EXT_SOURCE_RADIUS)				/* Turn sound sources into objects instead of space points [EXT_3D] */ \
-	X(AL_EXT_STATIC_BUFFER)				/* Allow for referencing audio data outside the scope of OpenAL-managed buffers */ \
-	X(AL_EXT_STEREO_ANGLES)				/* Manually specify angles of the stereo speakers [EXT_3D] */ \
-	X(AL_SOFT_bformat_hoa)				/* Support for High-Order Ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
-	X(AL_SOFT_block_alignment)			/* Specify alignment requirements for compressed audio buffers */ \
-	X(AL_SOFT_buffer_length_query)		/* Same as AL_SOFT_source_length */ \
-	X(AL_SOFT_callback_buffer)			/* Register callbacks for streaming audio data */ \
-	X(AL_SOFT_deferred_updates)			/* Perform updates to the multiple sound params in single step */ \
-	X(AL_SOFT_direct_channels)			/* Bypass 3D sound and route audio directly to the speakers (creating standard 2D audio) [EXT_3D] */ \
-	X(AL_SOFT_direct_channels_remix)	/* Extend functionality of AL_SOFT_direct_channels and allow for remixing into actual set of speakers [EXT_3D] */ \
-	X(AL_SOFT_effect_target)			/* Allows chaining effects with each other */ \
-	X(AL_SOFT_events)					/* Allow for event-based source audio control */ \
-	X(AL_SOFT_gain_clamp_ex)			/* Custom gain limit */ \
-	X(AL_SOFT_loop_points)				/* Allows for looping mid-buffer rather than whole submitted audio data */ \
-	X(AL_SOFT_MSADPCM)					/* Support for Microsoft ADPCM format [EXT_FORMAT] */ \
-	X(AL_SOFT_source_latency)			/* Get exact latency of audio data being played, useful for sync with animation */ \
-	X(AL_SOFT_source_length)			/* Query the time duration of the sound buffer */ \
-	X(AL_SOFT_source_resampler)			/* Change resamplers for given sources when converting between bitrates */ \
-	X(AL_SOFT_source_spatialize)		/* Manual specification whether given source should be spatialized [EXT_3D] */ \
-	X(AL_SOFT_source_start_delay)		/* Play audio with a delay into the future */ \
-	X(AL_SOFT_UHJ)						/* New UHJ audio formats from B-Formats [EXT_FORMAT] [EXT_3D] */ \
-	X(AL_SOFT_UHJ_ex)					/* UHJ formats extended for u-law/a-law/IMA4/MS ADPCM formats [EXT_FORMAT] [EXT_3D] */
+	X(AL_EXT_ALAW)					/* Support for a-law encoded audio data (mostly telcom) [EXT_FORMAT] */ \
+	X(AL_EXT_BFORMAT)				/* Support for B-Format ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
+	X(AL_EXT_direct_context)		/* Instead of using implicit current context for all functions, use direct context pointer in each call */ \
+	X(AL_EXT_IMA4)					/* Support IMA4 ADPCM audio data [EXT_FORMAT] */ \
+	X(AL_EXT_MULAW)					/* Support for u-law encoded audio data (mostly telcom) [EXT_FORMAT] */ \
+	X(AL_EXT_MULAW_BFORMAT)			/* Support for u-law B-Format ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
+	X(AL_EXT_MULAW_MCFORMATS)		/* Support for u-law encoded multi channel-audio data (mostly telcom) [EXT_FORMAT] */ \
+	X(AL_EXT_source_distance_model)	/* Allows for custom distance curves for different sources [EXT_3D] */ \
+	X(AL_EXT_SOURCE_RADIUS)			/* Turn sound sources into objects instead of space points [EXT_3D] */ \
+	X(AL_EXT_STEREO_ANGLES)			/* Manually specify angles of the stereo speakers [EXT_3D] */ \
+	X(AL_SOFT_bformat_hoa)			/* Support for High-Order Ambisonics audio data [EXT_FORMAT] [EXT_3D] */ \
+	X(AL_SOFT_block_alignment)		/* Specify alignment requirements for compressed audio buffers */ \
+	X(AL_SOFT_buffer_length_query)	/* Same as AL_SOFT_source_length */ \
+	X(AL_SOFT_callback_buffer)		/* Register callbacks for streaming audio data */ \
+	X(AL_SOFT_deferred_updates)		/* Perform updates to the multiple sound params in single step */ \
+	X(AL_SOFT_effect_target)		/* Allows chaining effects with each other */ \
+	X(AL_SOFT_events)				/* Allow for event-based source audio control */ \
+	X(AL_SOFT_gain_clamp_ex)		/* Custom gain limit */ \
+	X(AL_SOFT_loop_points)			/* Allows for looping mid-buffer rather than whole submitted audio data */ \
+	X(AL_SOFT_MSADPCM)				/* Support for Microsoft ADPCM format [EXT_FORMAT] */ \
+	X(AL_SOFT_source_latency)		/* Get exact latency of audio data being played, useful for sync with animation */ \
+	X(AL_SOFT_source_length)		/* Query the time duration of the sound buffer */ \
+	X(AL_SOFT_source_resampler)		/* Change resamplers for given sources when converting between bitrates */ \
+	X(AL_SOFT_source_start_delay)	/* Play audio with a delay into the future */ \
+	X(AL_SOFT_UHJ)					/* New UHJ audio formats from B-Formats [EXT_FORMAT] [EXT_3D] */ \
+	X(AL_SOFT_UHJ_ex)				/* UHJ formats extended for u-law/a-law/IMA4/MS ADPCM formats [EXT_FORMAT] [EXT_3D] */
 
 // List of AL extensions, intended for use in X() macro
 #define ZE_AL_EXT_LIST ZE_AL_EXT_LIST_REQUIRED ZE_AL_EXT_LIST_DEBUG ZE_AL_EXT_LIST_OPTIONAL

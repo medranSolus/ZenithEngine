@@ -4,20 +4,21 @@
 namespace ZE::AHI::OpenAL
 {
 #pragma region Extension functions
-#if AL_EXT_debug
-	LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT;
-	LPALOBJECTLABELEXT alObjectLabelEXT;
-#endif
+	LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT = nullptr;
+	LPALOBJECTLABELEXT alObjectLabelEXT = nullptr;
+	PFNALBUFFERDATASTATICPROC alBufferDataStatic = nullptr;
 
 	void LoadExtensions(Device& dev) noexcept
 	{
-#if _ZE_DEBUG_AUDIO_API
 		if (dev.IsExtensionSupported("AL_EXT_debug"))
 		{
 			alDebugMessageCallbackEXT = reinterpret_cast<LPALDEBUGMESSAGECALLBACKEXT>(alGetProcAddress("alDebugMessageCallbackEXT"));
 			alObjectLabelEXT = reinterpret_cast<LPALOBJECTLABELEXT>(alGetProcAddress("alObjectLabelEXT"));
 		}
-#endif
+		if (dev.IsExtensionSupported("AL_EXT_STATIC_BUFFER"))
+		{
+			alBufferDataStatic = reinterpret_cast<PFNALBUFFERDATASTATICPROC>(alGetProcAddress("alBufferDataStatic"));
+		}
 	}
 #pragma endregion
 
@@ -192,6 +193,7 @@ namespace ZE::AHI::OpenAL
 				}
 			}
 		}
+		ZE_FAIL("Unsupported channels configuration for OpenAL!");
 		return UINT_MAX;
 	}
 }
