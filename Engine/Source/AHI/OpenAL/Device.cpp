@@ -140,7 +140,6 @@ namespace ZE::AHI::OpenAL
 		{
 			[[maybe_unused]] ALCboolean status = alcCloseDevice(device);
 			ZE_ASSERT(status, "Error closing AL device");
-			ZE_ALC_CHECK(device, "Failed to close AL device");
 		}
 	}
 
@@ -180,6 +179,11 @@ namespace ZE::AHI::OpenAL
 		{
 			attrList.emplace_back(ALC_FREQUENCY);
 			attrList.emplace_back(static_cast<ALCint>(sampleRate));
+		}
+		if (dev.IsExtensionSupported("ALC_SOFT_output_limiter"))
+		{
+			attrList.emplace_back(ALC_OUTPUT_LIMITER_SOFT);
+			attrList.emplace_back(ALC_TRUE);
 		}
 #if _ZE_DEBUG_AUDIO_API
 		if (dev.IsExtensionSupported("ALC_EXT_debug"))

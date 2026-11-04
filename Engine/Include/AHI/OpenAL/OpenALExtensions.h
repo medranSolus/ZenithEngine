@@ -74,7 +74,8 @@
 	X(ALC_EXT_debug) /* Debugging and error reporting [EXT_DEBUG] */
 
 // List of optional ALC extensions, intended for use in X() macro
-#define ZE_ALC_EXT_LIST_OPTIONAL
+#define ZE_ALC_EXT_LIST_OPTIONAL \
+	X(ALC_SOFT_output_limiter) /* Limit peaks of amplitude to not create distortion in 3D sound */
 
 // List of currently not used ALC extensions, intended for use in X() macro
 #define ZE_ALC_EXT_LIST_NOT_USED \
@@ -85,7 +86,6 @@
 	X(ALC_SOFT_HRTF)				/* Manual management over HRTF files [EXT_3D] */ \
 	X(ALC_SOFT_loopback)			/* Re-route sound to the buffer instead of sound card */ \
 	X(ALC_SOFT_loopback_bformat)	/* Allows for B-Formats during loopback capturing */ \
-	X(ALC_SOFT_output_limiter)		/* Limit peaks of amplitude to not create distortion in 3D sound */ \
 	X(ALC_SOFT_output_mode)			/* Use specific output mode with the given device */ \
 	X(ALC_SOFT_pause_device)		/* Allows for pausing playback of entire device */ \
 	X(ALC_SOFT_reopen_device)		/* Re-route output to the another device after it's being disconnected */ \
