@@ -196,4 +196,25 @@ namespace ZE::AHI::OpenAL
 		ZE_FAIL("Unsupported channels configuration for OpenAL!");
 		return UINT_MAX;
 	}
+
+	Status SetSource2D(Device& dev, ALuint source) noexcept
+	{
+		alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
+		ZE_AL_RET_FAILED();
+
+		// Disable source spatialization since this is 2D sound
+		if (dev.IsExtensionSupported("AL_SOFT_source_spatialize"))
+		{
+			alSourcei(source, AL_SOURCE_SPATIALIZE_SOFT, AL_FALSE);
+			ZE_AL_CHECK("Error disabling source spatialization!");
+		}
+
+		// Send audio directly with as little virtualization as possible
+		if (dev.IsExtensionSupported("AL_SOFT_direct_channels") && dev.IsExtensionSupported("AL_SOFT_direct_channels_remix"))
+		{
+			alSourcei(source, AL_DIRECT_CHANNELS_SOFT, AL_REMIX_UNMATCHED_SOFT);
+			ZE_AL_CHECK("Error specifying direct channels for track!");
+		}
+		return {};
+	}
 }

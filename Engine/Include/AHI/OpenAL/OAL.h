@@ -16,6 +16,8 @@ namespace ZE::AHI::OpenAL
 	void LoadExtensions(class Device& dev) noexcept;
 	// Get OpenAL format description of sound data
 	ALenum GetALFormat(class Device& dev, SFX::ChannelMask channels, U8 bitsPerSample, bool isFloat) noexcept;
+	// Setup source parameters to disable spatialization
+	Status SetSource2D(class Device& dev, ALuint source) noexcept;
 
 #pragma region Functions
 	constexpr float GetVolumeLevel(float decibels) noexcept

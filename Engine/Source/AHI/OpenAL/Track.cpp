@@ -40,22 +40,7 @@ namespace ZE::AHI::OpenAL
 		ZE_AL_RET_FAILED_EXPECT();
 		ZE_AL_SET_DEBUG_ID(device, AL_SOURCE_EXT, track.source, "Track source " + std::to_string(data.Desc.Bytes));
 
-		alSourcei(track.source, AL_SOURCE_RELATIVE, AL_TRUE);
-		ZE_AL_RET_FAILED_EXPECT();
-
-		// Disable source spatialization since this is 2D sound
-		if (device.IsExtensionSupported("AL_SOFT_source_spatialize"))
-		{
-			alSourcei(track.source, AL_SOURCE_SPATIALIZE_SOFT, AL_FALSE);
-			ZE_AL_CHECK("Error disabling source spatialization!");
-		}
-
-		// Send audio directly with as little virtualization as possible
-		if (device.IsExtensionSupported("AL_SOFT_direct_channels") && device.IsExtensionSupported("AL_SOFT_direct_channels_remix"))
-		{
-			alSourcei(track.source, AL_DIRECT_CHANNELS_SOFT, AL_REMIX_UNMATCHED_SOFT);
-			ZE_AL_CHECK("Error specifying direct channels for track!");
-		}
+		ZE_CODE_RET_FAILED_EXPECT(SetSource2D(device, track.source));
 		return track;
 	}
 
