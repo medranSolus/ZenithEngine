@@ -1,5 +1,6 @@
 #pragma once
 #include "SFX/StreamDesc.h"
+#include "SFX/StreamOrderAwaiter.h"
 
 namespace ZE::AHI::XAudio2
 {
@@ -7,32 +8,14 @@ namespace ZE::AHI::XAudio2
 	{
 		struct StreamData
 		{
-			struct Awaiter
-			{
-				Ptr<StreamData> Data;
-				U64 BufferIdx;
-				std::coroutine_handle<> Handle = {};
-
-				bool await_ready() const noexcept;
-				bool await_suspend(std::coroutine_handle<> h) noexcept;
-				bool await_resume() const noexcept;
-			};
-
 			std::unique_ptr<U8[]> RingBuffer;
 			std::shared_ptr<IO::File> FileHandle;
-			bool EnableLoop = false;
 			SFX::StreamState StateInfo = {};
 			Ptr<IXAudio2SourceVoice> SourceVoice;
-
-			UA64 NextSubmitBufferIdx = 0;
-			BoolAtom Alive = true;
-			UA8 FinishedBuffers = 0;
-			std::array<std::coroutine_handle<>, SFX::StreamState::BUFFER_COUNT> WaitTable;
-			SpinLock WaitLock;
+			bool EnableLoop = false;
+			SFX::StreamOrderData OrderData = {};
 
 			~StreamData();
-
-			void AbortAllWaiters() noexcept;
 		};
 
 		class StreamCallback final : public IXAudio2VoiceCallback
@@ -49,7 +32,7 @@ namespace ZE::AHI::XAudio2
 			void OnBufferStart(void* bufferCtx) noexcept override {}
 			void OnLoopEnd(void* bufferCtx) noexcept override {}
 
-			void OnStreamEnd() noexcept override { data->Alive = false; data->FinishedBuffers = SFX::StreamState::BUFFER_COUNT; }
+			void OnStreamEnd() noexcept override { data->OrderData.Alive = false; }
 			void OnVoiceError(void* bufferCtx, HRESULT error) noexcept override { ZE_CODE_ERROR(ZE_XA2_ERROR(error), "Error while playing stream number " + std::to_string(reinterpret_cast<U64>(bufferCtx))); }
 
 			void OnBufferEnd(void* bufferCtx) noexcept override;

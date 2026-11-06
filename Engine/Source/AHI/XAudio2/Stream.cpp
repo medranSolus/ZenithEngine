@@ -2,84 +2,30 @@
 
 namespace ZE::AHI::XAudio2
 {
-	bool Stream::StreamData::Awaiter::await_ready() const noexcept
-	{
-		return Data->NextSubmitBufferIdx.load(std::memory_order_acquire) >= BufferIdx
-			|| !Data->Alive.load(std::memory_order_acquire);
-	}
-
-	bool Stream::StreamData::Awaiter::await_suspend(std::coroutine_handle<> h) noexcept
-	{
-		Handle = h;
-		Data->WaitLock.Lock();
-
-		// Re-check condition under lock
-		if (Data->NextSubmitBufferIdx.load(std::memory_order_relaxed) >= BufferIdx
-			|| !Data->Alive.load(std::memory_order_relaxed))
-		{
-			Data->WaitLock.Unlock();
-			return false;
-		}
-
-		// Register into the fixed table slot
-		Data->WaitTable.at(BufferIdx % SFX::StreamState::BUFFER_COUNT) = h;
-
-		Data->WaitLock.Unlock();
-		return true;
-	}
-
-	bool Stream::StreamData::Awaiter::await_resume() const noexcept
-	{
-		return Data->Alive.load(std::memory_order_acquire);
-	}
-
 	Stream::StreamData::~StreamData()
 	{
-		AbortAllWaiters();
+		OrderData.AbortAllWaiters();
 		if (SourceVoice)
 			SourceVoice->DestroyVoice();
 	}
 
-	void Stream::StreamData::AbortAllWaiters() noexcept
-	{
-		// Gracefully finish all waits
-		WaitLock.Lock();
-		auto localWaits = WaitTable;
-		WaitTable = {};
-		WaitLock.Unlock();
-
-		for (auto h : localWaits)
-		{
-			if (h)
-				h.resume();
-		}
-	}
-
 	void Stream::StreamCallback::OnBufferEnd(void* bufferCtx) noexcept
 	{
-		if (!data->Alive)
+		if (!data->OrderData.Alive)
 		{
 			// In case of rewind position call
-			++data->FinishedBuffers;
-			data->FinishedBuffers.notify_one();
+			data->OrderData.FinishNextBuffer(false);
 			return;
 		}
 
 		Settings::GetThreadPool().Schedule(ThreadPriority::High,
 			[](std::shared_ptr<StreamData> data, U64 bufferIdx) noexcept -> Task<void>
 			{
-				ZE_ASSERT(data->NextSubmitBufferIdx <= bufferIdx, "Buffer has been submitted twice!");
-
-				auto endSubmission = [&data]() noexcept -> void
-					{
-						++data->NextSubmitBufferIdx;
-						++data->FinishedBuffers;
-						data->FinishedBuffers.notify_one();
-					};
+				ZE_ASSERT(data->OrderData.NextSubmitBufferIdx <= bufferIdx, "Buffer has been submitted twice!");
 
 				// Wait with reading till it's this buffer turn or return early if stream is wrapping up
-				if (!co_await StreamData::Awaiter{ data.get(), bufferIdx })
-					co_return endSubmission();
+				if (!co_await SFX::StreamOrderAwaiter{ &data->OrderData, bufferIdx })
+					co_return data->OrderData.FinishNextBuffer(true);
 
 				U32 audioSize = data->StateInfo.GetBlockSize();
 				U8* writeRegion = data->RingBuffer.get() + data->StateInfo.GetBlockSize() * (bufferIdx % SFX::StreamState::BUFFER_COUNT);
@@ -91,12 +37,12 @@ namespace ZE::AHI::XAudio2
 						audioSize = IO::EofResult::GetRealBytes(stat);
 						// Drop execution if stream has already ended
 						if (audioSize == 0)
-							co_return endSubmission();
+							co_return data->OrderData.FinishNextBuffer(true);
 					}
 					else
 					{
 						ZE_CODE_ERROR(stat, "Error reading next buffer in the stream! Buffer index: " + std::to_string(bufferIdx));
-						co_return endSubmission();
+						co_return data->OrderData.FinishNextBuffer(true);
 					}
 				}
 				else
@@ -121,23 +67,15 @@ namespace ZE::AHI::XAudio2
 
 					// Indicate for others that stream has ended
 					if (buffer.Flags)
-						data->Alive = false;
+						data->OrderData.Alive = false;
 				}
-				const U64 nextTask = ++data->NextSubmitBufferIdx;
+				const U64 nextTask = ++data->OrderData.NextSubmitBufferIdx;
 
 				// Last check if should ignore everything and exit
-				if (!data->Alive)
+				if (!data->OrderData.Alive)
 					co_return;
 
-				// Advance and resume any awaiting tasks if any
-				data->WaitLock.Lock();
-				std::coroutine_handle<> h = data->WaitTable.at(nextTask % SFX::StreamState::BUFFER_COUNT);
-				data->WaitTable.at(nextTask % SFX::StreamState::BUFFER_COUNT) = nullptr;
-				data->WaitLock.Unlock();
-
-				if (h)
-					h.resume();
-				co_return;
+				co_return data->OrderData.PerformNextWaitingTask(nextTask);
 			}, data, reinterpret_cast<U64>(bufferCtx));
 	}
 
@@ -165,7 +103,7 @@ namespace ZE::AHI::XAudio2
 	{
 		if (data)
 		{
-			data->Alive = false;
+			data->OrderData.Alive = false;
 			if (data->SourceVoice)
 			{
 				Status stat = Pause();
@@ -198,10 +136,7 @@ namespace ZE::AHI::XAudio2
 			audioStream.data->RingBuffer.get(), desc.LoopAudio).Get();
 		if (stat)
 		{
-			if (IO::EofResult::IsEOF(stat))
-			{
-				ZE_FAIL("Buffer too small to be efficiently used as a SFX::Stream! Switch to simpler SFX::Track for this sound file!");
-			}
+			ZE_ASSERT(!IO::EofResult::IsEOF(stat), "Buffer too small to be efficiently used as a SFX::Stream! Switch to simpler SFX::Track for this sound file!");
 			return std::unexpected(stat);
 		}
 
@@ -213,9 +148,8 @@ namespace ZE::AHI::XAudio2
 	{
 		ZE_ASSERT(data, "Not initialized!");
 		ZE_CODE_RET_FAILED_CORO(Pause());
-		data->Alive = false;
-		data->AbortAllWaiters();
-		data->NextSubmitBufferIdx = 0;
+
+		data->OrderData.FlushBuffers();
 		data->EnableLoop = enableLoop;
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
 
@@ -223,21 +157,9 @@ namespace ZE::AHI::XAudio2
 		ZE_CODE_RET_FAILED_CORO(data->StateInfo.RewindToBegining(true));
 		ZE_CODE_RET_FAILED_CORO(co_await data->StateInfo.ReadNextChunk(data->StateInfo.GetBlockSize() * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get(), data->EnableLoop));
 
-		// Wait quickly till all buffers "ended" after flush
-		U8 awaitingBuffers = 0;
-		do
-		{
-			data->FinishedBuffers.wait(awaitingBuffers);
-			awaitingBuffers = data->FinishedBuffers;
-		} while (awaitingBuffers < SFX::StreamState::BUFFER_COUNT);
-		data->FinishedBuffers = 0;
-		data->Alive = true;
+		data->OrderData.WaitAllBuffersFinished();
 		
 		ZE_CODE_RET_FAILED_CORO(SubmitInitialBuffers());
-		if (autoPlay)
-		{
-			ZE_CODE_RET_FAILED_CORO(Resume());
-		}
-		co_return Status{};
+		co_return autoPlay ? Resume() : Status{};
 	}
 }
