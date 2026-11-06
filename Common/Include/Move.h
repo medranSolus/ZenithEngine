@@ -18,6 +18,12 @@ namespace ZE
 		constexpr Move& operator=(T&& m) noexcept { value = std::move(m); return *this; }
 		constexpr Move& operator=(const T& m) noexcept { value = m; return *this; }
 
+		// Initialization from same Move type
+		constexpr Move(Move&& m) noexcept : value(std::exchange(m.value, DEF_VALUE)) {}
+		constexpr Move(const Move& m) noexcept : value(m.value) {}
+		constexpr Move& operator=(Move&& m) noexcept { value = std::exchange(m.value, DEF_VALUE); return *this; }
+		constexpr Move& operator=(const Move& m) noexcept { value = m.value; return *this; }
+
 		// Initialization from compatible Move<T, DEF_VALUE>
 		template<T DEF_VAL>
 		constexpr Move(Move<T, DEF_VAL>&& m) noexcept : value(std::exchange(m.value, DEF_VAL)) {}
