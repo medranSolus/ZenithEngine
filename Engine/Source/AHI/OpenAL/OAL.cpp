@@ -217,4 +217,18 @@ namespace ZE::AHI::OpenAL
 		}
 		return {};
 	}
+
+	Status ResumePlayback(ALuint source) noexcept
+	{
+		ALenum sourceState = AL_INITIAL;
+		alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
+		ZE_AL_RET_FAILED();
+
+		if (sourceState != AL_PLAYING)
+		{
+			alSourcePlay(source);
+			ZE_AL_RET_FAILED();
+		}
+		return {};
+	}
 }

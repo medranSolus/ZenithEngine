@@ -44,20 +44,6 @@ namespace ZE::AHI::OpenAL
 		return track;
 	}
 
-	Status Track::Resume() noexcept
-	{
-		ALenum sourceState = AL_INITIAL;
-		alGetSourcei(source, AL_SOURCE_STATE, &sourceState);
-		ZE_AL_RET_FAILED();
-
-		if (sourceState != AL_PLAYING)
-		{
-			alSourcePlay(source);
-			ZE_AL_RET_FAILED();
-		}
-		return {};
-	}
-
 	Status Track::Play(U32 loopCount) noexcept
 	{
 		ALenum sourceState = AL_INITIAL;
