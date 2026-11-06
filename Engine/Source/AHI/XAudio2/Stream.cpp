@@ -167,7 +167,13 @@ namespace ZE::AHI::XAudio2
 		{
 			data->Alive = false;
 			if (data->SourceVoice)
-				Pause();
+			{
+				Status stat = Pause();
+				if (stat)
+				{
+					ZE_CODE_ERROR(stat, "Error stopping Stream voice!");
+				}
+			}
 		}
 	}
 
@@ -206,7 +212,7 @@ namespace ZE::AHI::XAudio2
 	Task<Status> Stream::ResetPosition(bool autoPlay, bool enableLoop) noexcept
 	{
 		ZE_ASSERT(data, "Not initialized!");
-		Pause();
+		ZE_CODE_RET_FAILED_CORO(Pause());
 		data->Alive = false;
 		data->AbortAllWaiters();
 		data->NextSubmitBufferIdx = 0;
@@ -229,7 +235,9 @@ namespace ZE::AHI::XAudio2
 		
 		ZE_CODE_RET_FAILED_CORO(SubmitInitialBuffers());
 		if (autoPlay)
-			Resume();
+		{
+			ZE_CODE_RET_FAILED_CORO(Resume());
+		}
 		co_return Status{};
 	}
 }

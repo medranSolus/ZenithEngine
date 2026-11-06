@@ -15,7 +15,7 @@ namespace ZE::AHI::XAudio2
 
 		static Expected<Device> Create(U32 sampleRate) noexcept;
 
-		void SetVolume(float decibels) noexcept { masterVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW); }
+		Status SetVolume(float decibels) noexcept { return ZE_XA2_ERROR(masterVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW)); }
 
 		// Audio API Internal
 

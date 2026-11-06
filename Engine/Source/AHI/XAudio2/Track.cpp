@@ -6,7 +6,11 @@ namespace ZE::AHI::XAudio2
 	{
 		if (sourceVoice)
 		{
-			Pause();
+			Status stat = Pause();
+			if (stat)
+			{
+				ZE_CODE_ERROR(stat, "Error stopping Track voice!");
+			}
 			sourceVoice->DestroyVoice();
 		}
 	}
@@ -40,14 +44,12 @@ namespace ZE::AHI::XAudio2
 			buffer.pContext = nullptr;
 			ZE_XA2_RET_FAILED(sourceVoice->SubmitSourceBuffer(&buffer, nullptr));
 		}
-
-		Resume();
-		return {};
+		return Resume();
 	}
 
 	Status Track::Stop() noexcept
 	{
-		Pause();
+		ZE_CODE_RET_FAILED(Pause());
 		ZE_XA2_RET_FAILED(sourceVoice->FlushSourceBuffers());
 		return {};
 	}

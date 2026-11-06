@@ -17,7 +17,7 @@ namespace ZE::AHI::OpenAL
 
 		static Expected<SoundGroup> Create(SFX::Device& dev, U32 sampleRate, const SFX::SoundGroup* outputGroup) noexcept;
 
-		void SetVolume(float decibels) noexcept {  }
+		Status SetVolume(float decibels) noexcept { return {}; }
 
 		// Audio API Internal
 

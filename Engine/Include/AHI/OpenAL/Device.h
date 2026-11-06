@@ -31,7 +31,7 @@ namespace ZE::AHI::OpenAL
 
 		static Expected<Device> Create(U32 sampleRate) noexcept;
 
-		void SetVolume(float decibels) noexcept { alListenerf(AL_GAIN, GetVolumeLevel(decibels)); ZE_AL_CHECK("Failed to set listener volume"); }
+		Status SetVolume(float decibels) noexcept { alListenerf(AL_GAIN, GetVolumeLevel(decibels)); ZE_AL_RET_FAILED(); return {}; }
 
 		// Audio API Internal
 

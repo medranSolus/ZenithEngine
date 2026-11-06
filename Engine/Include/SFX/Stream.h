@@ -24,11 +24,11 @@ namespace ZE::SFX
 
 		// Main Audio API
 
-		constexpr void SetVolume(float decibels) noexcept { ZE_AHI_BACKEND_CALL(SetVolume, decibels); }
-		constexpr void SetPitch(float semitones) noexcept { ZE_AHI_BACKEND_CALL(SetPitch, semitones); }
+		Status SetVolume(float decibels) noexcept { ZE_AHI_BACKEND_CALL_RET(SetVolume, decibels); }
+		Status SetPitch(float semitones) noexcept { ZE_AHI_BACKEND_CALL_RET(SetPitch, semitones); }
 
-		constexpr void Resume() noexcept { ZE_AHI_BACKEND_CALL(Resume); }
-		constexpr void Pause() noexcept { ZE_AHI_BACKEND_CALL(Pause); }
+		Status Resume() noexcept { ZE_AHI_BACKEND_CALL_RET(Resume); }
+		Status Pause() noexcept { ZE_AHI_BACKEND_CALL_RET(Pause); }
 
 		bool IsLooping() const noexcept { ZE_AHI_BACKEND_CALL_RET(IsLooping); }
 

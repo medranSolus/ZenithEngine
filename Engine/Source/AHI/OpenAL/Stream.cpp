@@ -14,11 +14,13 @@ namespace ZE::AHI::OpenAL
 
 	Task<Status> Stream::ResetPosition(bool autoPlay, bool enableLoop) noexcept
 	{
-		Pause();
+		ZE_CODE_RET_FAILED_CORO(Pause());
 
 
 		if (autoPlay)
-			Resume();
+		{
+			ZE_CODE_RET_FAILED_CORO(Resume());
+		}
 		co_return Status{};
 	}
 }

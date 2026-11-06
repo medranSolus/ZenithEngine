@@ -13,11 +13,11 @@ namespace ZE::AHI::OpenAL
 
 		static Expected<Stream> Create(SFX::Device& dev, const SFX::StreamDesc& desc) noexcept;
 
-		void SetVolume(float decibels) noexcept {  }
-		void SetPitch(float semitones) noexcept {  }
+		Status SetVolume(float decibels) noexcept { return {}; }
+		Status SetPitch(float semitones) noexcept { return {}; }
 
-		void Resume() noexcept {  }
-		void Pause() noexcept {  }
+		Status Resume() noexcept { return {}; }
+		Status Pause() noexcept { return {}; }
 
 		bool IsLooping() const noexcept {  }
 

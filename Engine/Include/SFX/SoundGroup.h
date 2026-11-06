@@ -24,6 +24,6 @@ namespace ZE::SFX
 
 		// Main Audio API
 
-		constexpr void SetVolume(float decibels) noexcept { ZE_AHI_BACKEND_CALL(SetVolume, decibels); }
+		Status SetVolume(float decibels) noexcept { ZE_AHI_BACKEND_CALL_RET(SetVolume, decibels); }
 	};
 }

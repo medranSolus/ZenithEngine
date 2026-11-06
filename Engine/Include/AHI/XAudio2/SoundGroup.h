@@ -19,7 +19,7 @@ namespace ZE::AHI::XAudio2
 
 		static Expected<SoundGroup> Create(SFX::Device& dev, U32 sampleRate, const SFX::SoundGroup* outputGroup) noexcept;
 
-		void SetVolume(float decibels) noexcept { submixVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW); }
+		Status SetVolume(float decibels) noexcept { return ZE_XA2_ERROR(submixVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW)); }
 
 		// Audio API Internal
 

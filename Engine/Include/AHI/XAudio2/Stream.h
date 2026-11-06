@@ -67,11 +67,11 @@ namespace ZE::AHI::XAudio2
 
 		static Expected<Stream> Create(SFX::Device& dev, const SFX::StreamDesc& desc) noexcept;
 
-		void SetVolume(float decibels) noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW); }
-		void SetPitch(float semitones) noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->SetFrequencyRatio(GetPitchLevel(semitones), XAUDIO2_COMMIT_NOW); }
+		Status SetVolume(float decibels) noexcept { ZE_ASSERT(data, "Not initialized!"); return ZE_XA2_ERROR(data->SourceVoice->SetVolume(GetVolumeLevel(decibels), XAUDIO2_COMMIT_NOW)); }
+		Status SetPitch(float semitones) noexcept { ZE_ASSERT(data, "Not initialized!"); return ZE_XA2_ERROR(data->SourceVoice->SetFrequencyRatio(GetPitchLevel(semitones), XAUDIO2_COMMIT_NOW)); }
 
-		void Resume() noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->Start(0, XAUDIO2_COMMIT_NOW); }
-		void Pause() noexcept { ZE_ASSERT(data, "Not initialized!"); data->SourceVoice->Stop(0, XAUDIO2_COMMIT_NOW); }
+		Status Resume() noexcept { ZE_ASSERT(data, "Not initialized!"); return ZE_XA2_ERROR(data->SourceVoice->Start(0, XAUDIO2_COMMIT_NOW)); }
+		Status Pause() noexcept { ZE_ASSERT(data, "Not initialized!"); return ZE_XA2_ERROR(data->SourceVoice->Stop(0, XAUDIO2_COMMIT_NOW)); }
 
 		bool IsLooping() const noexcept { ZE_ASSERT(data, "Not initialized!"); return data->EnableLoop; }
 
