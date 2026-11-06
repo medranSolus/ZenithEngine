@@ -31,6 +31,7 @@ namespace ZE::SFX
 			FileUtils::OggOpusCtx oggOpus;
 		};
 
+		void Init(FileSourceType type) noexcept;
 		void MoveFrom(StreamState&& state) noexcept;
 		void Release() noexcept;
 
@@ -39,7 +40,7 @@ namespace ZE::SFX
 		ZE_CLASS_NO_COPY(StreamState);
 		StreamState(StreamState&& state) noexcept { MoveFrom(std::move(state)); }
 		StreamState& operator=(StreamState&& state) noexcept { Release(); MoveFrom(std::move(state)); return *this; }
-		~StreamState();
+		~StreamState() { Release(); }
 
 		// Get audio file description from any file region on disk for async streaming
 		static Expected<StreamState> Create(IO::File& file, U64 startOffset, U64 regionSize, FileSourceType type, AudioDesc& audioInfo) noexcept;

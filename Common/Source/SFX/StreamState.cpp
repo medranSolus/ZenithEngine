@@ -4,10 +4,42 @@
 
 namespace ZE::SFX
 {
+	void StreamState::Init(FileSourceType type) noexcept
+	{
+		sourceType = type;
+		switch (type)
+		{
+		default:
+			ZE_ENUM_UNHANDLED();
+		case FileSourceType::Unknown:
+			break;
+		case FileSourceType::WAV:
+		{
+			new (&wav)StreamState::StateWAV;
+			break;
+		}
+		case FileSourceType::Flac:
+		{
+			new (&flac)FileUtils::FlacCtx;
+			break;
+		}
+		case FileSourceType::OggVorbis:
+		{
+			new (&oggVorbis)FileUtils::OggVorbisCtx;
+			break;
+		}
+		case FileSourceType::OggOpus:
+		{
+			new (&oggOpus)FileUtils::OggOpusCtx;
+			break;
+		}
+		}
+	}
+
 	void StreamState::MoveFrom(StreamState&& state) noexcept
 	{
 		audioBlockSize = state.audioBlockSize;
-		sourceType = state.sourceType;
+		Init(state.sourceType);
 		switch (sourceType)
 		{
 		default:
@@ -44,8 +76,12 @@ namespace ZE::SFX
 		default:
 			ZE_ENUM_UNHANDLED();
 		case FileSourceType::Unknown:
-		case FileSourceType::WAV:
 			break;
+		case FileSourceType::WAV:
+		{
+			wav.~StateWAV();
+			break;
+		}
 		case FileSourceType::Flac:
 		{
 			if (flac.Decoder)
@@ -54,6 +90,7 @@ namespace ZE::SFX
 				FLAC__stream_decoder_delete(flac.Decoder);
 				flac.Decoder = nullptr;
 			}
+			flac.~FlacCtx();
 			break;
 		}
 		case FileSourceType::OggVorbis:
@@ -63,6 +100,7 @@ namespace ZE::SFX
 				ov_clear(oggVorbis.Decoder);
 				oggVorbis.Decoder = nullptr;
 			}
+			oggVorbis.~OggVorbisCtx();
 			break;
 		}
 		case FileSourceType::OggOpus:
@@ -72,36 +110,6 @@ namespace ZE::SFX
 				op_free(oggOpus.Decoder);
 				oggOpus.Decoder = nullptr;
 			}
-			break;
-		}
-		}
-	}
-
-	StreamState::~StreamState()
-	{
-		switch (sourceType)
-		{
-		default:
-			ZE_ENUM_UNHANDLED();
-		case FileSourceType::Unknown:
-			break;
-		case FileSourceType::WAV:
-		{
-			wav.~StateWAV();
-			break;
-		}
-		case FileSourceType::Flac:
-		{
-			flac.~FlacCtx();
-			break;
-		}
-		case FileSourceType::OggVorbis:
-		{
-			oggVorbis.~OggVorbisCtx();
-			break;
-		}
-		case FileSourceType::OggOpus:
-		{
 			oggOpus.~OggOpusCtx();
 			break;
 		}
@@ -111,7 +119,7 @@ namespace ZE::SFX
 	Expected<StreamState> StreamState::Create(IO::File& file, U64 startOffset, U64 regionSize, FileSourceType type, AudioDesc& audioInfo) noexcept
 	{
 		StreamState state = {};
-		state.sourceType = type;
+		state.Init(type);
 		switch (type)
 		{
 		default:
@@ -123,7 +131,6 @@ namespace ZE::SFX
 		}
 		case FileSourceType::WAV:
 		{
-			new (&state.wav)StreamState::StateWAV;
 			ZE_EXPECT_RET_FAILED(audioInfo, IO::WAV::ParseFileInfo(file, state.wav.DataStart, startOffset));
 			state.wav.File = &file;
 			state.wav.FileEnd = startOffset + regionSize;
@@ -131,19 +138,16 @@ namespace ZE::SFX
 		}
 		case FileSourceType::Flac:
 		{
-			new (&state.flac)FileUtils::FlacCtx;
 			ZE_EXPECT_RET_FAILED(state.flac, FileUtils::GetFlacCtx(file, startOffset, regionSize, audioInfo));
 			break;
 		}
 		case FileSourceType::OggVorbis:
 		{
-			new (&state.oggVorbis)FileUtils::OggVorbisCtx;
 			ZE_EXPECT_RET_FAILED(state.oggVorbis, FileUtils::GetOggVorbisCtx(file, startOffset + regionSize, audioInfo));
 			break;
 		}
 		case FileSourceType::OggOpus:
 		{
-			new (&state.oggOpus)FileUtils::OggOpusCtx;
 			ZE_EXPECT_RET_FAILED(state.oggOpus, FileUtils::GetOggOpusCtx(file, startOffset + regionSize, audioInfo));
 			break;
 		}
