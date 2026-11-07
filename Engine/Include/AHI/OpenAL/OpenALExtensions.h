@@ -16,7 +16,9 @@
 #pragma region AL extensions
 // List of required AL extensions, intended for use in X() macro
 #define ZE_AL_EXT_LIST_REQUIRED \
-	X(AL_EXT_float32) /* Support for 32-bit floating-point audio data [EXT_FORMAT] */
+	X(AL_EXT_float32)		/* Support for 32-bit floating-point audio data [EXT_FORMAT] */ \
+	X(AL_EXT_STATIC_BUFFER)	/* Allow for referencing audio data outside the scope of OpenAL-managed buffers */ \
+	X(AL_SOFT_events)		/* Allow for event-based source audio control */
 
 // List of AL extensions, used in debug targets, intended for use in X() macro
 #define ZE_AL_EXT_LIST_DEBUG \
@@ -26,7 +28,6 @@
 #define ZE_AL_EXT_LIST_OPTIONAL \
 	X(AL_EXT_double)					/* Support for 64-bit floating-point audio data [EXT_FORMAT] */ \
 	X(AL_EXT_MCFORMATS)					/* Support for multi-channel audio data [EXT_FORMAT] */ \
-	X(AL_EXT_STATIC_BUFFER)				/* Allow for referencing audio data outside the scope of OpenAL-managed buffers */ \
 	X(AL_SOFT_direct_channels)			/* Bypass 3D sound and route audio directly to the speakers (creating standard 2D audio) [EXT_3D] */ \
 	X(AL_SOFT_direct_channels_remix)	/* Extend functionality of AL_SOFT_direct_channels and allow for remixing into actual set of speakers [EXT_3D] */ \
 	X(AL_SOFT_source_spatialize)		/* Manual specification whether given source should be spatialized [EXT_3D] */
@@ -49,7 +50,6 @@
 	X(AL_SOFT_callback_buffer)		/* Register callbacks for streaming audio data */ \
 	X(AL_SOFT_deferred_updates)		/* Perform updates to the multiple sound params in single step */ \
 	X(AL_SOFT_effect_target)		/* Allows chaining effects with each other */ \
-	X(AL_SOFT_events)				/* Allow for event-based source audio control */ \
 	X(AL_SOFT_gain_clamp_ex)		/* Custom gain limit */ \
 	X(AL_SOFT_loop_points)			/* Allows for looping mid-buffer rather than whole submitted audio data */ \
 	X(AL_SOFT_MSADPCM)				/* Support for Microsoft ADPCM format [EXT_FORMAT] */ \

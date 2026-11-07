@@ -26,14 +26,9 @@ namespace ZE::AHI::OpenAL
 		ZE_AL_SET_DEBUG_ID(device, AL_BUFFER_EXT, track.buffer, "Track buffer " + std::to_string(data.Desc.Bytes));
 
 		const ALenum format = GetALFormat(device, data.Desc.Channels, data.Desc.BitsPerSample, data.Desc.IsFloat);
-		// Don't make copy of a sound inside OpenAL if possible
-		if (device.IsExtensionSupported("AL_EXT_STATIC_BUFFER"))
-		{
-			track.audioData = data.Samples;
-			alBufferDataStatic(track.buffer, format, data.Samples.get(), data.Desc.Bytes, data.Desc.SampleRate);
-		}
-		else
-			alBufferData(track.buffer, format, data.Samples.get(), data.Desc.Bytes, data.Desc.SampleRate);
+		// Don't make copy of a sound inside OpenAL
+		track.audioData = data.Samples;
+		alBufferDataStatic(track.buffer, format, data.Samples.get(), data.Desc.Bytes, data.Desc.SampleRate);
 		ZE_AL_RET_FAILED_EXPECT();
 		
 		alGenSources(1, &track.source);

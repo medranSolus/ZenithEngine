@@ -27,31 +27,11 @@ namespace ZE::SFX
 			h.resume();
 	}
 
-	void StreamOrderData::FinishNextBuffer(bool advanceSubmission) noexcept
-	{
-		if (advanceSubmission)
-			++NextSubmitBufferIdx;
-		++FinishedBuffers;
-		FinishedBuffers.notify_one();
-	}
-
 	void StreamOrderData::FlushBuffers() noexcept
 	{
 		Alive = false;
 		AbortAllWaiters();
 		NextSubmitBufferIdx = 0;
-	}
-
-	void StreamOrderData::WaitAllBuffersFinished() noexcept
-	{
-		U8 awaitingBuffers = 0;
-		do
-		{
-			FinishedBuffers.wait(awaitingBuffers);
-			awaitingBuffers = FinishedBuffers;
-		} while (awaitingBuffers < SFX::StreamState::BUFFER_COUNT);
-		FinishedBuffers = 0;
-		Alive = true;
 	}
 
 	bool StreamOrderAwaiter::await_ready() const noexcept

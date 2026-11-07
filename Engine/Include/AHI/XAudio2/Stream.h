@@ -13,6 +13,7 @@ namespace ZE::AHI::XAudio2
 			SFX::StreamState StateInfo = {};
 			Ptr<IXAudio2SourceVoice> SourceVoice;
 			bool EnableLoop = false;
+			UA8 FinishedBuffers = 0;
 			SFX::StreamOrderData OrderData = {};
 
 			~StreamData();

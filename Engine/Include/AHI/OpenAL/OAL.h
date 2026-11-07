@@ -23,6 +23,10 @@ namespace ZE::AHI::OpenAL
 	// Resume playback of a source if is paused
 	Status ResumePlayback(ALuint source) noexcept;
 
+	// Global event callback for OpenAL SOFT events extension
+	void EventCallback(ALenum eventType, ALuint object, ALuint param,
+		ALsizei length, const ALchar* message, void* userParam) noexcept;
+
 #pragma region Functions
 	constexpr float GetGainLevel(float decibels) noexcept
 	{
@@ -42,5 +46,7 @@ namespace ZE::AHI::OpenAL
 	extern LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT;
 	extern LPALOBJECTLABELEXT alObjectLabelEXT;
 	extern PFNALBUFFERDATASTATICPROC alBufferDataStatic;
+	extern LPALEVENTCONTROLSOFT alEventControlSOFT;
+	extern LPALEVENTCALLBACKSOFT alEventCallbackSOFT;
 #pragma endregion
 }

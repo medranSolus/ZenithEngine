@@ -14,18 +14,25 @@ namespace ZE::AHI::XAudio2
 		if (!data->OrderData.Alive)
 		{
 			// In case of rewind position call
-			data->OrderData.FinishNextBuffer(false);
+			++data->FinishedBuffers;
+			data->FinishedBuffers.notify_one();
 			return;
 		}
 
 		Settings::GetThreadPool().Schedule(ThreadPriority::High,
 			[](std::shared_ptr<StreamData> data, U64 bufferIdx) noexcept -> Task<void>
 			{
+				auto endSubmission = [&data]() noexcept -> void
+					{
+						++data->OrderData.NextSubmitBufferIdx;
+						++data->FinishedBuffers;
+						data->FinishedBuffers.notify_one();
+					};
 				ZE_ASSERT(data->OrderData.NextSubmitBufferIdx <= bufferIdx, "Buffer has been submitted twice!");
 
 				// Wait with reading till it's this buffer turn or return early if stream is wrapping up
 				if (!co_await SFX::StreamOrderAwaiter{ &data->OrderData, bufferIdx })
-					co_return data->OrderData.FinishNextBuffer(true);
+					co_return endSubmission();
 
 				U32 audioSize = data->StateInfo.GetBlockSize();
 				U8* writeRegion = data->RingBuffer.get() + data->StateInfo.GetBlockSize() * (bufferIdx % SFX::StreamState::BUFFER_COUNT);
@@ -37,12 +44,12 @@ namespace ZE::AHI::XAudio2
 						audioSize = IO::EofResult::GetRealBytes(stat);
 						// Drop execution if stream has already ended
 						if (audioSize == 0)
-							co_return data->OrderData.FinishNextBuffer(true);
+							co_return endSubmission();
 					}
 					else
 					{
 						ZE_CODE_ERROR(stat, "Error reading next buffer in the stream! Buffer index: " + std::to_string(bufferIdx));
-						co_return data->OrderData.FinishNextBuffer(true);
+						co_return endSubmission();
 					}
 				}
 				else
@@ -153,11 +160,19 @@ namespace ZE::AHI::XAudio2
 		data->EnableLoop = enableLoop;
 		ZE_XA2_RET_FAILED_CORO(data->SourceVoice->FlushSourceBuffers());
 
+		// Wait quickly till all buffers "ended" after flush
+		U8 awaitingBuffers = 0;
+		do
+		{
+			data->FinishedBuffers.wait(awaitingBuffers);
+			awaitingBuffers = data->FinishedBuffers;
+		} while (awaitingBuffers < SFX::StreamState::BUFFER_COUNT);
+		data->FinishedBuffers = 0;
+		data->OrderData.Alive = true;
+
 		// Rewind and load initial data
 		ZE_CODE_RET_FAILED_CORO(data->StateInfo.RewindToBegining(true));
 		ZE_CODE_RET_FAILED_CORO(co_await data->StateInfo.ReadNextChunk(data->StateInfo.GetBlockSize() * SFX::StreamState::BUFFER_COUNT, data->RingBuffer.get(), data->EnableLoop));
-
-		data->OrderData.WaitAllBuffersFinished();
 		
 		ZE_CODE_RET_FAILED_CORO(SubmitInitialBuffers());
 		co_return autoPlay ? Resume() : Status{};

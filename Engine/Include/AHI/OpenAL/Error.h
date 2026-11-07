@@ -47,8 +47,12 @@ namespace ZE::AHI::OpenAL
 #define ZE_AL_CHECK(msg) do { ALenum __alerror = alGetError(); ZE_ASSERT(!ZE_AL_FAILED(__alerror), msg); } while (false)
 // Check result of the previous AL call and return said error if failed
 #define ZE_AL_RET_FAILED() do { ALenum __alerror = alGetError(); if (ZE_AL_FAILED(__alerror)) { ZE_BREAK(); return ZE_AL_ERROR(__alerror); } } while (false)
+// Check result of the previous AL call and return said error if failed  in coroutine
+#define ZE_AL_RET_FAILED_CORO() do { ALenum __alerror = alGetError(); if (ZE_AL_FAILED(__alerror)) { ZE_BREAK(); co_return ZE_AL_ERROR(__alerror); } } while (false)
 // Check result of the previous AL call and return said error if failed (wrapped in std::unexpected)
 #define ZE_AL_RET_FAILED_EXPECT() do { ALenum __alerror = alGetError(); if (ZE_AL_FAILED(__alerror)) { ZE_BREAK(); return std::unexpected(ZE_AL_ERROR(__alerror)); } } while (false)
+// Check result of the previous AL call and return said error if failed in coroutine (wrapped in std::unexpected)
+#define ZE_AL_RET_FAILED_EXPECT_CORO() do { ALenum __alerror = alGetError(); if (ZE_AL_FAILED(__alerror)) { ZE_BREAK(); co_return std::unexpected(ZE_AL_ERROR(__alerror)); } } while (false)
 
 #define ZE_ALC_ERROR(error) ZE::AHI::OpenAL::AlcError::Make(error)
 // Returns true if the alc-error occured
@@ -57,5 +61,9 @@ namespace ZE::AHI::OpenAL
 #define ZE_ALC_CHECK(device, msg) do { ALCenum __alcerror = alcGetError(device); ZE_ASSERT(!ZE_ALC_FAILED(__alcerror), msg); } while (false)
 // Check result of the previous ALC call and return said error if failed
 #define ZE_ALC_RET_FAILED(device) do { ALCenum __alcerror = alcGetError(device); if (ZE_ALC_FAILED(__alcerror)) { ZE_BREAK(); return ZE_ALC_ERROR(__alcerror); } } while (false)
+// Check result of the previous ALC call and return said error if failed in coroutine
+#define ZE_ALC_RET_FAILED_CORO(device) do { ALCenum __alcerror = alcGetError(device); if (ZE_ALC_FAILED(__alcerror)) { ZE_BREAK(); co_return ZE_ALC_ERROR(__alcerror); } } while (false)
 // Check result of the previous ALC call and return said error if failed (wrapped in std::unexpected)
 #define ZE_ALC_RET_FAILED_EXPECT(device) do { ALCenum __alcerror = alcGetError(device); if (ZE_ALC_FAILED(__alcerror)) { ZE_BREAK(); return std::unexpected(ZE_ALC_ERROR(__alcerror)); } } while (false)
+// Check result of the previous ALC call and return said error if failed in coroutine (wrapped in std::unexpected)
+#define ZE_ALC_RET_FAILED_EXPECT_CORO(device) do { ALCenum __alcerror = alcGetError(device); if (ZE_ALC_FAILED(__alcerror)) { ZE_BREAK(); co_return std::unexpected(ZE_ALC_ERROR(__alcerror)); } } while (false)

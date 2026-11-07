@@ -1,5 +1,5 @@
 #include "AHI/OpenAL/OAL.h"
-#include "AHI/OpenAL/Device.h"
+#include "AHI/OpenAL/Stream.h"
 
 namespace ZE::AHI::OpenAL
 {
@@ -7,6 +7,8 @@ namespace ZE::AHI::OpenAL
 	LPALDEBUGMESSAGECALLBACKEXT alDebugMessageCallbackEXT = nullptr;
 	LPALOBJECTLABELEXT alObjectLabelEXT = nullptr;
 	PFNALBUFFERDATASTATICPROC alBufferDataStatic = nullptr;
+	LPALEVENTCONTROLSOFT alEventControlSOFT = nullptr;
+	LPALEVENTCALLBACKSOFT alEventCallbackSOFT = nullptr;
 
 	void LoadExtensions(Device& dev) noexcept
 	{
@@ -18,6 +20,11 @@ namespace ZE::AHI::OpenAL
 		if (dev.IsExtensionSupported("AL_EXT_STATIC_BUFFER"))
 		{
 			alBufferDataStatic = reinterpret_cast<PFNALBUFFERDATASTATICPROC>(alGetProcAddress("alBufferDataStatic"));
+		}
+		if (dev.IsExtensionSupported("AL_SOFT_events"))
+		{
+			alEventControlSOFT = reinterpret_cast<LPALEVENTCONTROLSOFT>(alGetProcAddress("alEventControlSOFT"));
+			alEventCallbackSOFT = reinterpret_cast<LPALEVENTCALLBACKSOFT>(alGetProcAddress("alEventCallbackSOFT"));
 		}
 	}
 #pragma endregion
@@ -230,5 +237,21 @@ namespace ZE::AHI::OpenAL
 			ZE_AL_RET_FAILED();
 		}
 		return {};
+	}
+
+	void EventCallback(ALenum eventType, ALuint object, ALuint param,
+		ALsizei length, const ALchar* message, void* userParam) noexcept
+	{
+		switch (eventType)
+		{
+		case AL_EVENT_TYPE_BUFFER_COMPLETED_SOFT:
+		{
+			// If it's stream object then signal need for new buffer in the queue
+			Stream::OnBufferEndCallback(object, Utils::SafeCast<U8>(param));
+			break;
+		}
+		default:
+			break;
+		}
 	}
 }

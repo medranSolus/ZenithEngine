@@ -220,6 +220,13 @@ namespace ZE::AHI::OpenAL
 		// Must load extension functions before using any of them
 		LoadExtensions(dev);
 
+		// Setup even callback for finer streaming control
+		ALenum events[] = { AL_EVENT_TYPE_BUFFER_COMPLETED_SOFT };
+		alEventControlSOFT(1, events, AL_TRUE);
+		ZE_AL_RET_FAILED_EXPECT();
+		alEventCallbackSOFT(EventCallback, nullptr);
+		ZE_AL_RET_FAILED_EXPECT();
+
 #if _ZE_DEBUG_AUDIO_API
 		if (dev.IsExtensionSupported("AL_EXT_debug"))
 		{
