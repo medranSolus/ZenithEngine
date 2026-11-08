@@ -1,5 +1,6 @@
 #include "GFX/Surface.h"
 ZE_WARNING_PUSH
+#include "jpeglib.h"
 #include "spng.h"
 #include "qoixx.hpp"
 #define STBI_ASSERT(X) ZE_ASSERT(X, "STB Image assert!")
@@ -328,6 +329,68 @@ namespace ZE::GFX
 				Logger::Error("Error reading file \"" + path.string() + "\", file with 0 size!");
 				success = false;
 			}
+		}
+		else if (ext == ".jpg" || ext == ".jpeg")
+		{
+			struct ErrorMgrJpeg
+			{
+				jpeg_error_mgr JError;
+				jmp_buf JmpBuffer;
+			};
+
+			ErrorMgrJpeg errMgr = {};
+			jpeg_decompress_struct decoder = {};
+
+			decoder.err = jpeg_std_error(&errMgr.JError);
+			errMgr.JError.error_exit = [](j_common_ptr cinfo)
+				{
+					ErrorMgrJpeg* errMgr = reinterpret_cast<ErrorMgrJpeg*>(cinfo->err);
+					longjmp(errMgr->JmpBuffer, 1);
+				};
+			ZE_WARNING_PUSH
+			ZE_WARNING_DISABLE_MSVC(4611) // No C++ objects will be destroyed here
+			if (setjmp(errMgr.JmpBuffer))
+			{
+				ZE_WARNING_POP
+				Logger::Warning("Error loading file \"" + path.string() + "\", trying fallback to STB Image");
+				memory = nullptr;
+				rewind(file.GetHandle());
+			}
+			else
+			{
+				jpeg_create_decompress(&decoder);
+				jpeg_stdio_src(&decoder, file.GetHandle());
+				jpeg_read_header(&decoder, TRUE);
+				jpeg_calc_output_dimensions(&decoder);
+
+				if (decoder.jpeg_color_space == JCS_GRAYSCALE)
+					format = PixelFormat::R8_UNorm;
+				else
+				{
+					format = PixelFormat::R8G8B8A8_UNorm;
+					decoder.out_color_space = JCS_EXT_RGBA;
+				}
+				alpha = false;
+				width = Utils::SafeCast<U32>(decoder.output_width);
+				height = Utils::SafeCast<U32>(decoder.output_height);
+				depth = 1;
+				mipCount = 1;
+				arraySize = 1;
+				memorySize = GetSliceByteSize();
+				memory = std::make_shared<U8[]>(memorySize);
+
+				jpeg_start_decompress(&decoder);
+
+				while (decoder.output_scanline < decoder.output_height)
+				{
+					U8* scanlines[1] = { memory.get() + GetRowByteSize() * decoder.output_scanline };
+					jpeg_read_scanlines(&decoder, scanlines, 1);
+				}
+
+				jpeg_finish_decompress(&decoder);
+				success = true;
+			}
+			jpeg_destroy_decompress(&decoder);
 		}
 
 		// Last resort method to try loading image file

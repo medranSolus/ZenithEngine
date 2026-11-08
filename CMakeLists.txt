@@ -185,7 +185,7 @@ set(ZLIB_INC_DIR "${ZLIB_DIR}")
 # List of include directories needed for Common target
 set(COMMON_INC_DIRS "${COMMON_INC_DIR}"
 	${EXT_INC_DIR}
-	${EXTERNAL_CONFIG_INC_DIR}
+	${EXT_CONFIG_INC_DIR}
 	${BROTLI_INC_DIR}
 	${DXMATH_INC_DIR}
 	${FLAC_INC_DIR}
@@ -652,6 +652,7 @@ set(LIBJPG_CACHE_ARGS "-DENABLE_SHARED:BOOL=OFF"
 	"-DWITH_SYSTEM_SPNG:BOOL=ON"
 	"-DWITH_SYSTEM_ZLIB:BOOL=ON")
 add_external_project(LIBJPG "" "" "" "LIBSPNG;ZLIB")
+copy_inner_file(LIBJPG HeaderConfig "" "jconfig.h")
 
  # libpng
 set(LIBPNG_CACHE_ARGS "-DPNG_SHARED:BOOL=OFF"
