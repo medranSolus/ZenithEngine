@@ -83,3 +83,12 @@
 [submodule "External/opusfile"]
 	path = External/opusfile
 	url = https://github.com/xiph/opusfile.git
+[submodule "External/OpenUSD"]
+	path = External/OpenUSD
+	url = https://github.com/PixarAnimationStudios/OpenUSD.git
+[submodule "External/libjxl"]
+	path = External/libjxl
+	url = https://github.com/libjxl/libjxl.git
+[submodule "External/libjpeg-turbo"]
+	path = External/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git

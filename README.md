@@ -11,7 +11,8 @@ To download assets required for Demo application, you can use command `download-
 **Requirements:**
  - Windows SDK 10.0.20348.0
  - Vulkan SDK 1.3.250.0
- - CMake 3.22
+ - CMake 4.4
+ - NASM 3.02
 
 ## Development progress
 
@@ -86,6 +87,8 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [FidelityFX SDK](https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK) - [MIT License](Doc/License/ThirdParty/FidelityFXSDK.md)
  - [HarfBuzz](https://github.com/harfbuzz/harfbuzz) - [Old MIT license](Doc/License/ThirdParty/HarfBuzz.txt)
  - [HBAO+](https://github.com/NVIDIAGameWorks/HBAOPlus) - [Nvidia Source Code License (1-Way Commercial)](Doc/License/ThirdParty/HBAO.txt)
+ - [libjpeg-turbo](https://github.com/libjpeg-turbo/libjpeg-turbo) - [The Modified (3-clause) BSD License](Doc/License/ThirdParty/libjpeg-turbo.txt)
+ - [libjxl](https://github.com/libjxl/libjxl) - [BSD-3-Clause license](Doc/License/ThirdParty/libjxl.txt)
  - [libpng](https://github.com/glennrp/libpng) - [PNG Reference Library License](Doc/License/ThirdParty/libpng.txt)
  - [libspng](https://github.com/randy408/libspng) - [BSD 2-Clause License](Doc/License/ThirdParty/libspng.txt)
  - [NVIDIA Image Scaling SDK](https://github.com/NVIDIAGameWorks/NVIDIAImageScaling) - [The MIT License(MIT)](Doc/License/ThirdParty/NvidiaImageScaling.txt), [Third Party Notices](Doc/License/ThirdParty/NvidiaImageScalingThirdPartyNotices.txt)
