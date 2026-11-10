@@ -77,6 +77,22 @@ macro(copy_inner_file PROJECT STEP_NAME ADD_DIR FILE_NAME)
 	endif()
 endmacro()
 
+# Macro for copying external projects inner generated headers
+#	PROJECT = prefix of a project containing libraries
+#	STEP_NAME = unique name of step to be performed in given project
+#	ADD_DIR = different path for file
+#	FILE_NAME = file to be copied
+macro(copy_inner_header PROJECT STEP_NAME ADD_DIR FILE_NAME)
+	if(NOT EXISTS "${EXT_CONFIG_INC_DIR}/${FILE_NAME}")
+		ExternalProject_Add_Step(${${PROJECT}_TARGET} copyHeader${STEP_NAME}
+			DEPENDEES install
+			LOG OFF
+			COMMAND "${CMAKE_COMMAND}" -E copy
+			"${${PROJECT}_BUILD_DIR}${ADD_DIR}${FILE_NAME}"
+			"${EXT_CONFIG_INC_DIR}/${FILE_NAME}")
+	endif()
+endmacro()
+
 # Macro for copying external projects inner libraries
 #	PROJECT = prefix of a project containing libraries
 #	STEP_NAME = unique name of step to be performed in given project
