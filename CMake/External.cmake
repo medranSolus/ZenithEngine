@@ -5,7 +5,8 @@ include_guard(DIRECTORY)
 #	ADD_BIN_DIR = different path for library file
 #	ADD_PDB_DIR_PRE = different path for MSVC debug symbols for "CMakeFiles/PROJECT_LIb.dir/" location
 #	ADD_PDB_DIR_POST = different path for MSVC debug symbols inside "CMakeFiles/PROJECT_LIb.dir/" location
-macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST)
+#	PDB_PRESENT = whether the project has PDB files or not
+macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST PDB_PRESENT)
 	set(${PROJECT}_OUT_LIB_NAME "${LIB_PREFIX}${${PROJECT}_TARGET}${LIB_EXT}")
 	set(${PROJECT}_OUT_LIB "${EXTERNAL_BIN_DIR}/${${PROJECT}_OUT_LIB_NAME}")
 
@@ -13,7 +14,7 @@ macro(set_external_cp_cmd_vars PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_P
 		"${${PROJECT}_BUILD_DIR}${ADD_BIN_DIR}${${PROJECT}_OUT_LIB_NAME}"
 		"${${PROJECT}_OUT_LIB}")
 
-	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
+	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO} AND ${PDB_PRESENT})
 		set(${PROJECT}_CP_CMD "${${PROJECT}_CP_CMD}" &&
 			"${CMAKE_COMMAND}" -E rename
 				"${${PROJECT}_BUILD_DIR}${ADD_PDB_DIR_PRE}CMakeFiles/${${PROJECT}_LIB}.dir/${ADD_PDB_DIR_POST}${${PROJECT}_LIB}.pdb"
@@ -27,10 +28,11 @@ endmacro()
 #	ADD_PDB_DIR_PRE = different path for MSVC debug symbols for "CMakeFiles/PROJECT_LIb.dir/" location
 #	ADD_PDB_DIR_POST = different path for MSVC debug symbols inside "CMakeFiles/PROJECT_LIb.dir/" location
 #	DEP_PROJECTS = prefixes of projects on which this eternal project depends (semicolon separated)
+#	PDB_PRESENT = whether the project has PDB files or not
 # Set ${PROJECT}_CACHE_ARGS variable to pass options for project
-macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST DEP_PROJECTS)
+macro(add_external_project PROJECT ADD_BIN_DIR ADD_PDB_DIR_PRE ADD_PDB_DIR_POST DEP_PROJECTS PDB_PRESENT)
 	set(${PROJECT}_BUILD_DIR "${ZE_BUILD_DIR}/${PROJECT}/")
-	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR_PRE}" "${ADD_PDB_DIR_POST}")
+	set_external_cp_cmd_vars("${PROJECT}" "${ADD_BIN_DIR}" "${ADD_PDB_DIR_PRE}" "${ADD_PDB_DIR_POST}" ${PDB_PRESENT})
 	if(NOT EXISTS "${${PROJECT}_OUT_LIB}")
 		foreach(DEP_PROJECT IN ITEMS ${DEP_PROJECTS})
 			list(APPEND ${PROJECT}_DEPENDENCY "${${DEP_PROJECT}_TARGET}")
@@ -80,16 +82,17 @@ endmacro()
 # Macro for copying external projects inner generated headers
 #	PROJECT = prefix of a project containing libraries
 #	STEP_NAME = unique name of step to be performed in given project
-#	ADD_DIR = different path for file
+#	ADD_DIR = different source path for file
+#	ADD_OUT_DIR = additional output path for file
 #	FILE_NAME = file to be copied
-macro(copy_inner_header PROJECT STEP_NAME ADD_DIR FILE_NAME)
-	if(NOT EXISTS "${EXT_CONFIG_INC_DIR}/${FILE_NAME}")
+macro(copy_inner_header PROJECT STEP_NAME ADD_DIR ADD_OUT_DIR FILE_NAME)
+	if(NOT EXISTS "${EXT_CONFIG_INC_DIR}/${ADD_OUT_DIR}${FILE_NAME}")
 		ExternalProject_Add_Step(${${PROJECT}_TARGET} copyHeader${STEP_NAME}
 			DEPENDEES install
 			LOG OFF
 			COMMAND "${CMAKE_COMMAND}" -E copy
 			"${${PROJECT}_BUILD_DIR}${ADD_DIR}${FILE_NAME}"
-			"${EXT_CONFIG_INC_DIR}/${FILE_NAME}")
+			"${EXT_CONFIG_INC_DIR}/${ADD_OUT_DIR}${FILE_NAME}")
 	endif()
 endmacro()
 
@@ -98,9 +101,10 @@ endmacro()
 #	STEP_NAME = unique name of step to be performed in given project
 #	ADD_BIN_DIR = different path for library file
 #	LIB_NAME = library to be copied
-macro(copy_inner_lib PROJECT STEP_NAME ADD_BIN_DIR LIB_NAME)
+#	PDB_PRESENT = whether library has PDB files or not
+macro(copy_inner_lib PROJECT STEP_NAME ADD_BIN_DIR LIB_NAME PDB_PRESENT)
 	copy_inner_file("${PROJECT}" "${STEP_NAME}" "${ADD_BIN_DIR}" "${LIB_PREFIX}${LIB_NAME}${LIB_EXT}")
-	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO})
+	if(${ZE_COMPILER_MSVC} AND ${ZE_EXTERNAL_BUILD_DEBUG_INFO} AND ${PDB_PRESENT})
 		copy_inner_file("${PROJECT}" "${STEP_NAME}Pdb" "${ADD_BIN_DIR}CMakeFiles/${LIB_NAME}.dir/" "${LIB_NAME}.pdb")
 	endif()
 endmacro()

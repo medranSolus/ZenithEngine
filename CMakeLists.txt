@@ -303,7 +303,14 @@ set(HARFBUZZ_LIB "harfbuzz")
 set(HBAO_DX11_LIB "GFSDK_SSAO_D3D11.win64")
 set(HBAO_DX12_LIB "GFSDK_SSAO_D3D12.win64")
 set(LIBJPG_LIB "jpeg-static")
-set(LIBJXL_LIB "libjxl")
+set(LIBJXL_LIB "jxl")
+set(LIBJXL_INT_LIB "jxl-internal")
+set(LIBJXL_CMS_LIB "jxl_cms")
+set(LIBJXL_DEC_LIB "jxl_dec")
+set(LIBJXL_DEC_INT_LIB "jxl_dec-internal")
+set(LIBJXL_HWY_LIB "hwy")
+set(LIBJXL_LCMS_LIB "lcms2")
+set(LIBJXL_THREADS_LIB "jxl_threads")
 set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(NGX_LIB "nvsdk_ngx")
@@ -345,7 +352,8 @@ if(${ZE_ENABLE_DX12})
 endif()
 set(HBAO_TARGETS "${HBAO_DX11_TARGET}" "${HBAO_DX12_TARGET}")
 set(LIBJPG_TARGET "${LIBJPG_LIB}")
-#set(LIBJXL_TARGET "${LIBJXL_LIB}")
+set(LIBJXL_TARGET "${LIBJXL_LIB}")
+set(LIBJXL_TARGETS "${LIBJXL_TARGET}" "${LIBJXL_INT_LIB}" "${LIBJXL_CMS_LIB}" "${LIBJXL_DEC_LIB}" "${LIBJXL_DEC_INT_LIB}" "${LIBJXL_HWY_LIB}" "${LIBJXL_LCMS_LIB}" "${LIBJXL_THREADS_LIB}")
 set(LIBPNG_TARGET "libpng16_static") # Will need to increase number based on version
 set(LIBSPNG_TARGET "${LIBSPNG_LIB}")
 if(${ZE_NGX_ENABLED})
@@ -410,7 +418,7 @@ endif()
 set(COMMON_EXTERNAL_TARGETS ${BROTLI_TARGETS}
 	${FLAC_TARGET}
 	${LIBJPG_TARGET}
-	${LIBJXL_TARGET}
+	${LIBJXL_TARGETS}
 	${LIBSPNG_TARGET}
 	${OGG_TARGET}
 	${OPUS_TARGET}
@@ -619,8 +627,8 @@ endif()
 # zlib
 set(ZLIB_CACHE_ARGS "-DZLIB_BUILD_TESTING:BOOL=OFF"
 	"-DZLIB_BUILD_SHARED:BOOL=OFF")
-add_external_project(ZLIB "" "" "" "")
-copy_inner_header(ZLIB Config "" "zconf.h")
+add_external_project(ZLIB "" "" "" "" TRUE)
+copy_inner_header(ZLIB Config "" "" "zconf.h")
 
  # libspng
 set(LIBSPNG_CACHE_ARGS "-DENABLE_OPT:BOOL=ON"
@@ -632,7 +640,7 @@ set(LIBSPNG_CACHE_ARGS "-DENABLE_OPT:BOOL=ON"
 	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR};${EXT_CONFIG_INC_DIR}"
 	"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
-add_external_project(LIBSPNG "" "" "" "ZLIB")
+add_external_project(LIBSPNG "" "" "" "ZLIB" TRUE)
 
 # libjpeg-turbo
 set(LIBJPG_CACHE_ARGS "-DENABLE_SHARED:BOOL=OFF"
@@ -651,8 +659,8 @@ set(LIBJPG_CACHE_ARGS "-DENABLE_SHARED:BOOL=OFF"
 	"-DFORCE_INLINE:BOOL=ON"
 	"-DWITH_SYSTEM_SPNG:BOOL=ON"
 	"-DWITH_SYSTEM_ZLIB:BOOL=ON")
-add_external_project(LIBJPG "" "" "" "LIBSPNG;ZLIB")
-copy_inner_header(LIBJPG Config "" "jconfig.h")
+add_external_project(LIBJPG "" "" "" "LIBSPNG;ZLIB" TRUE)
+copy_inner_header(LIBJPG Config "" "" "jconfig.h")
 
  # libpng
 set(LIBPNG_CACHE_ARGS "-DPNG_SHARED:BOOL=OFF"
@@ -667,8 +675,8 @@ set(LIBPNG_CACHE_ARGS "-DPNG_SHARED:BOOL=OFF"
 	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR};${EXT_CONFIG_INC_DIR}"
 	"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 	"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
-add_external_project(LIBPNG "" "" "" "ZLIB")
-copy_inner_header(LIBPNG Config "" "pnglibconf.h")
+add_external_project(LIBPNG "" "" "" "ZLIB" TRUE)
+copy_inner_header(LIBPNG Config "" "" "pnglibconf.h")
 
 # DirectXTex
 if(ZE_BUILD_TOOLS)
@@ -691,7 +699,7 @@ if(ZE_BUILD_TOOLS)
 		"-DENABLE_OPENEXR_SUPPORT:BOOL=OFF"
 		"-DENABLE_LIBJPEG_SUPPORT:BOOL=OFF"
 		"-DENABLE_LIBPNG_SUPPORT:BOOL=OFF")
-	add_external_project(DXTEX "lib/" "" "" "")
+	add_external_project(DXTEX "lib/" "" "" "" TRUE)
 	copy_inner_file(DXTEX Texconv "bin/" "${TEXCONV_TARGET}")
 	copy_inner_file(DXTEX Texassemble "bin/" "${TEXASM_TARGET}")
 endif()
@@ -710,7 +718,7 @@ if(${ZE_EXTERNAL_MODEL_LOADING})
 		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
 		"-DASSIMP_INSTALL_PDB:BOOL=OFF"
 		"-DASSIMP_NO_EXPORT:BOOL=OFF")
-	add_external_project(ASSIMP "lib/" "code/" "" "ZLIB")
+	add_external_project(ASSIMP "lib/" "code/" "" "ZLIB" TRUE)
 	if(NOT EXISTS "${ASSIMP_OUT_LIB}")
 		ExternalProject_Add_Step(${ASSIMP_TARGET} headerConfig
 			DEPENDEES install
@@ -750,7 +758,7 @@ if(${ZE_ENABLE_OPENAL})
 		"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
 		"-DZLIB_LIBRARIES:STRING=${ZLIB_TARGET}"
 		"-DZLIB_LIBRARY:STRING=${ZLIB_TARGET}")
-	add_external_project(OPENAL "" "" "../../" "ZLIB")
+	add_external_project(OPENAL "" "" "../../" "ZLIB" TRUE)
 	copy_inner_file(OPENAL SharedLib "" "${OPENAL_LIB}${SHARED_LIB_EXT}")
 endif()
 
@@ -762,7 +770,7 @@ if(${ZE_COMPILER_MSVC})
 	set(HARFBUZZ_CACHE_ARGS ${HARFBUZZ_CACHE_ARGS}
 		"-DCMAKE_CXX_FLAGS:STRING=/bigobj")
 endif()
-add_external_project(HARFBUZZ "" "" "" "")
+add_external_project(HARFBUZZ "" "" "" "" TRUE)
 
 # brotli
 set(BROTLI_CACHE_ARGS "-DBROTLI_BUNDLED_MODE:BOOL=ON"
@@ -770,9 +778,62 @@ set(BROTLI_CACHE_ARGS "-DBROTLI_BUNDLED_MODE:BOOL=ON"
 	"-DBROTLI_BUILD_TOOLS:BOOL=OFF"
 	"-DBUILD_SHARED_LIBS:BOOL=OFF"
 	"-DENABLE_SANITIZER:BOOL=OFF")
-add_external_project(BROTLI "" "" "" "")
-copy_inner_lib(BROTLI BrotliDecoder "" "${BROTLIDEC_LIB}")
-copy_inner_lib(BROTLI BrotliEncoder "" "${BROTLIENC_LIB}")
+add_external_project(BROTLI "" "" "" "" TRUE)
+copy_inner_lib(BROTLI BrotliDecoder "" "${BROTLIDEC_LIB}" TRUE)
+copy_inner_lib(BROTLI BrotliEncoder "" "${BROTLIENC_LIB}" TRUE)
+
+# libjxl
+set(LIBJXL_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_FUZZERS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_DEVTOOLS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_TOOLS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_DOXYGEN:BOOL=OFF"
+	"-DJPEGXL_ENABLE_MANPAGES:BOOL=OFF"
+	"-DJPEGXL_ENABLE_BENCHMARK:BOOL=OFF"
+	"-DJPEGXL_ENABLE_EXAMPLES:BOOL=OFF"
+	"-DJPEGXL_BUNDLE_LIBPNG:BOOL=OFF"
+	"-DJPEGXL_ENABLE_JNI:BOOL=OFF"
+	"-DJPEGXL_ENABLE_SJPEG:BOOL=OFF"
+	"-DJPEGXL_ENABLE_OPENEXR:BOOL=OFF"
+	"-DJPEGXL_ENABLE_SKCMS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_VIEWERS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_TCMALLOC:BOOL=OFF"
+	"-DJPEGXL_ENABLE_PLUGINS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_COVERAGE:BOOL=OFF"
+	"-DJPEGXL_ENABLE_TRANSCODE_JPEG:BOOL=ON"
+	"-DJPEGXL_ENABLE_BOXES:BOOL=ON"
+	"-DJPEGXL_STATIC:BOOL=ON"
+	"-DJPEGXL_WARNINGS_AS_ERRORS:BOOL=OFF"
+	"-DJPEGXL_FORCE_NEON:BOOL=ON"
+	"-DJPEGXL_TEST_TOOLS:BOOL=OFF"
+	"-DJPEGXL_ENABLE_WASM_THREADS:BOOL=ON"
+	"-DJPEGXL_FORCE_SYSTEM_BROTLI:BOOL=ON"
+	"-DJPEGXL_FORCE_SYSTEM_GTEST:BOOL=OFF"
+	"-DJPEGXL_FORCE_SYSTEM_LCMS2:BOOL=OFF"
+	"-DJPEGXL_FORCE_SYSTEM_HWY:BOOL=OFF"
+	"-DBrotli_FOUND:BOOL=ON"
+	"-DBROTLI_INCLUDE_DIR:STRING=${BROTLI_INC_DIR}"
+	"-DBROTLICOMMON_LIBRARY:STRING=${EXTERNAL_BIN_DIR}/${BROTLI_LIB}${LIB_EXT}"
+	"-DBROTLIENC_LIBRARY:STRING=${EXTERNAL_BIN_DIR}/${BROTLIENC_LIB}${LIB_EXT}"
+	"-DBROTLIDEC_LIBRARY:STRING=${EXTERNAL_BIN_DIR}/${BROTLIDEC_LIB}${LIB_EXT}"
+	"-DJPEG_INCLUDE_DIR:STRING=${LIBJPG_INC_DIR}"
+	"-DPNG_LIBRARY:STRING=${EXTERNAL_BIN_DIR}/${LIBPNG_TARGET}${LIB_EXT}"
+	"-DPNG_PNG_INCLUDE_DIR:STRING=${LIBPNG_INC_DIR}"
+	"-DZLIB_LIBRARY:STRING=${EXTERNAL_BIN_DIR}/${ZLIB_TARGET}${LIB_EXT}"
+	"-DZLIB_INCLUDE_DIR:STRING=${ZLIB_INC_DIR}"
+	"-DBUILD_TESTING:BOOL=OFF")
+add_external_project(LIBJXL "lib/" "lib/" "" "BROTLI;LIBJPG;LIBPNG;ZLIB" FALSE)
+copy_inner_lib(LIBJXL LibjxlInternal "lib/" "${LIBJXL_INT_LIB}" FALSE)
+copy_inner_lib(LIBJXL LibjxlCms "lib/" "${LIBJXL_CMS_LIB}" TRUE)
+copy_inner_lib(LIBJXL LibjxlDecoder "lib/" "${LIBJXL_DEC_LIB}" FALSE)
+copy_inner_lib(LIBJXL LibjxlDecoderInternal "lib/" "${LIBJXL_DEC_INT_LIB}" FALSE)
+copy_inner_lib(LIBJXL LibjxlHwy "third_party/highway/" "${LIBJXL_HWY_LIB}" TRUE)
+copy_inner_lib(LIBJXL LibjxlLcms "third_party/" "${LIBJXL_LCMS_LIB}" TRUE)
+copy_inner_lib(LIBJXL LibjxlThreads "lib/" "${LIBJXL_THREADS_LIB}" TRUE)
+copy_inner_header(LIBJXL Export "lib/include/jxl/" "jxl/" "jxl_export.h")
+copy_inner_header(LIBJXL ExportCms "lib/include/jxl/" "jxl/" "jxl_cms_export.h")
+copy_inner_header(LIBJXL ExportThreads "lib/include/jxl/" "jxl/" "jxl_threads_export.h")
+copy_inner_header(LIBJXL LibVersion "lib/include/jxl/" "jxl/" "version.h")
 
 # bzip2
 set(BZIP2_CACHE_ARGS "-DENABLE_LIB_ONLY:BOOL=ON"
@@ -783,7 +844,7 @@ set(BZIP2_CACHE_ARGS "-DENABLE_LIB_ONLY:BOOL=ON"
 	"-DENABLE_DEBUG:BOOL=OFF"
 	"-DENABLE_SHARED_LIB:BOOL=OFF"
 	"-DBROTLI_DISABLE_TESTS:BOOL=ON")
-add_external_project(BZIP2 "" "" "" "")
+add_external_project(BZIP2 "" "" "" "" TRUE)
 
 # FreeType
 set(FTYPE_CACHE_ARGS "-DSKIP_INSTALL_ALL:BOOL=ON"
@@ -823,7 +884,7 @@ set(FTYPE_CACHE_ARGS "-DSKIP_INSTALL_ALL:BOOL=ON"
 	"-DBZIP2_INCLUDE_DIR:STRING=${BZIP2_INC_DIR}"
 	"-DBZIP2_LIBRARIES:STRING=${BZIP2_TARGET}"
 	"-DBZIP2_LIBRARY:STRING=${BZIP2_TARGET}")
-add_external_project(FTYPE "" "" "" "LIBPNG;HARFBUZZ;BROTLI;BZIP2")
+add_external_project(FTYPE "" "" "" "LIBPNG;HARFBUZZ;BROTLI;BZIP2" TRUE)
 
 # FidelityFX SDK
 add_external_fidelityfx_effect(CACAO)
@@ -840,7 +901,7 @@ set(OGG_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
 	"-DINSTALL_DOCS:BOOL=OFF"
 	"-DINSTALL_PKG_CONFIG_MODULE:BOOL=OFF"
 	"-DINSTALL_CMAKE_PACKAGE_MODULE:BOOL=OFF")
-add_external_project(OGG "" "" "" "")
+add_external_project(OGG "" "" "" "" TRUE)
 
 # flac
 set(FLAC_CACHE_ARGS "-DBUILD_CXXLIBS:BOOL=OFF"
@@ -858,7 +919,7 @@ set(FLAC_CACHE_ARGS "-DBUILD_CXXLIBS:BOOL=OFF"
 	"-DENABLE_MULTITHREADING:BOOL=ON"
 	"-DOGG_INCLUDE_DIR:STRING=${OGG_INC_DIR}"
 	"-DOGG_LIBRARY:STRING=${OGG_TARGET}")
-add_external_project(FLAC "src/libFLAC/" "src/libFLAC/" "" "OGG")
+add_external_project(FLAC "src/libFLAC/" "src/libFLAC/" "" "OGG" TRUE)
 
 # vorbis
 set(VORB_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
@@ -868,9 +929,9 @@ set(VORB_CACHE_ARGS "-DBUILD_SHARED_LIBS:BOOL=OFF"
 	"-DOGG_INCLUDE_DIR:STRING=${OGG_INC_DIR}"
 	"-DOGG_LIBRARY:STRING=${OGG_TARGET}"
 	"-Wno-author")
-add_external_project(VORB "lib/" "lib/" "" "OGG")
-copy_inner_lib(VORB VorbisEncoder "lib/" "${VORBENC_LIB}")
-copy_inner_lib(VORB VorbisFile "lib/" "${VORBFILE_LIB}")
+add_external_project(VORB "lib/" "lib/" "" "OGG" TRUE)
+copy_inner_lib(VORB VorbisEncoder "lib/" "${VORBENC_LIB}" TRUE)
+copy_inner_lib(VORB VorbisFile "lib/" "${VORBFILE_LIB}" TRUE)
 
 # opus
 set(OPUS_CACHE_ARGS "-DOPUS_BUILD_SHARED_LIBRARY:BOOL=OFF"
@@ -892,7 +953,7 @@ set(OPUS_CACHE_ARGS "-DOPUS_BUILD_SHARED_LIBRARY:BOOL=OFF"
 	"-DOPUS_OSCE:BOOL=OFF"
 	"-DOPUS_BUILD_FRAMEWORK:BOOL=OFF"
 	"-DOPUS_STATIC_RUNTIME:BOOL=OFF")
-add_external_project(OPUS "" "" "" "")
+add_external_project(OPUS "" "" "" "" TRUE)
 
 # opusfile
 set(OPUSFILE_DEP_SCRIPT "${ZE_BUILD_DIR}/opusfile_dep.cmake")
@@ -919,7 +980,7 @@ if(NOT EXISTS "${EXTERNAL_BIN_DIR}/${OPUSFILE_TARGET}${LIB_EXT}")
 		  INTERFACE_INCLUDE_DIRECTORIES \"${OPUS_INC_DIR}\")
 	  endif()")
 endif()
-add_external_project(OPUSFILE "" "" "" "OPUS;OGG")
+add_external_project(OPUSFILE "" "" "" "OPUS;OGG" TRUE)
 
 # EnTT
 if(${ZE_COMPILER_MSVC})

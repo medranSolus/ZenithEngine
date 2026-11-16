@@ -54,6 +54,7 @@ Switch ($command)
     "init"
     {
         git submodule update --init
+        git submodule update --init --recursive ./External/libjxl
         exit 0
     }
     "up"

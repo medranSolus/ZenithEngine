@@ -65,5 +65,5 @@ macro(add_external_fidelityfx_effect EFFECT_NAME)
 	    "-DFFX_INCLUDE_PATH:STRING=${FFXSDK_DIR}/include"
 	    "-DFFX_HOST_PATH:STRING=${FFXSDK_HOST_PATH}"
 	    "-DFFX_COMPONENTS_PATH:STRING=${FFXSDK_DIR}/src/components")
-    add_external_project(FFX${EFFECT_NAME} "../FFX_LIBS/" "../FFX_LIBS/" "" "${FFX${EFFECT_NAME}_DEP_LIST}")
+    add_external_project(FFX${EFFECT_NAME} "../FFX_LIBS/" "../FFX_LIBS/" "" "${FFX${EFFECT_NAME}_DEP_LIST}" TRUE)
 endmacro()

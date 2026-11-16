@@ -1,8 +1,10 @@
 #include "GFX/Surface.h"
 ZE_WARNING_PUSH
+#define JXL_STATIC_DEFINE
+#include "jxl/decode.h"
+#include "jxl/thread_parallel_runner.h"
 #include "jpeglib.h"
 #include "spng.h"
-#include "qoixx.hpp"
 #define STBI_ASSERT(X) ZE_ASSERT(X, "STB Image assert!")
 #define STB_IMAGE_STATIC
 #define STBI_FAILURE_USERMSG
@@ -13,6 +15,7 @@ ZE_WARNING_PUSH
 #define STBIW_WINDOWS_UTF8
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
+#include "qoixx.hpp"
 ZE_WARNING_POP
 
 namespace ZE::GFX
