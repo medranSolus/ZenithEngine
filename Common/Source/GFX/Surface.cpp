@@ -1,6 +1,7 @@
 #include "GFX/Surface.h"
 ZE_WARNING_PUSH
 #define JXL_STATIC_DEFINE
+#include "jxl/cms.h"
 #include "jxl/decode.h"
 #include "jxl/thread_parallel_runner.h"
 #include "jpeglib.h"
@@ -394,6 +395,251 @@ namespace ZE::GFX
 				success = true;
 			}
 			jpeg_destroy_decompress(&decoder);
+		}
+		else if (ext == ".jxl")
+		{
+			tryStbi = false;
+			JxlDecoder* dec = JxlDecoderCreate(nullptr);
+			if (dec)
+			{
+				if (JxlDecoderSubscribeEvents(dec, JXL_DEC_FULL_IMAGE | JXL_DEC_BASIC_INFO) == JXL_DEC_SUCCESS)
+				{
+					// 4 should be good-enough minimal value to improve reading
+					void* runner = JxlThreadParallelRunnerCreate(nullptr, 4);
+					// Ignore error, if can't add runner then just single thread
+					JxlDecoderSetParallelRunner(dec, JxlThreadParallelRunner, runner);
+
+					// Ingore error, let library handle no CMS state
+					const JxlCmsInterface* cms = JxlGetDefaultCms();
+					JxlDecoderSetCms(dec, *cms);
+
+					constexpr U64 BUFFER_SIZE = 64 * Math::KILOBYTE;
+					std::unique_ptr<U8[]> loadBuffer = std::make_unique_for_overwrite<U8[]>(BUFFER_SIZE);
+					bool run = true, finished = false;
+
+					struct JxlCtx
+					{
+						U8* Memory = nullptr;
+						bool ExpandAlpha = false;
+						bool Floating = false;
+						U32 RowSize = 0;
+						PixelFormat Format = PixelFormat::Unknown;
+					};
+					JxlCtx ctx = {};
+
+					do
+					{
+						switch (JxlDecoderProcessInput(dec))
+						{
+						default:
+							ZE_ENUM_UNHANDLED();
+						case JXL_DEC_ERROR:
+						{
+							ZE_FAIL("Decoding JXL error occured!");
+							run = false;
+							break;
+						}
+						case JXL_DEC_FULL_IMAGE:
+						{
+							finished = true;
+							break;
+						}
+						case JXL_DEC_SUCCESS:
+						{
+							if (memory)
+								success = true;
+							if (finished)
+								run = false;
+							break;
+						}
+						case JXL_DEC_NEED_MORE_INPUT:
+						{
+							U64 bytesLeft = JxlDecoderReleaseInput(dec);
+							if (bytesLeft)
+								std::memcpy(loadBuffer.get(), loadBuffer.get() + BUFFER_SIZE - bytesLeft, bytesLeft);
+
+							Status stat = file.Read(loadBuffer.get() + bytesLeft, Utils::SafeCast<U32>(BUFFER_SIZE - bytesLeft));
+							if (stat)
+							{
+								if (IO::EofResult::IsEOF(stat))
+									bytesLeft = IO::EofResult::GetRealBytes(stat);
+								else
+								{
+									ZE_CODE_ERROR(stat, "Error reading next chunk of data!");
+									run = false;
+								}
+							}
+							else
+								bytesLeft = BUFFER_SIZE;
+
+							if (JxlDecoderSetInput(dec, loadBuffer.get(), bytesLeft) != JXL_DEC_SUCCESS)
+							{
+								ZE_FAIL("Error setting new part of input data!");
+								run = false;
+							}
+							break;
+						}
+						case JXL_DEC_BASIC_INFO:
+						{
+							JxlBasicInfo info = {};
+							if (JxlDecoderGetBasicInfo(dec, &info) != JXL_DEC_SUCCESS)
+							{
+								ZE_FAIL("Should already be available!");
+								run = false;
+							}
+							else
+							{
+								alpha = info.alpha_bits != 0;
+								ctx.Floating = info.exponent_bits_per_sample != 0;
+								bool rgb = info.num_color_channels == 3;
+								U8 bits = Math::AlignUp<U8>(Utils::SafeCast<U8>(info.bits_per_sample), 8);
+
+								// Decode format
+								switch (bits)
+								{
+								case 8:
+								{
+									if (ctx.Floating)
+									{
+										ZE_FAIL("Floating-point encoding not supported for 8 bits!");
+										run = false;
+									}
+									else if (rgb)
+									{
+										format = PixelFormat::R8G8B8A8_UNorm;
+										ctx.ExpandAlpha = !alpha;
+									}
+									else
+										format = alpha ? PixelFormat::R8G8_UNorm : PixelFormat::R8_UNorm;
+									break;
+								}
+								case 16:
+								{
+									if (rgb)
+									{
+										format = ctx.Floating ? PixelFormat::R16G16B16A16_Float : PixelFormat::R16G16B16A16_UNorm;
+										ctx.ExpandAlpha = !alpha;
+									}
+									else if (ctx.Floating)
+										format = alpha ? PixelFormat::R16G16_Float : PixelFormat::R16_Float;
+									else if (alpha)
+										format = PixelFormat::R16G16_UNorm;
+									else
+										format = PixelFormat::R16_UNorm;
+									break;
+								}
+								case 32:
+								{
+									if (!ctx.Floating)
+									{
+										ZE_FAIL("Only float values supported as 32 bit data by the libjxl!");
+										run = false;
+									}
+									else if (rgb)
+										format = alpha ? PixelFormat::R32G32B32A32_Float : PixelFormat::R32G32B32_Float;
+									else if (alpha)
+										format = PixelFormat::R32G32_Float;
+									else
+										format = PixelFormat::R32_Float;
+									break;
+								}
+								default:
+								{
+									ZE_FAIL("Unsupported number of bits per channel!");
+									run = false;
+									break;
+								}
+								}
+
+								if (run)
+								{
+									width = Utils::SafeCast<U32>(info.xsize);
+									height = Utils::SafeCast<U32>(info.ysize);
+									depth = 1;
+									mipCount = 1;
+									arraySize = 1;
+									memorySize = GetSliceByteSize();
+									ctx.RowSize = GetRowByteSize();
+									ctx.Format = format;
+								}
+							}
+							break;
+						}
+						case JXL_DEC_NEED_IMAGE_OUT_BUFFER:
+						{
+							memory = std::make_shared<U8[]>(memorySize);
+							ctx.Memory = memory.get();
+
+							JxlPixelFormat pixelFormat = {};
+							pixelFormat.num_channels = Utils::GetChannelCount(format);
+							if (pixelFormat.num_channels == 4 && ctx.ExpandAlpha)
+								pixelFormat.num_channels = 3;
+							if (ctx.Floating)
+								pixelFormat.data_type = Utils::GetChannelSize(format) == sizeof(float) ? JXL_TYPE_FLOAT : JXL_TYPE_FLOAT16;
+							else
+								pixelFormat.data_type = Utils::GetChannelSize(format) == sizeof(U16) ? JXL_TYPE_UINT16 : JXL_TYPE_UINT8;
+							pixelFormat.endianness = JXL_NATIVE_ENDIAN;
+							pixelFormat.align = GetRowByteSize();
+
+							auto writeCallback = [](void* ctx, U64 startX, U64 startY, U64 pixelCount, const void* pixels) noexcept
+								{
+									ZE_ASSERT(ctx, "Empty JXL ctx!");
+									const JxlCtx& context = *reinterpret_cast<JxlCtx*>(ctx);
+
+									U8 pixelSize = Utils::GetFormatSize(context.Format);
+									U8* startMem = context.Memory + startY * context.RowSize + startX * pixelSize;
+									if (context.ExpandAlpha)
+									{
+										// Need to decode 3-channel image into full RGBA
+										U8 channelSize = Utils::GetChannelSize(context.Format);
+										U8 offset = channelSize * 3;
+										for (U64 x = 0; x < pixelCount; ++x)
+										{
+											std::memcpy(startMem, pixels, offset);
+											startMem += offset;
+											switch (channelSize)
+											{
+											default:
+												ZE_ENUM_UNHANDLED();
+											case sizeof(U8):
+											{
+												*startMem = UINT8_MAX;
+												break;
+											}
+											case sizeof(U16):
+											{
+												*reinterpret_cast<U16*>(startMem) = context.Floating ? Math::FP16::POS_ONE_VAL : UINT16_MAX;
+												break;
+											}
+											case sizeof(U32):
+											{
+												*reinterpret_cast<float*>(startMem) = 1.0f;
+												break;
+											}
+											}
+											startMem += channelSize;
+											reinterpret_cast<const U8*&>(pixels) += offset;
+										}
+									}
+									else
+										std::memcpy(startMem, pixels, pixelCount * pixelSize);
+								};
+
+							if (JxlDecoderSetImageOutCallback(dec, &pixelFormat, writeCallback, &ctx) != JXL_DEC_SUCCESS)
+							{
+								ZE_FAIL("Error writing JXL image data!");
+								run = false;
+							}
+							break;
+						}
+						}
+					} while (run);
+
+					if (runner)
+						JxlThreadParallelRunnerDestroy(runner);
+				}
+			}
+			JxlDecoderDestroy(dec);
 		}
 
 		// Last resort method to try loading image file
