@@ -877,9 +877,10 @@ namespace ZE::GFX::External::FFX
 	FfxErrorCode GetShaderInfoDOF(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "cbDOF" };
+		static const char* uavBuffNames[] = { "rw_internal_globals" };
 		static const char* samplerNames[] = { "LinearSampler", "PointSampler" };
-		static const U32 slots[] = { 0, 1, 2 };
-		static const U32 counts[] = { 1, 1, 1 };
+		static const U32 slots[] = { 0, 1, 2, 4 };
+		static const U32 counts[] = { 1, 1, 1, 1 };
 
 		const bool depthReverse = permutationOptions & DOF_SHADER_PERMUTATION_REVERSE_DEPTH;
 		const bool combinePlace = permutationOptions & DOF_SHADER_PERMUTATION_COMBINE_IN_PLACE;
@@ -887,14 +888,12 @@ namespace ZE::GFX::External::FFX
 		const bool fp16 = permutationOptions & DOF_SHADER_PERMUTATION_USE_FP16;
 		const bool wave64 = permutationOptions & DOF_SHADER_PERMUTATION_FORCE_WAVE64;
 
-		auto getPermutation = [](bool depthReverse, bool combinePlace, bool ringsMerge, bool fp16, bool wave64) -> std::string
+		auto getPermutation = [](bool combinePlace, bool ringsMerge, bool fp16, bool wave64) -> std::string
 			{
 				std::string suffix = "";
-				if (depthReverse || combinePlace || ringsMerge || fp16 || wave64)
+				if (combinePlace || ringsMerge || fp16 || wave64)
 				{
 					suffix = '_';
-					if (depthReverse)
-						suffix += 'R';
 					if (combinePlace)
 						suffix += 'C';
 					if (ringsMerge)
@@ -911,23 +910,23 @@ namespace ZE::GFX::External::FFX
 		case FFX_DOF_PASS_DOWNSAMPLE_DEPTH:
 		{
 			static const char* srvNames[] = { "r_input_depth" };
-			static const char* uavNames[] = { "rw_internal_globals", "rw_internal_radius" };
+			static const char* uavTexNames[] = { "rw_internal_radius" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
-				1, 1, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, 1, 1, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, slots, counts, nullptr, // CBV
 				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				uavTexNames, slots + 1, counts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				uavBuffNames, slots, counts, nullptr, // UAV buff
 				samplerNames, slots, counts, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFDownsampleDepthCS" + getPermutation(depthReverse, false, false, false, wave64));
+				return InitShader(*shader, dev, depthReverse ? "DOFDownsampleDepthCS_R" : "DOFDownsampleDepthCS");
 			break;
 		}
 		case FFX_DOF_PASS_DOWNSAMPLE_COLOR:
@@ -941,7 +940,7 @@ namespace ZE::GFX::External::FFX
 				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, slots, counts, nullptr, // CBV
 				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, uavCounts, counts, nullptr, // UAV tex
+				uavNames, slots, uavCounts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -950,50 +949,50 @@ namespace ZE::GFX::External::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFDownsampleColorCS" + getPermutation(false, false, false, fp16, wave64));
+				return InitShader(*shader, dev, "DOFDownsampleColorCS" + GetGeneralPermutation(fp16, wave64));
 			break;
 		}
 		case FFX_DOF_PASS_DILATE:
 		{
-			static const char* uavNames[] = { "rw_internal_globals", "rw_internal_radius" };
+			static const char* uavTexNames[] = { "rw_internal_radius", "rw_internal_dilated_radius" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
-				1, 0, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, 0, 2, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, slots, counts, nullptr, // CBV
 				nullptr, nullptr, nullptr, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				uavTexNames, slots + 1, counts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				uavBuffNames, slots, counts, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFDilateCS" + getPermutation(false, false, false, false, wave64));
+				return InitShader(*shader, dev, "DOFDilateCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_DOF_PASS_BLUR:
 		{
 			static const char* srvNames[] = { "r_internal_dilated_radius", "r_internal_bilat_color" };
-			static const char* uavNames[] = { "rw_internal_globals", "rw_internal_near", "rw_internal_far" };
+			static const char* uavTexNames[] = { "rw_internal_near", "rw_internal_far" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
-				1, 2, 3, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				1, 2, 2, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				cbvNames, slots, counts, nullptr, // CBV
 				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				uavTexNames, slots + 1, counts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				uavBuffNames, slots, counts, nullptr, // UAV buff
 				samplerNames, slots, counts, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFBlurCS" + getPermutation(false, false, ringsMerge, fp16, wave64));
+				return InitShader(*shader, dev, "DOFBlurCS" + getPermutation(false, ringsMerge, fp16, wave64));
 			break;
 		}
 		case FFX_DOF_PASS_COMPOSITE:
@@ -1015,7 +1014,7 @@ namespace ZE::GFX::External::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFCompositeCS" + getPermutation(false, combinePlace, false, fp16, wave64));
+				return InitShader(*shader, dev, "DOFCompositeCS" + getPermutation(combinePlace, false, fp16, false));
 			break;
 		}
 		default:

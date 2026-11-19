@@ -332,7 +332,9 @@ namespace ZE::GFX::External::FFX
 		resDesc.Format = GetPixelFormat(createResourceDescription->resourceDescription.format);
 		if (createResourceDescription->resourceDescription.type == FFX_RESOURCE_TYPE_BUFFER)
 		{
-			const U32 formatSize = static_cast<U32>(Utils::GetFormatSize(resDesc.Format));
+			U32 formatSize = static_cast<U32>(Utils::GetFormatSize(resDesc.Format));
+			if (!formatSize)
+				formatSize = 1;
 			resDesc.Sizes.X = Math::AlignUp(createResourceDescription->resourceDescription.size, formatSize);
 			resDesc.Sizes.Y = Math::AlignUp(createResourceDescription->resourceDescription.stride, formatSize);
 			resDesc.DepthOrArraySize = 1;
@@ -368,7 +370,7 @@ namespace ZE::GFX::External::FFX
 			{
 				std::vector<U8> initValue;
 				Resource::CBufferData data = {};
-				data.Bytes = Math::AlignUp(Utils::SafeCast<U32>(createResourceDescription->initData.size), static_cast<U32>(Utils::GetFormatSize(resDesc.Format)));
+				data.Bytes = Math::AlignUp<U32>(Utils::SafeCast<U32>(createResourceDescription->initData.size), std::max<U32>(Utils::GetFormatSize(resDesc.Format), 1U));
 				if (isValue)
 				{
 					initValue.resize(data.Bytes, createResourceDescription->initData.value);

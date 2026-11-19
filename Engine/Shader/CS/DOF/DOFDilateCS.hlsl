@@ -1,22 +1,23 @@
-#define ZE_DOF_CB_RANGE 2
+#define ZE_DOF_CB_RANGE 3
 #include "CB/ConstantsDOF.hlsli"
 
 UAV_EX(globals, globallycoherent RWStructuredBuffer<DofGlobalVars>, 0, 0);
 UAV2D(radius, FfxFloat32x2, 1, 1);
+UAV2D(dilatedRadius, FfxFloat32x2, 2, 2);
 
 FfxUInt32 FfxDofGetMaxTileRadius()
 {
 	return ua_globals[0].MaxTileRad;
 }
 
-void FfxDofStoreDilatedRadius(const in FfxUInt32x2 coord, const in FfxFloat32x2 dilatedMinMax)
-{
-	ua_radius[coord] = dilatedMinMax;
-}
-
 FfxFloat32x2 FfxDofLoadTileRadius(const in FfxUInt32x2 tile)
 {
 	return ua_radius[tile];
+}
+
+void FfxDofStoreDilatedRadius(const in FfxUInt32x2 coord, const in FfxFloat32x2 dilatedMinMax)
+{
+	ua_dilatedRadius[coord] = dilatedMinMax;
 }
 
 #include "WarningGuardOn.hlsli"
