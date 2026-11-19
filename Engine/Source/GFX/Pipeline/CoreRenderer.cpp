@@ -154,7 +154,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 
 		// Combined scene related resources
 		graphDesc.AddResource("rawScene",
-			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncRenderSize), PixelFormat::R16G16B16A16_Float, "Raw lighted scene"));
+			GENERIC_TEX2D_DESC(FrameResourceFlag::SyncRenderSize | FrameResourceFlag::ForceUAV, PixelFormat::R16G16B16A16_Float, "Raw lighted scene"));
 		graphDesc.AddResource("upscaledScene",
 			GENERIC_TEX2D_DESC(Base(FrameResourceFlag::SyncDisplaySize), PixelFormat::R16G16B16A16_Float, "Upscaled scene"));
 		graphDesc.AddResource("tonemapedScene",
@@ -417,11 +417,20 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 			node.SetHintGfx();
 			graphDesc.RenderPasses.emplace_back(std::move(node));
 		}
+		{
+			RenderNode node("depthOfField", "", RenderPass::DepthOfField::GetDesc(), PassExecutionType::StaticProcessor);
+			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
+			node.AddOutput("RT", TextureLayout::ShaderResource, "rawScene");
+			node.SetHintCompute();
+			node.DisableExecDataCaching();
+			graphDesc.RenderPasses.emplace_back(std::move(node));
+		}
 #pragma endregion
 #pragma region Upscaling
 		{
 			RenderNode node("upscale", "fsr1", RenderPass::UpscaleFSR1::GetDesc(graphDesc.GetFormat("upscaledScene")), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetHintCompute();
 			node.DisableExecDataCaching();
@@ -429,7 +438,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		}
 		{
 			RenderNode node("upscale", "fsr2", RenderPass::UpscaleFSR2::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -441,7 +450,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 		}
 		{
 			RenderNode node("upscale", "fsr3", RenderPass::UpscaleFSR3::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -457,7 +466,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #if _ZE_FFX_API_ENABLED
 		{
 			RenderNode node("upscale", "ffxfsr", RenderPass::UpscaleFfxFSR::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -472,7 +481,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #if _ZE_XESS_ENABLED
 		{
 			RenderNode node("upscale", "xess", RenderPass::UpscaleXeSS::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_R", TextureLayout::ShaderResource);
@@ -489,7 +498,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #endif
 		{
 			RenderNode node("upscale", "nis", RenderPass::UpscaleNIS::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");
 			node.SetInitDataGpuUploadRequired();
 			node.SetHintCompute();
@@ -498,7 +507,7 @@ namespace ZE::GFX::Pipeline::CoreRenderer
 #if _ZE_DLSS_ENABLED
 		{
 			RenderNode node("upscale", "dlss", RenderPass::UpscaleDLSS::GetDesc(), PassExecutionType::StaticProcessor);
-			node.AddInput("wireframe.RT", TextureLayout::ShaderResource);
+			node.AddInput("depthOfField.RT", TextureLayout::ShaderResource);
 			node.AddInput("wireframe.DS", TextureLayout::ShaderResource);
 			node.AddInput("lambertian.GB_MV", TextureLayout::ShaderResource);
 			node.AddOutput("RT", TextureLayout::UnorderedAccess, "upscaledScene", "rawScene");

@@ -81,6 +81,7 @@ namespace ZE::GFX::Pipeline
 
 		LightCombine,
 		Skybox,
+		DepthOfField,
 
 		UpscaleDLSS,
 		UpscaleFSR1,
