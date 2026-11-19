@@ -9,7 +9,7 @@
 namespace ZE
 {
 	// Set of flags used to enable various engine features.
-	typedef U8 SettingsInitFlags;
+	typedef U16 SettingsInitFlags;
 	// Possible engine features to be enabled by the application.
 	enum class SettingsInitFlag : SettingsInitFlags
 	{
@@ -29,6 +29,8 @@ namespace ZE
 		SplitRenderSubmissions = 64,
 		// Enable Image Based Lighting as handler of ambient lighting.
 		EnableIBL = 128,
+		// Enable Depth of Field effect.
+		EnableDOF = 256,
 	};
 	ZE_ENUM_OPERATORS(SettingsInitFlag, SettingsInitFlags);
 

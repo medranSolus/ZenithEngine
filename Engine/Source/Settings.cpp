@@ -38,6 +38,7 @@ namespace ZE
 #if _ZE_GFX_MARKERS
 		flags[Flags::GfxTags] = true;
 #endif
+		flags[Flags::EnabledDOF] = params.Flags & SettingsInitFlag::EnableDOF;
 		flags[Flags::EnabledSSSR] = params.Flags & SettingsInitFlag::EnableSSSR;
 		flags[Flags::AsyncAO] = params.Flags & SettingsInitFlag::AsyncAO;
 		flags[Flags::IBL] = params.Flags & SettingsInitFlag::EnableIBL;

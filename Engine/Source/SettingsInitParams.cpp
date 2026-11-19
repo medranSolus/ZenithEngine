@@ -19,6 +19,7 @@ namespace ZE
 		parser.AddOption("hbao");
 		parser.AddOption("ibl");
 		parser.AddOption("sssr");
+		parser.AddOption("dof");
 
 		// Tonemappers
 		parser.AddOption("tonemap-exp");
@@ -72,6 +73,8 @@ namespace ZE
 			params.Flags |= SettingsInitFlag::EnableGPUValidation;
 		if (parser.GetOption("sssr"))
 			params.Flags |= SettingsInitFlag::EnableSSSR;
+		if (parser.GetOption("dof"))
+			params.Flags |= SettingsInitFlag::EnableDOF;
 
 		if (parser.GetOption("ffx-fsr"))
 			params.Upscaler = GFX::UpscalerType::FfxFsr;

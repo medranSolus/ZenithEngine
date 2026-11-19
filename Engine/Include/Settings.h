@@ -17,6 +17,7 @@ namespace ZE
 			IndexBufferU8,
 			AttachPIX,
 			GPUValidation,
+			EnabledDOF,
 			EnabledSSSR,
 			SupportedSSSR,
 			AsyncAO,
@@ -101,6 +102,7 @@ namespace ZE
 		static constexpr bool IsEnabledU8IndexBuffers() noexcept { return flags[Flags::IndexBufferU8]; }
 		static constexpr bool IsEnabledPIXAttaching() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AttachPIX]; }
 		static constexpr bool IsEnabledGPUValidation() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::GPUValidation]; }
+		static constexpr bool IsEnabledDOF() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::EnabledDOF]; }
 		static constexpr bool IsEnabledSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::EnabledSSSR] && IsSupportedSSSR(); }
 		static constexpr bool IsSupportedSSSR() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::SupportedSSSR]; }
 		static constexpr bool IsEnabledAsyncAO() noexcept { ZE_ASSERT_INIT(Initialized()); return flags[Flags::AsyncAO] && IsSupportedAsyncQueue(); }
@@ -115,6 +117,7 @@ namespace ZE
 		static constexpr void SetGfxTags(bool enabled) noexcept { flags[Flags::GfxTags] = enabled; }
 		static constexpr void SetU8IndexBuffers(bool enabled) noexcept { flags[Flags::IndexBufferU8] = enabled; }
 		static constexpr void SetImGui(bool enabled) noexcept { flags[Flags::ImGui] = enabled; }
+		static constexpr void SetDOF(bool enabled) noexcept { flags[Flags::EnabledDOF] = enabled; }
 		static constexpr void SetSSSR(bool enabled) noexcept { flags[Flags::EnabledSSSR] = enabled; }
 		static constexpr void SetGfxSupportSSSR(bool enabled) noexcept { flags[Flags::SupportedSSSR] = enabled; }
 		static constexpr void SetIBL(bool enabled) noexcept { flags[Flags::IBL] = enabled; }

@@ -291,6 +291,8 @@ namespace ZE
 						ImGui::EndCombo();
 					}
 
+					ImGui::Columns(2, "##effects_box", false);
+					{
 					ImGui::BeginDisabled(!Settings::IsSupportedSSSR());
 					bool sssr = Settings::IsEnabledSSSR();
 					ImGui::Checkbox("SSSR##enable", &sssr);
@@ -301,6 +303,14 @@ namespace ZE
 					ImGui::Checkbox("Debug view##enable", &debugView);
 					Settings::SetDebugView(debugView);
 #endif
+					}
+					ImGui::NextColumn();
+					{
+						bool dof = Settings::IsEnabledDOF();
+						ImGui::Checkbox("Depth of Field##enable", &dof);
+						Settings::SetDOF(dof);
+					}
+					ImGui::Columns(1);
 					ImGui::NewLine();
 				}
 				ZE_EXPECT_RET_FAILED_CODE(flags[ExecuteUploadSync], graphBuilder.ShowCurrentPassesDebugUI(graphics.GetDevice(), assets, renderGraph));
