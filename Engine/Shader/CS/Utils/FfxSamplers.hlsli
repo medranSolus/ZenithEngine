@@ -14,6 +14,11 @@ SamplerState splr_RealPointClamp : register(s4);
 SamplerState splr_LinearClamp : register(s0);
 #endif
 
+#ifdef _ZE_FFX_DOF
+SamplerState splr_Linear : register(s0);
+SamplerState splr_Point : register(s1);
+#endif
+
 #ifdef _ZE_FFX_SSSR
 SamplerState splr_EnvironmentMap : register(s0);
 #endif

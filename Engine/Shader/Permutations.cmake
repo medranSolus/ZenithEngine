@@ -63,6 +63,24 @@ add_shader_permutation("DenoiserShadowsFilterCS" "_ZE_PREFER_WAVE64:W")
 add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_PREFER_WAVE64:W")
 
+# DOF
+
+add_shader_permutation("DOFBlurCS" "FFX_DOF_OPTION_MAX_RING_MERGE_LOG=1:M")
+add_shader_permutation("DOFBlurCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DOFBlurCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DOFCompositeCS" "FFX_DOF_OPTION_COMBINE_IN_PLACE=1:C")
+add_shader_permutation("DOFCompositeCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DOFCompositeCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DOFDilateCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DOFDownsampleColorCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation("DOFDownsampleColorCS" "_ZE_PREFER_WAVE64:W")
+
+add_shader_permutation("DOFDownsampleDepthCS" "FFX_DOF_OPTION_REVERSE_DEPTH=1:R")
+add_shader_permutation("DOFDownsampleDepthCS" "_ZE_PREFER_WAVE64:W")
+
 # FSR1
 add_shader_permutation("FSR1RCasCS" "FFX_FSR1_OPTION_RCAS_PASSTHROUGH_ALPHA=1:A")
 add_shader_permutation("FSR1EasuCS" "FFX_FSR1_OPTION_APPLY_RCAS=1:S")
