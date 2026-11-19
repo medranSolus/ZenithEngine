@@ -144,7 +144,10 @@ namespace ZE::RHI::DX11::Pipeline
 				{
 					dataDesc.Size = resDesc.GetResolutionAdjustedSizes();
 					dataDesc.Array = resDesc.DepthOrArraySize;
-					dataDesc.Mips = resDesc.MipLevels ? resDesc.MipLevels : Math::GetMipLevels(dataDesc.Size.X, dataDesc.Size.Y);
+					if (!resDesc.MipLevels && !dataDesc.IsBuffer())
+						dataDesc.Mips = Math::GetMipLevels(dataDesc.Size.X, dataDesc.Size.Y);
+					else
+						dataDesc.Mips = resDesc.MipLevels;
 					dataDesc.Format = resDesc.Format;
 
 					// Get correct usage flags
@@ -186,7 +189,7 @@ namespace ZE::RHI::DX11::Pipeline
 						ZE_ASSERT(!isDS, "Cannot create buffer resource as depth stencil!");
 
 						D3D11_BUFFER_DESC buffDesc = {};
-						buffDesc.ByteWidth = dataDesc.Size.X;
+						buffDesc.ByteWidth = Math::AlignUp(dataDesc.Size.X, 16U);
 						buffDesc.Usage = D3D11_USAGE_DEFAULT;
 						buffDesc.BindFlags = bindFlags;
 						buffDesc.CPUAccessFlags = 0;
@@ -521,6 +524,8 @@ namespace ZE::RHI::DX11::Pipeline
 							uavDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
 							uavDesc.Buffer.FirstElement = 0;
 							uavDesc.Buffer.NumElements = dataDesc.Size.X;
+							if (dataDesc.Size.Y)
+								uavDesc.Buffer.NumElements /= dataDesc.Size.Y;
 							break;
 						}
 						case GFX::Pipeline::FrameResourceType::Texture1D:
@@ -643,6 +648,8 @@ namespace ZE::RHI::DX11::Pipeline
 							srvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
 							srvDesc.BufferEx.FirstElement = 0;
 							srvDesc.BufferEx.NumElements = dataDesc.Size.X;
+							if (dataDesc.Size.Y)
+								srvDesc.Buffer.NumElements /= dataDesc.Size.Y;
 							srvDesc.BufferEx.Flags = resDesc.Flags & GFX::Pipeline::FrameResourceFlag::RawBufferView ? D3D11_BUFFEREX_SRV_FLAG_RAW : 0;
 							break;
 						}

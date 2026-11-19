@@ -392,12 +392,17 @@ namespace ZE::RHI::DX12::Pipeline
 					if (res.Type == GFX::Pipeline::FrameResourceType::Buffer)
 					{
 						resDesc.Height = 1;
+						resDesc.MipLevels = 1;
 						++bufferCount;
 						resDesc.Format = DXGI_FORMAT_UNKNOWN;
 						resDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 					}
 					else
 					{
+						resDesc.MipLevels = res.MipLevels;
+						if (!resDesc.MipLevels)
+							resDesc.MipLevels = Math::GetMipLevels(sizes.X, sizes.Y);
+
 						resDesc.Format = DX::GetTypedDepthDXFormat(res.Format);
 						resDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 					}
@@ -406,9 +411,6 @@ namespace ZE::RHI::DX12::Pipeline
 					if (res.Type == GFX::Pipeline::FrameResourceType::TextureCube)
 						resDesc.DepthOrArraySize *= 6;
 
-					resDesc.MipLevels = res.MipLevels;
-					if (!resDesc.MipLevels)
-						resDesc.MipLevels = Math::GetMipLevels(sizes.X, sizes.Y);
 					if (res.Flags & GFX::Pipeline::FrameResourceFlag::SimultaneousAccess)
 						resDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_SIMULTANEOUS_ACCESS;
 					else
