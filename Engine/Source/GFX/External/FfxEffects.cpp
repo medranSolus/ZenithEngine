@@ -2,6 +2,7 @@
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_cacao.h"
 #include "FidelityFX/host/ffx_denoiser.h"
+#include "FidelityFX/host/ffx_dof.h"
 #include "FidelityFX/host/ffx_fsr1.h"
 #include "FidelityFX/host/ffx_fsr2.h"
 #include "FidelityFX/host/ffx_fsr3upscaler.h"
@@ -9,6 +10,7 @@ ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_sssr.h"
 #include "../src/components/cacao/ffx_cacao_private.h"
 #include "../src/components/denoiser/ffx_denoiser_private.h"
+#include "../src/components/dof/ffx_dof_private.h"
 #include "../src/components/fsr1/ffx_fsr1_private.h"
 #include "../src/components/fsr2/ffx_fsr2_private.h"
 #include "../src/components/fsr3upscaler/ffx_fsr3upscaler_private.h"
@@ -20,6 +22,7 @@ namespace ZE::GFX::External::FFX
 {
 	FfxErrorCode GetShaderInfoCACAO(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
 	FfxErrorCode GetShaderInfoDenoiser(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
+	FfxErrorCode GetShaderInfoDOF(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
 	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
 	FfxErrorCode GetShaderInfoFSR2(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
 	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
@@ -99,6 +102,33 @@ namespace ZE::GFX::External::FFX
 			default:
 			ZE_FAIL("Invalid pass for Denoiser!");
 			break;
+			}
+			break;
+		}
+		case FFX_EFFECT_DOF:
+		{
+			switch (passId)
+			{
+			case FFX_DOF_PASS_DOWNSAMPLE_DEPTH:
+				permutationOptions &= DOF_SHADER_PERMUTATION_REVERSE_DEPTH | DOF_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			case FFX_DOF_PASS_DOWNSAMPLE_COLOR:
+				permutationOptions &= DOF_SHADER_PERMUTATION_USE_FP16 | DOF_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			case FFX_DOF_PASS_DILATE:
+				permutationOptions &= DOF_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			case FFX_DOF_PASS_BLUR:
+				permutationOptions &= DOF_SHADER_PERMUTATION_MERGE_RINGS
+					| DOF_SHADER_PERMUTATION_USE_FP16 | DOF_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			case FFX_DOF_PASS_COMPOSITE:
+				permutationOptions &= DOF_SHADER_PERMUTATION_COMBINE_IN_PLACE
+					| DOF_SHADER_PERMUTATION_USE_FP16 | DOF_SHADER_PERMUTATION_FORCE_WAVE64;
+				break;
+			default:
+				ZE_FAIL("Invalid pass for DOF!");
+				break;
 			}
 			break;
 		}
@@ -250,6 +280,9 @@ namespace ZE::GFX::External::FFX
 		case FFX_EFFECT_DENOISER:
 			code = GetShaderInfoDenoiser(dev, pass, permutationOptions, shaderBlob, shader);
 			break;
+		case FFX_EFFECT_DOF:
+			code = GetShaderInfoDOF(dev, pass, permutationOptions, shaderBlob, shader);
+			break;
 		case FFX_EFFECT_FSR1:
 			code = GetShaderInfoFSR1(dev, pass, permutationOptions, shaderBlob, shader);
 			break;
@@ -298,15 +331,15 @@ namespace ZE::GFX::External::FFX
 				std::string suffix = "";
 				if (normalsInput || half || downsampled || wave64)
 				{
-					suffix = "_";
+					suffix = '_';
 					if (normalsInput)
-						suffix += "I";
+						suffix += 'I';
 					if (half)
-						suffix += "F";
+						suffix += 'F';
 					if (downsampled)
-						suffix += "D";
+						suffix += 'D';
 					if (wave64)
-						suffix += "W";
+						suffix += 'W';
 				}
 				return suffix;
 			};
@@ -445,7 +478,7 @@ namespace ZE::GFX::External::FFX
 				std::string name = "CACAOGenerateCS";
 				if (generateVersion > 0 || wave64)
 				{
-					name += "_";
+					name += '_';
 					if (generateVersion > 0)
 					{
 						name += "Q";
@@ -558,7 +591,7 @@ namespace ZE::GFX::External::FFX
 				const U8 blurCount = Utils::SafeCast<U8>(pass - FFX_CACAO_PASS_EDGE_SENSITIVE_BLUR_1 + 1);
 				if (blurCount > 1 || fp16 || wave64)
 				{
-					name += "_";
+					name += '_';
 					if (blurCount > 1)
 						name += std::to_string(blurCount);
 					if (fp16)
@@ -599,7 +632,7 @@ namespace ZE::GFX::External::FFX
 				std::string name = "CACAOApplyCS";
 				if (applyNonSmart || wave64)
 				{
-					name += "_";
+					name += '_';
 					if (applyNonSmart)
 					{
 						name += "NS";
@@ -638,7 +671,7 @@ namespace ZE::GFX::External::FFX
 				std::string name = "CACAOUpscaleCS";
 				if (upscaleSmartApply || fp16 || wave64)
 				{
-					name += "_";
+					name += '_';
 					if (upscaleSmartApply)
 						name += "S";
 					if (fp16)
@@ -749,7 +782,7 @@ namespace ZE::GFX::External::FFX
 						std::string suffix = "";
 						if (filterPass || fp16 || wave64)
 						{
-							suffix = "_";
+							suffix = '_';
 							if (filterPass)
 								suffix += filterPass == 1 ? "1" : "2";
 							if (fp16)
@@ -841,6 +874,159 @@ namespace ZE::GFX::External::FFX
 		return FFX_OK;
 	}
 
+	FfxErrorCode GetShaderInfoDOF(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
+	{
+		static const char* cbvNames[] = { "cbDOF" };
+		static const char* samplerNames[] = { "LinearSampler", "PointSampler" };
+		static const U32 slots[] = { 0, 1, 2 };
+		static const U32 counts[] = { 1, 1, 1 };
+
+		const bool depthReverse = permutationOptions & DOF_SHADER_PERMUTATION_REVERSE_DEPTH;
+		const bool combinePlace = permutationOptions & DOF_SHADER_PERMUTATION_COMBINE_IN_PLACE;
+		const bool ringsMerge = permutationOptions & DOF_SHADER_PERMUTATION_MERGE_RINGS;
+		const bool fp16 = permutationOptions & DOF_SHADER_PERMUTATION_USE_FP16;
+		const bool wave64 = permutationOptions & DOF_SHADER_PERMUTATION_FORCE_WAVE64;
+
+		auto getPermutation = [](bool depthReverse, bool combinePlace, bool ringsMerge, bool fp16, bool wave64) -> std::string
+			{
+				std::string suffix = "";
+				if (depthReverse || combinePlace || ringsMerge || fp16 || wave64)
+				{
+					suffix = '_';
+					if (depthReverse)
+						suffix += 'R';
+					if (combinePlace)
+						suffix += 'C';
+					if (ringsMerge)
+						suffix += 'M';
+					if (fp16)
+						suffix += 'H';
+					if (wave64)
+						suffix += 'W';
+				}
+				return suffix;
+			};
+		switch (pass)
+		{
+		case FFX_DOF_PASS_DOWNSAMPLE_DEPTH:
+		{
+			static const char* srvNames[] = { "r_input_depth" };
+			static const char* uavNames[] = { "rw_internal_globals", "rw_internal_radius" };
+			constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 1, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, nullptr, // CBV
+				srvNames, slots, counts, nullptr, // SRV tex
+				uavNames, slots, counts, nullptr, // UAV tex
+				nullptr, nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, slots, counts, nullptr, // Samplers
+				nullptr, nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				return InitShader(*shader, dev, "DOFDownsampleDepthCS" + getPermutation(depthReverse, false, false, false, wave64));
+			break;
+		}
+		case FFX_DOF_PASS_DOWNSAMPLE_COLOR:
+		{
+			static const char* srvNames[] = { "r_input_depth", "r_input_color" };
+			static const char* uavNames[] = { "rw_internal_bilat_color" };
+			static const U32 uavCounts[] = { 4 };
+			constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, nullptr, // CBV
+				srvNames, slots, counts, nullptr, // SRV tex
+				uavNames, uavCounts, counts, nullptr, // UAV tex
+				nullptr, nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				return InitShader(*shader, dev, "DOFDownsampleColorCS" + getPermutation(false, false, false, fp16, wave64));
+			break;
+		}
+		case FFX_DOF_PASS_DILATE:
+		{
+			static const char* uavNames[] = { "rw_internal_globals", "rw_internal_radius" };
+			constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 0, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, nullptr, // CBV
+				nullptr, nullptr, nullptr, nullptr, // SRV tex
+				uavNames, slots, counts, nullptr, // UAV tex
+				nullptr, nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				return InitShader(*shader, dev, "DOFDilateCS" + getPermutation(false, false, false, false, wave64));
+			break;
+		}
+		case FFX_DOF_PASS_BLUR:
+		{
+			static const char* srvNames[] = { "r_internal_dilated_radius", "r_internal_bilat_color" };
+			static const char* uavNames[] = { "rw_internal_globals", "rw_internal_near", "rw_internal_far" };
+			constexpr FfxShaderBlob BLOB =
+			{
+				nullptr, 0, // Blob, data
+				1, 2, 3, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, nullptr, // CBV
+				srvNames, slots, counts, nullptr, // SRV tex
+				uavNames, slots, counts, nullptr, // UAV tex
+				nullptr, nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				samplerNames, slots, counts, nullptr, // Samplers
+				nullptr, nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
+
+			if (shader)
+				return InitShader(*shader, dev, "DOFBlurCS" + getPermutation(false, false, ringsMerge, fp16, wave64));
+			break;
+		}
+		case FFX_DOF_PASS_COMPOSITE:
+		{
+			static const char* srvNames[] = { "r_internal_dilated_radius", "r_internal_bilat_color", "r_input_depth", "r_input_color", };
+			static const char* uavNames[] = { "rw_output_color", "rw_internal_near", "rw_internal_far" };
+			const FfxShaderBlob blob =
+			{
+				nullptr, 0, // Blob, data
+				1, 3U + !combinePlace, 3, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
+				cbvNames, slots, counts, nullptr, // CBV
+				srvNames, slots, counts, nullptr, // SRV tex
+				uavNames, slots, counts, nullptr, // UAV tex
+				nullptr, nullptr, nullptr, nullptr, // SRV buff
+				nullptr, nullptr, nullptr, nullptr, // UAV buff
+				nullptr, nullptr, nullptr, nullptr, // Samplers
+				nullptr, nullptr, nullptr, nullptr, // RT acc
+			};
+			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
+
+			if (shader)
+				return InitShader(*shader, dev, "DOFCompositeCS" + getPermutation(false, combinePlace, false, fp16, wave64));
+			break;
+		}
+		default:
+		{
+			ZE_FAIL("Invalid pass for DOF!");
+			return FFX_ERROR_INVALID_ENUM;
+		}
+		}
+		return FFX_OK;
+	}
+
 	FfxErrorCode GetShaderInfoFSR1(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "cbFSR1" };
@@ -859,17 +1045,17 @@ namespace ZE::GFX::External::FFX
 				std::string suffix = "";
 				if (passAlpha || sharpen || srgbConversion || fp16 || wave64)
 				{
-					suffix = "_";
+					suffix = '_';
 					if (passAlpha)
-						suffix += "A";
+						suffix += 'A';
 					if (sharpen)
-						suffix += "S";
+						suffix += 'S';
 					if (srgbConversion)
-						suffix += "R";
+						suffix += 'R';
 					if (fp16)
-						suffix += "H";
+						suffix += 'H';
 					if (wave64)
-						suffix += "W";
+						suffix += 'W';
 				}
 				return suffix;
 			};
@@ -907,7 +1093,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_internal_upscaled_color" };
 			static const char* uavNames[] = { "rw_upscaled_output" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -956,23 +1142,23 @@ namespace ZE::GFX::External::FFX
 				std::string suffix = "";
 				if (depthInverted || sharpen || lut || lowResMotionVectors || jitteredMotionVectors || hdr || fp16 || wave64)
 				{
-					suffix = "_";
+					suffix = '_';
 					if (depthInverted)
-						suffix += "I";
+						suffix += 'I';
 					if (sharpen)
-						suffix += "S";
+						suffix += 'S';
 					if (lut)
-						suffix += "L";
+						suffix += 'L';
 					if (lowResMotionVectors)
-						suffix += "R";
+						suffix += 'R';
 					if (jitteredMotionVectors)
-						suffix += "J";
+						suffix += 'J';
 					if (hdr)
-						suffix += "D";
+						suffix += 'D';
 					if (fp16)
-						suffix += "H";
+						suffix += 'H';
 					if (wave64)
-						suffix += "W";
+						suffix += 'W';
 				}
 				return suffix;
 			};
@@ -984,7 +1170,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_input_color_jittered", "r_input_motion_vectors", "r_input_exposure", "r_reactive_mask", "r_transparency_and_composition_mask", "r_reconstructed_previous_nearest_depth", "r_dilated_motion_vectors", "r_previous_dilated_motion_vectors", "r_dilatedDepth", "r_input_depth" };
 			static const char* uavNames[] = { "rw_prepared_input_color", "rw_dilated_reactive_masks" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 10, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1006,7 +1192,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_input_color_jittered", "r_input_motion_vectors", "r_input_depth", "r_input_exposure" };
 			static const char* uavNames[] = { "rw_reconstructed_previous_nearest_depth", "rw_dilated_motion_vectors", "rw_dilatedDepth", "rw_lock_input_luma" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 4, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1028,7 +1214,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_lock_input_luma" };
 			static const char* uavNames[] = { "rw_reconstructed_previous_nearest_depth", "rw_new_locks" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1079,7 +1265,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR2", "cbRCAS" };
 			static const char* srvNames[] = { "r_input_exposure", "r_rcas_input" };
 			static const char* uavNames[] = { "rw_upscaled_output" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1102,7 +1288,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR2", "cbSPD" };
 			static const char* srvNames[] = { "r_input_color_jittered" };
 			static const char* uavNames[] = { "rw_img_mip_shading_change", "rw_img_mip_5", "rw_auto_exposure", "rw_spd_global_atomic" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 1, 4, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1124,7 +1310,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_input_color_jittered", "r_input_opaque_only" };
 			static const char* uavNames[] = { "rw_output_autoreactive" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1146,7 +1332,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_input_color_jittered", "r_input_opaque_only", "r_input_motion_vectors", "r_reactive_mask", "r_transparency_and_composition_mask", "r_input_prev_color_pre_alpha", "r_input_prev_color_post_alpha" };
 			static const char* uavNames[] = { "rw_output_autoreactive", "rw_output_autocomposition", "rw_output_prev_color_pre_alpha", "rw_output_prev_color_post_alpha" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 7, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1194,23 +1380,23 @@ namespace ZE::GFX::External::FFX
 				std::string suffix = "";
 				if (depthInverted || sharpen || lut || lowResMotionVectors || jitteredMotionVectors || hdr || fp16 || wave64)
 				{
-					suffix = "_";
+					suffix = '_';
 					if (depthInverted)
-						suffix += "I";
+						suffix += 'I';
 					if (sharpen)
-						suffix += "S";
+						suffix += 'S';
 					if (lut)
-						suffix += "L";
+						suffix += 'L';
 					if (lowResMotionVectors)
-						suffix += "R";
+						suffix += 'R';
 					if (jitteredMotionVectors)
-						suffix += "J";
+						suffix += 'J';
 					if (hdr)
-						suffix += "D";
+						suffix += 'D';
 					if (fp16)
-						suffix += "H";
+						suffix += 'H';
 					if (wave64)
-						suffix += "W";
+						suffix += 'W';
 				}
 				return suffix;
 			};
@@ -1223,7 +1409,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_input_depth", "r_input_color_jittered", "r_input_motion_vectors" };
 			static const char* uavNames[] = { "rw_farthest_depth", "rw_current_luma", "rw_reconstructed_previous_nearest_depth", "rw_dilated_depth", "rw_dilated_motion_vectors" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 3, 5, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1246,7 +1432,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler", "cbSPD" };
 			static const char* srvNames[] = { "r_farthest_depth", "r_current_luma" };
 			static const char* uavNames[] = { "rw_farthest_depth_mip1", "rw_frame_info", "rw_spd_mip0", "rw_spd_mip1", "rw_spd_mip2", "rw_spd_mip3", "rw_spd_mip4", "rw_spd_mip5", "rw_spd_global_atomic" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 9, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1269,7 +1455,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler", "cbSPD" };
 			static const char* srvNames[] = { "r_current_luma", "r_previous_luma", "r_dilated_motion_vectors", "r_input_exposure" };
 			static const char* uavNames[] = { "rw_spd_mip0", "rw_spd_mip1", "rw_spd_mip2", "rw_spd_mip3", "rw_spd_mip4", "rw_spd_mip5", "rw_spd_global_atomic" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 4, 7, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1292,7 +1478,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_spd_mips" };
 			static const char* uavNames[] = { "rw_shading_change" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1315,7 +1501,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_reactive_mask", "r_transparency_and_composition_mask", "r_accumulation", "r_shading_change", "r_current_luma", "r_reconstructed_previous_nearest_depth", "r_dilated_motion_vectors", "r_dilated_depth", "r_input_exposure" };
 			static const char* uavNames[] = { "rw_accumulation", "rw_new_locks", "rw_dilated_reactive_masks" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 9, 3, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1338,7 +1524,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_luma_history", "r_current_luma", "r_dilated_motion_vectors", "r_input_exposure", "r_dilated_reactive_masks", "r_farthest_depth_mip1" };
 			static const char* uavNames[] = { "rw_luma_history", "rw_luma_instability" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1391,7 +1577,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbRCAS" };
 			static const char* srvNames[] = { "r_rcas_input", "r_input_exposure" };
 			static const char* uavNames[] = { "rw_upscaled_output" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1414,7 +1600,7 @@ namespace ZE::GFX::External::FFX
 			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_internal_upscaled_color", "r_dilated_motion_vectors", "r_dilated_depth", "r_dilated_reactive_masks" };
 			static const char* uavNames[] = { "rw_upscaled_output" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 4, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1472,7 +1658,7 @@ namespace ZE::GFX::External::FFX
 		static const U32 counts[] = { 1 };
 
 		const bool fp16 = permutationOptions & LPM_SHADER_PERMUTATION_ALLOW_FP16;
-		const bool wave64 = permutationOptions & LPM_SHADER_PERMUTATION_ALLOW_FP16;
+		const bool wave64 = permutationOptions & LPM_SHADER_PERMUTATION_FORCE_WAVE64;
 
 		switch (pass)
 		{
@@ -1480,7 +1666,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_input_color" };
 			static const char* uavNames[] = { "rw_output_color" };
-			const FfxShaderBlob blob =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1492,7 +1678,7 @@ namespace ZE::GFX::External::FFX
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
-			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
+			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
 				return InitShader(*shader, dev, "LPMFilterCS" + GetGeneralPermutation(fp16, wave64));
@@ -1526,7 +1712,7 @@ namespace ZE::GFX::External::FFX
 			static const char* srvNames[] = { "r_input_depth" };
 			static const char* uavTexNames[] = { "rw_depth_hierarchy" };
 			static const char* uavBuffNames[] = { "rw_spd_global_atomic" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				0, 1, 1, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1549,7 +1735,7 @@ namespace ZE::GFX::External::FFX
 			static const char* srvNames[] = { "r_depth_hierarchy", "r_variance", "r_input_normal", "r_input_environment_map", "r_input_material_parameters" };
 			static const char* uavTexNames[] = { "rw_radiance", "rw_extracted_roughness" };
 			static const char* uavBuffNames[] = { "rw_ray_counter", "rw_ray_list", "rw_denoiser_tile_list" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 5, 2, 0, 3, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1571,7 +1757,7 @@ namespace ZE::GFX::External::FFX
 		{
 			static const char* srvNames[] = { "r_sobol_buffer", "r_scrambling_tile_buffer" };
 			static const char* uavNames[] = { "rw_blue_noise_texture" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1592,7 +1778,7 @@ namespace ZE::GFX::External::FFX
 		case FFX_SSSR_PASS_PREPARE_INDIRECT_ARGS:
 		{
 			static const char* uavNames[] = { "rw_ray_counter", "rw_intersection_pass_indirect_args" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				0, 0, 0, 0, 2, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
@@ -1615,7 +1801,7 @@ namespace ZE::GFX::External::FFX
 			static const char* srvNames[] = { "r_blue_noise_texture", "r_depth_hierarchy", "r_input_normal", "r_extracted_roughness", "r_input_color", "r_input_environment_map" };
 			static const char* uavTexNames[] = { "rw_radiance" };
 			static const char* uavBuffNames[] = { "rw_ray_counter", "rw_ray_list" };
-			static constexpr FfxShaderBlob BLOB =
+			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 1, 0, 2, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
