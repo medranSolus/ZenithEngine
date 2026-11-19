@@ -87,7 +87,7 @@ function(_prepare_shader_compile_for_api API SD_TYPE SD_TYPE_DIR SD_TYPE_SRC_LIS
     if(${API} STREQUAL "DX11")
         string(TOLOWER "${SD_TYPE}_5_0" ${SD_TYPE}_TYPE_FLAG)
         set(SD_COMPILER "${EXTERNAL_DIR}/fxc.exe")
-        set(API_FLAGS "/D_ZE_COMPILER_FXC /DNIS_HLSL=1 /DZE_HLSL_SHADER_MODEL=50")
+        set(API_FLAGS "/D_ZE_COMPILER_FXC /D_FFX_COMPILER_FXC /DNIS_HLSL=1 /DZE_HLSL_SHADER_MODEL=50")
         set(SD_EXT "dxbc")
     elseif(${API} STREQUAL "DX12")
         string(TOLOWER "${SD_TYPE}_6_6" ${SD_TYPE}_TYPE_FLAG)

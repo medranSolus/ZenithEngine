@@ -32,6 +32,11 @@ FfxFloat4 LoadRCas_Input(const in FfxInt2 pxCoord)
 	return (FfxFloat4)tx_rcasInput[pxCoord];
 }
 
+#ifdef _ZE_COMPILER_FXC
+// StoreRCasOutput generates useless warning
+#	pragma warning(disable : 3206)
+#endif
+
 #include "WarningGuardOn.hlsli"
 #include "fsr1/ffx_fsr1_rcas.h"
 #include "WarningGuardOff.hlsli"
