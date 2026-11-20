@@ -91,12 +91,12 @@ namespace ZE::GFX::Pipeline::RenderPass::DepthOfField
 
 		const auto& proj = Settings::DataBank.GetWorldData().get<Data::Camera>(renderData.GraphData.CurrentCamera).Projection;
 		const float sensorSize = 2.0f * viewFocalLenght * std::tan(proj.FOV * 0.5f) * proj.ViewRatio;
-		const float conversion = static_cast<float>(renderData.Buffers.GetDimmensions(ids.Color).X) / data.SensorSize;
+		const float conversion = static_cast<float>(renderData.Buffers.GetDimmensions(ids.Color).X) / sensorSize;
 
 		desc.cocScale = ffxDofCalculateCocScale(aperture, data.Focus, viewFocalLenght, conversion,
-			renderData.GraphData.Projection._33, renderData.GraphData.Projection._34, renderData.GraphData.Projection._43);
+			renderData.GraphData.Projection._33, renderData.GraphData.Projection._43, renderData.GraphData.Projection._34);
 		desc.cocBias = ffxDofCalculateCocBias(aperture, data.Focus, viewFocalLenght, conversion,
-			renderData.GraphData.Projection._33, renderData.GraphData.Projection._34, renderData.GraphData.Projection._43);
+			renderData.GraphData.Projection._33, renderData.GraphData.Projection._43, renderData.GraphData.Projection._34);
 		ZE_FFX_LOG_RET_FAILED_EXPECT(ffxDofContextDispatch(&data.Ctx, &desc), "Error performing DOF!");
 
 		ZE_DRAW_TAG_END(dev, cl);
