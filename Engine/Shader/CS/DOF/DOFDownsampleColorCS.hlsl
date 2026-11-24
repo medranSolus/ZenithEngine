@@ -15,6 +15,7 @@ void FfxDofStoreBilatMip(const in FfxUInt32 mip, const in FfxInt32x2 coord, cons
 	switch (mip)
 	{
 	default:
+		break;
 	case 0:
 		ua_bilatColor0[coord] = value;
 		break;

@@ -949,7 +949,7 @@ namespace ZE::GFX::External::FFX
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFDownsampleColorCS" + GetGeneralPermutation(fp16, wave64));
+				return InitShader(*shader, dev, "DOFDownsampleColorCS" + GetGeneralPermutation(false, wave64));
 			break;
 		}
 		case FFX_DOF_PASS_DILATE:

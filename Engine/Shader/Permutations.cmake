@@ -73,7 +73,6 @@ add_shader_permutation("DOFCompositeCS" "_ZE_HALF_PRECISION:H")
 
 add_shader_permutation("DOFDilateCS" "_ZE_PREFER_WAVE64:W")
 
-add_shader_permutation("DOFDownsampleColorCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("DOFDownsampleColorCS" "_ZE_PREFER_WAVE64:W")
 
 add_shader_permutation("DOFDownsampleDepthCS" "FFX_DOF_OPTION_REVERSE_DEPTH=1:R")
