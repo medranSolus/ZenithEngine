@@ -92,3 +92,6 @@
 [submodule "External/libjpeg-turbo"]
 	path = External/libjpeg-turbo
 	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
+[submodule "External/nvapi"]
+	path = External/nvapi
+	url = https://github.com/NVIDIA/nvapi.git

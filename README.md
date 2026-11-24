@@ -91,6 +91,7 @@ Details about each subproject's license can be found in [Doc/License](Doc/Licens
  - [libjxl](https://github.com/libjxl/libjxl) - [BSD-3-Clause license](Doc/License/ThirdParty/libjxl.txt)
  - [libpng](https://github.com/glennrp/libpng) - [PNG Reference Library License](Doc/License/ThirdParty/libpng.txt)
  - [libspng](https://github.com/randy408/libspng) - [BSD 2-Clause License](Doc/License/ThirdParty/libspng.txt)
+ - [nvapi](https://github.com/NVIDIA/nvapi) - [MIT License](Doc/License/ThirdParty/nvapi.txt)
  - [NVIDIA Image Scaling SDK](https://github.com/NVIDIAGameWorks/NVIDIAImageScaling) - [The MIT License(MIT)](Doc/License/ThirdParty/NvidiaImageScaling.txt), [Third Party Notices](Doc/License/ThirdParty/NvidiaImageScalingThirdPartyNotices.txt)
  - [ogg](https://github.com/xiph/ogg) - [BDS-3-Clause License](Doc/License/ThirdParty/ogg.txt)
  - [OpenAL Soft](https://github.com/kcat/openal-soft) - [LGPL v2 License](Doc/License/ThirdParty/OpenAL.txt), [Third Party Notices](Doc/License/ThirdParty/OpenALThirdPartyNotices.txt), [Third Party Notices PFFFT](Doc/License/ThirdParty/OpenALThirdPartyNoticesPFFFT.txt)
