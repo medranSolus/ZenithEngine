@@ -108,6 +108,7 @@ set(DLSS_DIR "${EXTERNAL_DIR}/DLSS")
 set(DSTORE_DIR "${EXTERNAL_DIR}/DirectStorage")
 set(DXMATH_DIR "${EXTERNAL_DIR}/DirectXMath")
 set(DXTEX_DIR "${EXTERNAL_DIR}/DirectXTex")
+set(D3DEXT_DIR "${EXTERNAL_DIR}/d3dext-sdk")
 set(ENTT_DIR "${EXTERNAL_DIR}/EnTT")
 set(FTYPE_DIR "${EXTERNAL_DIR}/FreeType")
 set(FFX_API_DIR "${EXTERNAL_DIR}/FidelityFXSDK/Kits/FidelityFX")
@@ -122,6 +123,7 @@ set(LIBJXL_DIR "${EXTERNAL_DIR}/libjxl")
 set(LIBPNG_DIR "${EXTERNAL_DIR}/libpng")
 set(LIBSPNG_DIR "${EXTERNAL_DIR}/libspng")
 set(NIS_DIR "${EXTERNAL_DIR}/NvidiaImageScaling")
+set(NVAPI_DIR "${EXTERNAL_DIR}/nvapi")
 set(OGG_DIR "${EXTERNAL_DIR}/ogg")
 set(OPENAL_DIR "${EXTERNAL_DIR}/OpenAL")
 set(OPUS_DIR "${EXTERNAL_DIR}/opus")
@@ -153,6 +155,7 @@ set(DLSS_INC_DIR "${DLSS_DIR}/include")
 set(DSTORE_INC_DIR "${DSTORE_DIR}/include")
 set(DXMATH_INC_DIR "${DXMATH_DIR}/Inc")
 set(DXTEX_INC_DIR "${DXTEX_DIR}")
+set(D3DEXT_INC_DIR "${D3DEXT_DIR}/sdk/include")
 set(ENTT_INC_DIR "${ENTT_DIR}/src")
 set(FTYPE_INC_DIR "${FTYPE_DIR}/include")
 set(FFX_API_INC_DIR "${FFX_API_DIR}/api/include")
@@ -170,6 +173,7 @@ set(LIBJXL_INC_DIR "${LIBJXL_DIR}/lib/include")
 set(LIBPNG_INC_DIR "${LIBPNG_DIR}")
 set(LIBSPNG_INC_DIR "${LIBSPNG_DIR}/spng")
 set(NIS_INC_DIR "${NIS_DIR}/NIS")
+set(NVAPI_INC_DIR "${NVAPI_DIR}")
 set(OGG_INC_DIR "${OGG_DIR}/include")
 set(OPENAL_INC_DIR "${OPENAL_DIR}/include")
 set(OPUS_INC_DIR "${OPUS_DIR}/include")
@@ -218,12 +222,14 @@ set_bool(ZE_AGILITY_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_AGS_ENABLED ${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
 set_bool(ZE_ASSIMP_ENABLED ${ZE_EXTERNAL_MODEL_LOADING})
 set_bool(ZE_DLSS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
-set_bool(ZE_NGX_ENABLED ${ZE_DLSS_ENABLED})
 set_bool(ZE_DSTORE_ENABLED ${ZE_ENABLE_DX12})
+set_bool(ZE_D3DEXT_ENABLED ${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
 set_bool(ZE_FFX_API_ENABLED ${ZE_ENABLE_DX12})
 set_bool(ZE_FFX_API_ENABLED_GEN ${ZE_ENABLE_DX12})
-set_bool(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
+set_bool(ZE_NGX_ENABLED ${ZE_DLSS_ENABLED})
+set_bool(ZE_NVAPI_ENABLED ${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12})
 set_bool(ZE_PIX_ENABLED ${ZE_ENABLE_DX12} OR NOT ${ZE_BUILD_RELEASE})
+set_bool(ZE_VOLK_ENABLED ${ZE_ENABLE_VK})
 set_bool(ZE_XESS_ENABLED (${ZE_ENABLE_DX11} OR ${ZE_ENABLE_DX12}) OR ${ZE_ENABLE_VK})
 
 
@@ -246,6 +252,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${DLSS_INC_DIR}"
 	"${DSTORE_INC_DIR}"
 	"${DXTEX_INC_DIR}"
+	"${D3DEXT_INC_DIR}"
 	"${ENTT_INC_DIR}"
 	"${FTYPE_INC_DIR}"
 	"${FFX_API_INC_DIR}"
@@ -259,6 +266,7 @@ set(ZE_INC_DIRS "${ZE_API_DIR}"                    # Collection of all neccessar
 	"${IMGUI_INC_DIR}"
 	"${LIBPNG_INC_DIR}"
 	"${NIS_INC_DIR}"
+	"${NVAPI_INC_DIR}"
 	"${OPENAL_INC_DIR}"
 	"${VOLK_INC_DIR}"
 	"${PIX_INC_DIR}"
@@ -296,6 +304,7 @@ set(BROTLIENC_LIB "brotlienc")
 set(BZIP2_LIB "bz2_static")
 set(DSTORE_LIB "dstorage")
 set(DXTEX_LIB "DirectXTex")
+set(D3DEXT_LIB "igdext64")
 set(ENTT_LIB "EnTT::EnTT")
 set(FTYPE_LIB "freetype")
 set(FLAC_LIB "FLAC")
@@ -314,6 +323,7 @@ set(LIBJXL_THREADS_LIB "jxl_threads")
 set(LIBPNG_LIB "png_static")
 set(LIBSPNG_LIB "spng_static")
 set(NGX_LIB "nvsdk_ngx")
+set(NVAPI_LIB "nvapi64")
 set(OGG_LIB "ogg")
 set(OPENAL_LIB "OpenAL32")
 set(OPUS_LIB "opus")
@@ -338,6 +348,9 @@ set(BROTLI_TARGETS "${BROTLI_LIB}" "${BROTLIDEC_LIB}" "${BROTLIENC_LIB}")
 set(BZIP2_TARGET "${BZIP2_LIB}")
 if(${ZE_DSTORE_ENABLED})
 	set(DSTORE_TARGET "${DSTORE_DIR}/lib/x64/${DSTORE_LIB}.lib")
+endif()
+if(${ZE_D3DEXT_ENABLED})
+	set(D3DEXT_TARGET "${D3DEXT_DIR}/sdk/lib/x64/Release/${D3DEXT_LIB}.lib")
 endif()
 set(ENTT_TARGET "${ENTT_LIB}")
 set(DXTEX_TARGET "${DXTEX_LIB}")
@@ -366,6 +379,9 @@ if(${ZE_NGX_ENABLED})
 	elseif(${ZE_PLATFORM_LINUX})
 		set(NGX_TARGET "${DLSS_DIR}/lib/Linux_x86_64/lib${NGX_LIB}.a")
 	endif()
+endif()
+if(${ZE_NVAPI_ENABLED})
+	set(NVAPI_TARGET "${NVAPI_DIR}/amd64/${NVAPI_LIB}.lib")
 endif()
 set(OGG_TARGET "${OGG_LIB}")
 if(${ZE_ENABLE_OPENAL})
@@ -431,6 +447,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${ASSIMP_TARGET}
 	${BZIP2_TARGET}
 	${DSTORE_TARGET}
+	${D3DEXT_TARGET}
 	${ENTT_TARGET}
 	${FFXSDK_TARGETS}
 	${FTYPE_TARGET}
@@ -438,6 +455,7 @@ set(ENGINE_EXTERNAL_TARGETS ${AGS_TARGET}
 	${HBAO_TARGETS}
 	${LIBPNG_TARGET}
 	${NGX_TARGET}
+	${NVAPI_TARGET}
 	${OPENAL_TARGET}
 	${PIX_TARGET}
 	${XAUDIO2_TARGETS}
@@ -597,6 +615,12 @@ add_definition_flags(
 
 # Shader flags
 set(SHADER_FLAGS "/nologo /E main /Ges /Zpc /DZE_USE_FFX_API_FSR2_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DZE_USE_FFX_API_FSR3_SHADERS=${ZE_USE_FFX_API_FSR_SHADERS} /DFFX_GPU=1 /DFFX_HLSL=1 /DNIS_HLSL=1 /I \"${EXT_SHADER_INC_DIR}\" /I \"${FFXSDK_INC_DIR}/FidelityFX/gpu\" /I \"${FFX_API_DIR}\" /I \"${NIS_INC_DIR}\"")
+if(${ZE_AGS_ENABLED})
+	set(SHADER_FLAGS "${SHADER_FLAGS} /I \"${AGS_DIR}/ags_lib/hlsl\"")
+endif()
+if(${ZE_NVAPI_ENABLED})
+	set(SHADER_FLAGS "${SHADER_FLAGS} /I \"${NVAPI_INC_DIR}\"")
+endif()
 if(${ZE_BUILD_DEBUG} OR ${ZE_BUILD_DEVELOPMENT} OR ${ZE_BUILD_PROFILE})
 	set(SHADER_FLAGS "${SHADER_FLAGS} /Zi")
 	if(NOT ${ZE_BUILD_PROFILE})
