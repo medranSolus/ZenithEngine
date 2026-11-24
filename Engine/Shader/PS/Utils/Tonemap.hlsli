@@ -102,6 +102,9 @@ float3 GetKhronosPBRNeutral(const in float3 color, const in float exposure)
 	mapped -= offset;
 
 	const float peak = max(mapped.r, max(mapped.g, mapped.b));
+#ifdef _ZE_COMPILER_FXC
+#	pragma warning( disable : 4000 )
+#endif
 	if (peak < START_COMPRESSION)
 		return mapped;
 

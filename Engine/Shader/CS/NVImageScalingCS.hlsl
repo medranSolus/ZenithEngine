@@ -39,7 +39,9 @@ TEXTURE_EX(coefUSM, Texture2D<float4>, 2, 2);
 *
 * Changed variable 'kEps' to 'epsilon' under NIS_HDR_MODE_LINEAR to avoid clashes with cbuffer variable
 */
+#include "WarningGuardOn.hlsli"
 #include "NIS_Scaler.hlsli"
+#include "WarningGuardOff.hlsli"
 
 [numthreads(NIS_THREAD_GROUP_SIZE, 1, 1)]
 void main(const uint3 gid : SV_GroupID, const uint3 tid : SV_GroupThreadID)

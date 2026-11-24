@@ -11,6 +11,9 @@ TEXTURE_EX(bilatColor, Texture2D<FfxHalfOpt4>, 1, 4);
 
 void FfxDofResetMaxTileRadius()
 {
+#ifdef _ZE_COMPILER_FXC
+#	pragma warning( disable : 3538 3583 )
+#endif
 	ua_globals[0].MaxTileRad = 0;
 }
 
@@ -38,11 +41,6 @@ FfxHalfOpt4 FfxDofSampleInput(const in FfxFloat32x2 coord, const in FfxUInt32 mi
 {
 	return tx_bilatColor.SampleLevel(splr_Point, coord, mip);
 }
-
-#ifdef _ZE_COMPILER_FXC
-// ffx_dof_blur.h have tons of useless warnings with potential division by 0.0f
-#	pragma warning(disable : 4008)
-#endif
 
 #ifndef FFX_DOF_OPTION_MAX_RING_MERGE_LOG
 #	define FFX_DOF_OPTION_MAX_RING_MERGE_LOG 0
