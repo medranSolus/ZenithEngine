@@ -95,3 +95,6 @@
 [submodule "External/nvapi"]
 	path = External/nvapi
 	url = https://github.com/NVIDIA/nvapi.git
+[submodule "External/d3dext-sdk"]
+	path = External/d3dext-sdk
+	url = https://github.com/GameTechDev/d3dext-sdk.git
