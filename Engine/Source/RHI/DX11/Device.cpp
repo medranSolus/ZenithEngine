@@ -1,5 +1,9 @@
 #include "RHI/DX11/Device.h"
 #include "GFX/CommandList.h"
+ZE_WARNING_PUSH
+#define INTC_IGDEXT_D3D11
+#include "igdext.h"
+ZE_WARNING_POP
 
 namespace ZE::RHI::DX11
 {
@@ -25,6 +29,35 @@ namespace ZE::RHI::DX11
 
 		std::swap(gpuCtx, dev.gpuCtx);
 		displayProps = std::move(dev.displayProps);
+	}
+
+	Device::~Device()
+	{
+		if (device)
+		{
+			switch (Settings::GpuVendor)
+			{
+			case GFX::VendorGPU::AMD:
+			{
+				if (gpuCtx.AMD)
+				{
+					agsDriverExtensionsDX11_DestroyDevice(gpuCtx.AMD, device.Get(), nullptr, context.Get(), nullptr);
+					agsDeInitialize(gpuCtx.AMD);
+				}
+				break;
+			}
+			case GFX::VendorGPU::Intel:
+			{
+				if (gpuCtx.Intel)
+				{
+					INTC_DestroyDeviceExtensionContext(&gpuCtx.Intel);
+					INTC_UnloadExtensionsLibrary();
+				}
+			}
+			default:
+				break;
+			}
+		}
 	}
 
 	Expected<Device> Device::Create(const Window::MainWindow& window, U32 descriptorCount) noexcept
@@ -91,7 +124,6 @@ namespace ZE::RHI::DX11
 				agsDeInitialize(dev.gpuCtx.AMD);
 				dev.gpuCtx.AMD = nullptr;
 			}
-			Settings::GpuVendor = GFX::VendorGPU::Unknown;
 			break;
 		}
 		default:
@@ -110,6 +142,44 @@ namespace ZE::RHI::DX11
 			DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 			dev.device->GetImmediateContext3(&tempCtx);
 			ZE_DX_RET_FAILED_EXPECT(tempCtx.As(&dev.context));
+		}
+
+		// Add any remaining GPU ctx
+		switch (Settings::GpuVendor)
+		{
+		default:
+			break;
+		case GFX::VendorGPU::Intel:
+		{
+			if (SUCCEEDED(INTC_LoadExtensionsLibrary()))
+			{
+				U32 versionCount = 0;
+				if (SUCCEEDED(INTC_D3D11_GetSupportedVersions(dev.device.Get(), nullptr, &versionCount)) && versionCount)
+				{
+					versionCount = 1;
+					INTCExtensionInfo extInfo = {};
+					if (SUCCEEDED(INTC_D3D11_GetSupportedVersions(dev.device.Get(), &extInfo.RequestedExtensionVersion, &versionCount)))
+					{
+						INTCExtensionAppInfo1 appInfo = {};
+						const std::wstring appName = Utils::ToUTF16(Settings::GetAppName());
+						appInfo.pApplicationName = appName.c_str();
+						appInfo.ApplicationVersion.major = Utils::GetVersionMajor(Settings::GetAppVersion());
+						appInfo.ApplicationVersion.minor = Utils::GetVersionMinor(Settings::GetAppVersion());
+						appInfo.ApplicationVersion.patch = Utils::GetVersionPatch(Settings::GetAppVersion());
+						appInfo.pEngineName = Settings::ENGINE_NAME_WIDE;
+						appInfo.EngineVersion.major = ZE_VERSION_MAJOR;
+						appInfo.EngineVersion.minor = ZE_VERSION_MINOR;
+						appInfo.EngineVersion.patch = ZE_VERSION_PATCH;
+						if (FAILED(INTC_D3D11_CreateDeviceExtensionContext1(dev.device.Get(), &dev.gpuCtx.Intel, &extInfo, &appInfo)))
+						{
+							dev.gpuCtx.Intel = nullptr;
+							INTC_UnloadExtensionsLibrary();
+						}
+					}
+				}
+			}
+			break;
+		}
 		}
 
 #if _ZE_DEBUG_GFX_API

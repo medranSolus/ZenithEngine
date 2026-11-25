@@ -7,6 +7,7 @@ ZE_WARNING_PUSH
 #include "amd_ags.h"
 ZE_WARNING_POP
 
+struct INTCExtensionContext;
 namespace ZE::GFX
 {
 	class CommandList;
@@ -30,6 +31,7 @@ namespace ZE::RHI::DX11
 		union HWData
 		{
 			AGSContext* AMD;
+			INTCExtensionContext* Intel;
 
 			constexpr HWData() noexcept : AMD(nullptr) {}
 			ZE_CLASS_NO_COPY(HWData);
@@ -53,7 +55,7 @@ namespace ZE::RHI::DX11
 		ZE_CLASS_NO_COPY(Device);
 		Device(Device&& dev) noexcept { MoveFrom(std::move(dev)); }
 		Device& operator=(Device&& dev) noexcept { MoveFrom(std::move(dev)); return *this; }
-		~Device() = default;
+		~Device();
 
 		static Expected<Device> Create(const Window::MainWindow& window, U32 descriptorCount) noexcept;
 

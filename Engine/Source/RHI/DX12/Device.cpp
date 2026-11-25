@@ -2,6 +2,10 @@
 #include "RHI/DX12/DREDRecovery.h"
 #include "RHI/DX12/GarbageCollector.h"
 #include "GFX/CommandList.h"
+ZE_WARNING_PUSH
+#define INTC_IGDEXT_D3D12
+#include "igdext.h"
+ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
@@ -86,7 +90,7 @@ namespace ZE::RHI::DX12
 #if !_ZE_MODE_RELEASE
 		pixCapturer = std::exchange(dev.pixCapturer, nullptr);
 #endif
-		featureExistingHeap = dev.featureExistingHeap;
+		flags = dev.flags;
 		displayProps = std::move(dev.displayProps);
 	}
 
@@ -124,11 +128,21 @@ namespace ZE::RHI::DX12
 			{
 			case GFX::VendorGPU::AMD:
 			{
-				ZE_ASSERT(gpuCtx.AMD, "Invalid AMD AGS context!");
-				agsDriverExtensionsDX12_DestroyDevice(gpuCtx.AMD, device.Get(), nullptr);
-				device.Detach();
-				agsDeInitialize(gpuCtx.AMD);
+				if (gpuCtx.AMD)
+				{
+					agsDriverExtensionsDX12_DestroyDevice(gpuCtx.AMD, device.Get(), nullptr);
+					device.Detach();
+					agsDeInitialize(gpuCtx.AMD);
+				}
 				break;
+			}
+			case GFX::VendorGPU::Intel:
+			{
+				if (gpuCtx.Intel)
+				{
+					INTC_DestroyDeviceExtensionContext(&gpuCtx.Intel);
+					INTC_UnloadExtensionsLibrary();
+				}
 			}
 			default:
 				break;
@@ -243,7 +257,6 @@ namespace ZE::RHI::DX12
 						agsDeInitialize(dev.gpuCtx.AMD);
 						dev.gpuCtx.AMD = nullptr;
 					}
-					Settings::GpuVendor = GFX::VendorGPU::Unknown;
 					break;
 				}
 				default:
@@ -255,7 +268,7 @@ namespace ZE::RHI::DX12
 					hr = D3D12CreateDevice(adapter.Get(), MINIMAL_D3D_LEVEL, IID_PPV_ARGS(&dev.device));
 				return hr;
 			};
-
+		
 		std::array<D3D_FEATURE_LEVEL, 4> featureLevels =
 		{
 			D3D_FEATURE_LEVEL_12_2,
@@ -281,6 +294,44 @@ namespace ZE::RHI::DX12
 		if (!options12.EnhancedBarriersSupported)
 		{
 			ZE_DX_RET_FAILED_EXPECT(DX::Error::ENHANCED_BARRIERS_ERROR);
+		}
+
+		// Add any remaining GPU ctx
+		switch (Settings::GpuVendor)
+		{
+		default:
+			break;
+		case GFX::VendorGPU::Intel:
+		{
+			if (SUCCEEDED(INTC_LoadExtensionsLibrary()))
+			{
+				U32 versionCount = 0;
+				if (SUCCEEDED(INTC_D3D12_GetSupportedVersions(dev.device.Get(), nullptr, &versionCount)) && versionCount)
+				{
+					versionCount = 1;
+					INTCExtensionInfo1 extInfo = {};
+					if (SUCCEEDED(INTC_D3D12_GetSupportedVersions(dev.device.Get(), &extInfo.RequestedExtensionVersion, &versionCount)))
+					{
+						INTCExtensionAppInfo1 appInfo = {};
+						const std::wstring appName = Utils::ToUTF16(Settings::GetAppName());
+						appInfo.pApplicationName = appName.c_str();
+						appInfo.ApplicationVersion.major = Utils::GetVersionMajor(Settings::GetAppVersion());
+						appInfo.ApplicationVersion.minor = Utils::GetVersionMinor(Settings::GetAppVersion());
+						appInfo.ApplicationVersion.patch = Utils::GetVersionPatch(Settings::GetAppVersion());
+						appInfo.pEngineName = Settings::ENGINE_NAME_WIDE;
+						appInfo.EngineVersion.major = ZE_VERSION_MAJOR;
+						appInfo.EngineVersion.minor = ZE_VERSION_MINOR;
+						appInfo.EngineVersion.patch = ZE_VERSION_PATCH;
+						if (FAILED(INTC_D3D12_CreateDeviceExtensionContext2(dev.device.Get(), &dev.gpuCtx.Intel, &extInfo, &appInfo)))
+						{
+							dev.gpuCtx.Intel = nullptr;
+							INTC_UnloadExtensionsLibrary();
+						}
+					}
+				}
+			}
+			break;
+		}
 		}
 
 #if _ZE_DEBUG_GFX_API
@@ -421,7 +472,7 @@ namespace ZE::RHI::DX12
 
 		D3D12_FEATURE_DATA_EXISTING_HEAPS existingHeaps = {};
 		if (SUCCEEDED(dev.device->CheckFeatureSupport(D3D12_FEATURE_EXISTING_HEAPS, &existingHeaps, sizeof(existingHeaps))))
-			dev.featureExistingHeap = existingHeaps.Supported;
+			dev.SetExistingHeap(existingHeaps.Supported);
 
 		D3D12_FEATURE_DATA_TIGHT_ALIGNMENT tightAlignment = {};
 		if (FAILED(dev.device->CheckFeatureSupport(D3D12_FEATURE_D3D12_TIGHT_ALIGNMENT, &tightAlignment, sizeof(tightAlignment))))
@@ -617,7 +668,7 @@ namespace ZE::RHI::DX12
 		desc.Flags = D3D12_RESOURCE_FLAG_ALLOW_CROSS_ADAPTER;
 
 		// VirtualAlloc() + OpenExistingHeapFromAddress() + CreatePlacedResource() path, ensures that Breadcrumb buffer survives TDR.
-		if (featureExistingHeap)
+		if (IsExistingHeap())
 		{
 			blockData.memory = VirtualAlloc(nullptr, bytes, MEM_COMMIT, PAGE_READWRITE);
 			if (blockData.memory != nullptr)
@@ -659,7 +710,7 @@ namespace ZE::RHI::DX12
 
 	void Device::FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) noexcept
 	{
-		if (featureExistingHeap)
+		if (IsExistingHeap())
 		{
 			// VirutalAlloc() path
 			if (block.buffer)

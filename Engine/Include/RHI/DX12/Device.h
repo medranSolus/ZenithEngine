@@ -11,6 +11,7 @@ ZE_WARNING_PUSH
 #include "amd_ags.h"
 ZE_WARNING_POP
 
+struct INTCExtensionContext;
 namespace ZE::GFX
 {
 	class CommandList;
@@ -63,6 +64,7 @@ namespace ZE::RHI::DX12
 		union HWData
 		{
 			AGSContext* AMD;
+			INTCExtensionContext* Intel;
 
 			constexpr HWData() noexcept : AMD(nullptr) {}
 			ZE_CLASS_NO_COPY(HWData);
@@ -74,7 +76,7 @@ namespace ZE::RHI::DX12
 #if !_ZE_MODE_RELEASE
 		HMODULE pixCapturer = nullptr;
 #endif
-		bool featureExistingHeap = false;
+		std::bitset<1> flags = 0;
 		GFX::DisplayProperties displayProps = {};
 
 		static Status WaitCPU(IFence* fence, U64 val) noexcept;
@@ -82,6 +84,9 @@ namespace ZE::RHI::DX12
 		static Expected<U64> SetFenceCPU(IFence* fence, UA64& fenceVal) noexcept;
 		static Expected<U64> SetFenceGPU(IFence* fence, ICommandQueue* queue, UA64& fenceVal) noexcept;
 		static void Execute(ICommandQueue* queue, CommandList& cl) noexcept;
+
+		constexpr void SetExistingHeap(bool val) noexcept { flags[0] = val; }
+		constexpr bool IsExistingHeap() const noexcept { return flags[0]; }
 
 		void MoveFrom(Device&& dev) noexcept;
 
@@ -168,7 +173,8 @@ namespace ZE::RHI::DX12
 		ICommandQueue* GetQueueCompute() const noexcept { return computeQueue.Get(); }
 		ICommandQueue* GetQueueCopy() const noexcept { return copyQueue.Get(); }
 		IDescriptorHeap* GetDescHeap() const noexcept { return descriptorGpuAllocator.GetMemory(nullptr).Heap.Get(); }
-		AGSContext* GetAGSContext() const noexcept { ZE_ASSERT(Settings::GpuVendor == GFX::VendorGPU::AMD, "Wrong active GPU!"); return gpuCtx.AMD; }
+		AGSContext* GetAGSContext() const noexcept { return Settings::GpuVendor == GFX::VendorGPU::AMD ? gpuCtx.AMD : nullptr; }
+		INTCExtensionContext* GetINTCContext() const noexcept { return Settings::GpuVendor == GFX::VendorGPU::Intel ? gpuCtx.Intel : nullptr; }
 
 		void FreeBuffer(ResourceInfo& info) noexcept { allocator.RemoveBuffer(info); }
 		void FreeDynamicBuffer(ResourceInfo& info) noexcept { allocator.RemoveDynamicBuffer(info); }

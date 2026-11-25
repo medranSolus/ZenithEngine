@@ -2,6 +2,10 @@
 #include "GFX/Resource/PipelineStateCompute.h"
 #include "GFX/Resource/PipelineStateGfx.h"
 #include "GFX/Device.h"
+ZE_WARNING_PUSH
+#define INTC_IGDEXT_D3D12
+#include "igdext.h"
+ZE_WARNING_POP
 
 namespace ZE::RHI::DX12
 {
@@ -79,31 +83,21 @@ namespace ZE::RHI::DX12
 #if _ZE_GFX_MARKERS
 	void CommandList::TagBegin(GFX::Device& dev, std::string_view tag, Pixel color) const noexcept
 	{
-		switch (Settings::GpuVendor)
-		{
-		case GFX::VendorGPU::AMD:
-		{
-			agsDriverExtensionsDX12_PushMarker(dev.Get().dx12.GetAGSContext(), commands.Get(), tag.data());
-			break;
-		}
-		default:
-			break;
-		}
+		auto& device = dev.Get().dx12;
+		if (auto* ags = device.GetAGSContext())
+			agsDriverExtensionsDX12_PushMarker(ags, commands.Get(), tag.data());
+		if (auto* intc = device.GetINTCContext())
+			INTC_D3D12_SetEventMarker(intc, commands.Get(), INTC_EVENT_MARKER_BEGIN, tag.data(), Utils::SafeCast<U32>(tag.size()));
 		PIXBeginEvent(commands.Get(), PIX_COLOR(color.Red, color.Blue, color.Green), tag.data());
 	}
 
 	void CommandList::TagEnd(GFX::Device& dev) const noexcept
 	{
-		switch (Settings::GpuVendor)
-		{
-		case GFX::VendorGPU::AMD:
-		{
+		auto& device = dev.Get().dx12;
+		if (auto* ags = device.GetAGSContext())
 			agsDriverExtensionsDX12_PopMarker(dev.Get().dx12.GetAGSContext(), commands.Get());
-			break;
-		}
-		default:
-			break;
-		}
+		if (auto* intc = device.GetINTCContext())
+			INTC_D3D12_SetEventMarker(intc, commands.Get(), INTC_EVENT_MARKER_END, nullptr, 0);
 		PIXEndEvent(commands.Get());
 	}
 #endif
