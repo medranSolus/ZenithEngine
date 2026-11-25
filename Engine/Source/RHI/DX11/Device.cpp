@@ -109,7 +109,7 @@ namespace ZE::RHI::DX11
 				extensionParams.appVersion = Settings::GetAppVersion();
 				extensionParams.engineVersion = Settings::ENGINE_VERSION;
 				extensionParams.numBreadcrumbMarkers = _ZE_DEBUG_GFX_API ? 128 : 0;
-				extensionParams.uavSlot = 7;
+				extensionParams.uavSlot = D3D11_PS_CS_UAV_REGISTER_COUNT - 1;
 				extensionParams.crossfireMode = AGS_CROSSFIRE_MODE_DRIVER_AFR;
 				AGSDX11ReturnedParams returnParams = {};
 				if (agsDriverExtensionsDX11_CreateDevice(dev.gpuCtx.AMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
@@ -143,6 +143,7 @@ namespace ZE::RHI::DX11
 					_ZE_DEBUG_GFX_API ? D3D11_CREATE_DEVICE_DEBUG : 0, &FEATURE_LEVEL, 1,
 					D3D11_SDK_VERSION, &tempDevice, nullptr, nullptr, &supportedLevel) == NVAPI_OK)
 				{
+					NvAPI_D3D11_SetNvShaderExtnSlot(tempDevice.Get(), D3D11_PS_CS_UAV_REGISTER_COUNT - 1);
 					tempDevice.As(&dev.device);
 				}
 			}

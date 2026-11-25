@@ -251,7 +251,7 @@ namespace ZE::RHI::DX12
 						extensionParams.pEngineName = Settings::ENGINE_NAME_WIDE;
 						extensionParams.appVersion = Settings::GetAppVersion();
 						extensionParams.engineVersion = Settings::ENGINE_VERSION;
-						extensionParams.uavSlot = 7;
+						extensionParams.uavSlot = D3D12_UAV_SLOT_COUNT - 1;
 						AGSDX12ReturnedParams returnParams = {};
 						if (agsDriverExtensionsDX12_CreateDevice(dev.gpuCtx.AMD, &deviceParams, &extensionParams, &returnParams) == AGS_SUCCESS)
 						{
