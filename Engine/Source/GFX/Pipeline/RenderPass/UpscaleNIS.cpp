@@ -37,14 +37,14 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 			// Choose linear HDR for upscaled data
 			passData.BlockHeight = 24;
 			std::string shaderName = "NVImageScalingCS_L";
-			if (Settings::GpuVendor == VendorGPU::Nvidia)
-				shaderName += "NV";
 			if (passData.Float16Support)
 			{
-				shaderName += "H";
+				shaderName += 'H';
 				if (Settings::GpuVendor == VendorGPU::Nvidia)
 					passData.BlockHeight = 32;
 			}
+			if (Settings::GpuVendor == VendorGPU::Nvidia)
+				shaderName += "NV";
 			Resource::Shader shader;
 			ZE_EXPECT_RET_FAILED(shader, Resource::Shader::Create(dev, shaderName));
 			ZE_EXPECT_RET_FAILED(passData.StateUpscale, Resource::PipelineStateCompute::Create(dev, shader, buildData.BindingLib.GetSchema(passData.BindingIndex)));

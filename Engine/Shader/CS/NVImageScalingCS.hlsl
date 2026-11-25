@@ -16,10 +16,15 @@ TEXTURE_EX(coefUSM, Texture2D<float4>, 2, 2);
 #ifndef NIS_HDR_MODE
 #	define NIS_HDR_MODE 0
 #endif
-#ifndef NIS_BLOCK_HEIGHT
+#ifdef _ZE_GPU_NV
+#	ifdef NIS_USE_HALF_PRECISION
+#		define NIS_BLOCK_HEIGHT 32
+#	else
+#		define NIS_BLOCK_HEIGHT 24
+#	endif
+#	define NIS_THREAD_GROUP_SIZE 128
+#else
 #	define NIS_BLOCK_HEIGHT 24
-#endif
-#ifndef NIS_THREAD_GROUP_SIZE
 #	define NIS_THREAD_GROUP_SIZE 256
 #endif
 #if ZE_HLSL_SHADER_MODEL >= 62

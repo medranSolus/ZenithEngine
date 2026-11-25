@@ -40,13 +40,24 @@ macro(setup_shader BIN_DIR SHADER_DIR FLAGS)
         file(MAKE_DIRECTORY "${SD_CSO_DIR}/${API}")
     endforeach()
 endmacro()
- 
+
 # Add permutation to given shader
 #   SHADER = name of the shader without extension
 #   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX" or "DEFINE_OPT1_1,DEFINE_OPT1_2=VAL:SUFFIX1|DEFINE_OPT2:SUFFIX2" when multi-value permutation is needed
 # Every given permutation will result in passed define into shader with additional suffix added to name
 macro(add_shader_permutation SHADER PERMUTATION)
     list(APPEND ${SHADER}_PERMUTATIONS "${PERMUTATION}")
+endmacro()
+
+# Add permutation to given shader only for given RHI
+#   SHADER = name of the shader without extension
+#   PERMUTATION = permutation option in format "DEFINE_OPTION:SUFFIX" or "DEFINE_OPT1_1,DEFINE_OPT1_2=VAL:SUFFIX1|DEFINE_OPT2:SUFFIX2" when multi-value permutation is needed
+#   RHI_TYPE_LIST = list of supported graphics APIs for given shader to create permutations
+# Every given permutation will result in passed define into shader with additional suffix added to name
+macro(add_shader_permutation_rhi SHADER PERMUTATION RHI_TYPE_LIST)
+    foreach(RHI_TYPE ${RHI_TYPE_LIST})
+        list(APPEND ${SHADER}_PERMUTATIONS_${RHI_TYPE} "${PERMUTATION}")
+    endforeach()
 endmacro()
 
 # Creates commands for shader compilation for only exclusive RHI list
@@ -124,8 +135,10 @@ function(_prepare_shader_compile_for_api API SD_TYPE SD_TYPE_DIR SD_TYPE_SRC_LIS
         _add_shader_compile_command("${SD_COMPILER}" "${SD}" "${SD_OUT}" "${SD_NAME}.${SD_EXT}" "${SD_FLAGS};${API_FLAGS};${SD_CUSTOM_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${SD_TYPE_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
             
         # Flatten whole original list of permutations into for correct mask indexing
-        string(REPLACE "|" ";" ${SD_NAME}_ORIGINAL_PERMUTATIONS "${${SD_NAME}_PERMUTATIONS}")
-        _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_ORIGINAL_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATIONS}" 0 "" FALSE
+        set(${SD_NAME}_PERMUTATION_MASK ${${SD_NAME}_PERMUTATIONS})
+        list(APPEND ${SD_NAME}_PERMUTATION_MASK ${${SD_NAME}_PERMUTATIONS_${API}})
+        string(REPLACE "|" ";" ${SD_NAME}_ORIGINAL_PERMUTATIONS "${${SD_NAME}_PERMUTATION_MASK}")
+        _compile_shader_permutations("${SD_CSO_DIR}/${API}" "${SD_NAME}" "${SD_EXT}" "${${SD_NAME}_ORIGINAL_PERMUTATIONS}" "${SD_NAME}_" "${${SD_NAME}_PERMUTATION_MASK}" 0 "" FALSE
             "${SD_COMPILER}" "${SD}" "${SD_FLAGS};${API_FLAGS};${SD_CUSTOM_FLAGS}" "${${SD_TYPE}_TYPE_FLAG}" "${SD_TYPE}" "${SD_TYPE_DIR}" "${SD_INC_DIR}" "${SD_TYPE_INC_LIST}" "${SD_INC_LIST}" "${API}")
     endforeach()
 endfunction()
