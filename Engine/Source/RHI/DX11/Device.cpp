@@ -37,6 +37,14 @@ namespace ZE::RHI::DX11
 		{
 			switch (Settings::GpuVendor)
 			{
+			case GFX::VendorGPU::Intel:
+			{
+				if (gpuCtx.Intel)
+				{
+					INTC_DestroyDeviceExtensionContext(&gpuCtx.Intel);
+					INTC_UnloadExtensionsLibrary();
+				}
+			}
 			case GFX::VendorGPU::AMD:
 			{
 				if (gpuCtx.AMD)
@@ -46,13 +54,11 @@ namespace ZE::RHI::DX11
 				}
 				break;
 			}
-			case GFX::VendorGPU::Intel:
+			case GFX::VendorGPU::Nvidia:
 			{
-				if (gpuCtx.Intel)
-				{
-					INTC_DestroyDeviceExtensionContext(&gpuCtx.Intel);
-					INTC_UnloadExtensionsLibrary();
-				}
+				if (gpuCtx.NvapiInitialized)
+					NvAPI_Unload();
+				break;
 			}
 			default:
 				break;
@@ -126,6 +132,22 @@ namespace ZE::RHI::DX11
 			}
 			break;
 		}
+		case GFX::VendorGPU::Nvidia:
+		{
+			dev.gpuCtx.NvapiInitialized = NvAPI_Initialize() == NVAPI_OK;
+			if (dev.gpuCtx.NvapiInitialized)
+			{
+				DX::ComPtr<ID3D11Device> tempDevice = nullptr;
+				NVAPI_DEVICE_FEATURE_LEVEL supportedLevel = NVAPI_DEVICE_FEATURE_LEVEL_NULL;
+				if (NvAPI_D3D11_CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, nullptr,
+					_ZE_DEBUG_GFX_API ? D3D11_CREATE_DEVICE_DEBUG : 0, &FEATURE_LEVEL, 1,
+					D3D11_SDK_VERSION, &tempDevice, nullptr, nullptr, &supportedLevel) == NVAPI_OK)
+				{
+					tempDevice.As(&dev.device);
+				}
+			}
+			break;
+		}
 		default:
 			break;
 		}
@@ -138,18 +160,16 @@ namespace ZE::RHI::DX11
 				_ZE_DEBUG_GFX_API ? D3D11_CREATE_DEVICE_DEBUG : 0, &FEATURE_LEVEL, 1,
 				D3D11_SDK_VERSION, &tempDevice, nullptr, nullptr));
 			ZE_DX_RET_FAILED_EXPECT(tempDevice.As(&dev.device));
-
+		}
+		if (dev.context == nullptr)
+		{
 			DX::ComPtr<ID3D11DeviceContext3> tempCtx;
 			dev.device->GetImmediateContext3(&tempCtx);
 			ZE_DX_RET_FAILED_EXPECT(tempCtx.As(&dev.context));
 		}
 
-		// Add any remaining GPU ctx
-		switch (Settings::GpuVendor)
-		{
-		default:
-			break;
-		case GFX::VendorGPU::Intel:
+		// Add remaining extension ctx
+		if (Settings::GpuVendor == GFX::VendorGPU::Intel)
 		{
 			if (SUCCEEDED(INTC_LoadExtensionsLibrary()))
 			{
@@ -178,8 +198,6 @@ namespace ZE::RHI::DX11
 					}
 				}
 			}
-			break;
-		}
 		}
 
 #if _ZE_DEBUG_GFX_API

@@ -126,6 +126,15 @@ namespace ZE::RHI::DX12
 			GarbageCollector::Get().Flush(*this);
 			switch (Settings::GpuVendor)
 			{
+			case GFX::VendorGPU::Intel:
+			{
+				if (gpuCtx.Intel)
+				{
+					INTC_DestroyDeviceExtensionContext(&gpuCtx.Intel);
+					INTC_UnloadExtensionsLibrary();
+				}
+				break;
+			}
 			case GFX::VendorGPU::AMD:
 			{
 				if (gpuCtx.AMD)
@@ -136,13 +145,11 @@ namespace ZE::RHI::DX12
 				}
 				break;
 			}
-			case GFX::VendorGPU::Intel:
+			case GFX::VendorGPU::Nvidia:
 			{
-				if (gpuCtx.Intel)
-				{
-					INTC_DestroyDeviceExtensionContext(&gpuCtx.Intel);
-					INTC_UnloadExtensionsLibrary();
-				}
+				if (gpuCtx.NvapiInitialized)
+					NvAPI_Unload();
+				break;
 			}
 			default:
 				break;
@@ -259,6 +266,12 @@ namespace ZE::RHI::DX12
 					}
 					break;
 				}
+				case GFX::VendorGPU::Nvidia:
+				{
+					if (!dev.gpuCtx.NvapiInitialized)
+						dev.gpuCtx.NvapiInitialized = NvAPI_Initialize() == NVAPI_OK;
+					break;
+				}
 				default:
 					break;
 				}
@@ -296,12 +309,8 @@ namespace ZE::RHI::DX12
 			ZE_DX_RET_FAILED_EXPECT(DX::Error::ENHANCED_BARRIERS_ERROR);
 		}
 
-		// Add any remaining GPU ctx
-		switch (Settings::GpuVendor)
-		{
-		default:
-			break;
-		case GFX::VendorGPU::Intel:
+		// Add remaining extension ctx
+		if (Settings::GpuVendor == GFX::VendorGPU::Intel)
 		{
 			if (SUCCEEDED(INTC_LoadExtensionsLibrary()))
 			{
@@ -330,8 +339,6 @@ namespace ZE::RHI::DX12
 					}
 				}
 			}
-			break;
-		}
 		}
 
 #if _ZE_DEBUG_GFX_API

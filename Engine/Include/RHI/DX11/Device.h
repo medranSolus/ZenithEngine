@@ -5,6 +5,7 @@
 ZE_WARNING_PUSH
 #include "FidelityFX/host/ffx_types.h"
 #include "amd_ags.h"
+#include "nvapi.h"
 ZE_WARNING_POP
 
 struct INTCExtensionContext;
@@ -32,6 +33,7 @@ namespace ZE::RHI::DX11
 		{
 			AGSContext* AMD;
 			INTCExtensionContext* Intel;
+			bool NvapiInitialized;
 
 			constexpr HWData() noexcept : AMD(nullptr) {}
 			ZE_CLASS_NO_COPY(HWData);
