@@ -80,6 +80,8 @@ namespace ZE::RHI::DX11
 		constexpr Expected<FfxBreadcrumbsBlockData> AllocBreadcrumbsBlock(U64 bytes) noexcept { return FfxBreadcrumbsBlockData{}; }
 		constexpr void FreeBreadcrumbsBlock(FfxBreadcrumbsBlockData& block) noexcept {}
 
+		constexpr bool IsHwExtensionPresent() const noexcept;
+
 		void* GetHandle() const noexcept { return GetDevice(); }
 		const GFX::DisplayProperties* GetDisplayProperties() const noexcept { return &displayProps; }
 
@@ -129,4 +131,21 @@ namespace ZE::RHI::DX11
 		IDevice* GetDevice() const noexcept { return device.Get(); }
 		IDeviceContext* GetMainContext() const noexcept { return context.Get(); }
 	};
+
+#pragma region Functions
+	constexpr bool Device::IsHwExtensionPresent() const noexcept
+	{
+		switch (Settings::GpuVendor)
+		{
+		case GFX::VendorGPU::Intel:
+			return gpuCtx.Intel;
+		case GFX::VendorGPU::AMD:
+			return gpuCtx.AMD;
+		case GFX::VendorGPU::Nvidia:
+			return gpuCtx.NvapiInitialized;
+		default:
+			return false;
+		}
+	}
+#pragma endregion
 }

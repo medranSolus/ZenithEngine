@@ -106,6 +106,7 @@ namespace ZE::RHI::DX12
 		constexpr bool IsBufferMarkersSupported() const noexcept { return false; }
 		constexpr bool IsExtendedSynchronizationSupported() const noexcept { return false; }
 		constexpr bool IsUavNonUniformIndexing() const noexcept { return true; }
+		constexpr bool IsHwExtensionPresent() const noexcept;
 
 		void* GetHandle() const noexcept { return GetDevice(); }
 		const GFX::DisplayProperties* GetDisplayProperties() const noexcept { return &displayProps; }
@@ -194,4 +195,21 @@ namespace ZE::RHI::DX12
 		Expected<DescriptorInfo> AllocDescs(U32 count, bool gpuHeap = true) noexcept;
 		void FreeDescs(DescriptorInfo& descInfo) noexcept;
 	};
+
+#pragma region Functions
+	constexpr bool Device::IsHwExtensionPresent() const noexcept
+	{
+		switch (Settings::GpuVendor)
+		{
+		case GFX::VendorGPU::Intel:
+			return gpuCtx.Intel;
+		case GFX::VendorGPU::AMD:
+			return gpuCtx.AMD;
+		case GFX::VendorGPU::Nvidia:
+			return gpuCtx.NvapiInitialized;
+		default:
+			return false;
+		}
+	}
+#pragma endregion
 }

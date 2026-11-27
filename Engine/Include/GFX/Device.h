@@ -78,6 +78,7 @@ namespace ZE::GFX
 		constexpr bool IsBufferMarkersSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsBufferMarkersSupported); }
 		constexpr bool IsExtendedSynchronizationSupported() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsExtendedSynchronizationSupported); }
 		constexpr bool IsUavNonUniformIndexing() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsUavNonUniformIndexing); }
+		constexpr bool IsHwExtensionPresent() const noexcept { ZE_RHI_BACKEND_CALL_RET(IsHwExtensionPresent); }
 
 		constexpr void Execute(CommandList* cls, U32 count) const noexcept { ZE_RHI_BACKEND_CALL(Execute, cls, count); }
 		constexpr void ExecuteMain(CommandList& cl) const noexcept { ZE_RHI_BACKEND_CALL(ExecuteMain, cl); }
