@@ -44,7 +44,7 @@ namespace ZE::GFX::Pipeline::RenderPass::UpscaleNIS
 					passData.BlockHeight = 32;
 			}
 			if (Settings::GpuVendor == VendorGPU::Nvidia)
-				shaderName += "NV";
+				shaderName += 'V';
 			Resource::Shader shader;
 			ZE_EXPECT_RET_FAILED(shader, Resource::Shader::Create(dev, shaderName));
 			ZE_EXPECT_RET_FAILED(passData.StateUpscale, Resource::PipelineStateCompute::Create(dev, shader, buildData.BindingLib.GetSchema(passData.BindingIndex)));

@@ -180,7 +180,7 @@ add_shader_permutation("SSSRPrepareNoiseCS" "_ZE_PREFER_WAVE64:W")
 # NIS
 add_shader_permutation("NVImageScalingCS" "NIS_HDR_MODE=1:L|NIS_HDR_MODE=2:P")
 add_shader_permutation("NVImageScalingCS" "NIS_USE_HALF_PRECISION=1:H")
-add_shader_permutation_rhi("NVImageScalingCS" "_ZE_GPU_NV:NV" "DX11;DX12")
+add_shader_permutation_rhi("NVImageScalingCS" "_ZE_GPU_NV:V" "DX11;DX12")
 
 ############# PS PERMUTATIONS ##############
 
