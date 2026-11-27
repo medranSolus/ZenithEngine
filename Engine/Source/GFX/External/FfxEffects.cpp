@@ -20,6 +20,10 @@ ZE_WARNING_POP
 
 namespace ZE::GFX::External::FFX
 {
+	// Max of all the effect's needs
+	static const U32 SLOTS[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+	static const U32 COUNTS[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+
 	FfxErrorCode GetShaderInfoCACAO(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
 	FfxErrorCode GetShaderInfoDenoiser(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
 	FfxErrorCode GetShaderInfoDOF(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept;
@@ -306,16 +310,14 @@ namespace ZE::GFX::External::FFX
 	{
 		static const char* cbvNames[] = { "SSAOConstantsBuffer_t" };
 		static const char* samplerNames[] = { "g_PointClampSampler", "g_PointMirrorSampler", "g_LinearClampSampler", "g_ViewspaceDepthTapSampler" };
-		static const U32 slots[] = { 0, 1, 2, 3, 4 };
-		static const U32 counts[] = { 1, 1, 1, 1, 1 };
 		static constexpr const char** POINT_CLAMP_SAMPLER_NAME = samplerNames;
 		static constexpr const char** POINT_MIRROR_SAMPLER_NAME = samplerNames + 1;
 		static constexpr const char** LINEAR_CLAMP_SAMPLER_NAME = samplerNames + 2;
 		static constexpr const char** GENERATE_SAMPLER_NAMES = samplerNames + 1;
-		static constexpr const U32* POINT_CLAMP_SAMPLER_SLOT = slots;
-		static constexpr const U32* POINT_MIRROR_SAMPLER_SLOT = slots + 1;
-		static constexpr const U32* LINEAR_CLAMP_SAMPLER_SLOT = slots + 2;
-		static constexpr const U32* GENERATE_SAMPLER_SLOTS = slots + 1;
+		static constexpr const U32* POINT_CLAMP_SAMPLER_SLOT = SLOTS;
+		static constexpr const U32* POINT_MIRROR_SAMPLER_SLOT = SLOTS + 1;
+		static constexpr const U32* LINEAR_CLAMP_SAMPLER_SLOT = SLOTS + 2;
+		static constexpr const U32* GENERATE_SAMPLER_SLOTS = SLOTS + 1;
 
 		const bool fp16 = permutationOptions & CACAO_SHADER_PERMUTATION_ALLOW_FP16;
 		const bool wave64 = permutationOptions & CACAO_SHADER_PERMUTATION_FORCE_WAVE64;
@@ -358,7 +360,7 @@ namespace ZE::GFX::External::FFX
 				0, 0, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				nullptr, nullptr, nullptr, nullptr, // CBV
 				nullptr, nullptr, nullptr, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -383,12 +385,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -407,12 +409,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, uavCounts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, uavCounts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -435,12 +437,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				inputNormals ? srvNamesInputNormals : srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				inputNormals ? srvNamesInputNormals : srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -463,12 +465,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, generateVersion == 3 ? 5U : 2U, 1, 0, 0, 3, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				GENERATE_SAMPLER_NAMES, GENERATE_SAMPLER_SLOTS, counts, nullptr, // Samplers
+				GENERATE_SAMPLER_NAMES, GENERATE_SAMPLER_SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -502,12 +504,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				POINT_CLAMP_SAMPLER_NAME, POINT_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -524,12 +526,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -546,12 +548,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -575,12 +577,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				POINT_MIRROR_SAMPLER_NAME, POINT_MIRROR_SAMPLER_SLOT, counts, nullptr, // Samplers
+				POINT_MIRROR_SAMPLER_NAME, POINT_MIRROR_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -617,12 +619,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, counts, nullptr, // Samplers
+				LINEAR_CLAMP_SAMPLER_NAME, LINEAR_CLAMP_SAMPLER_SLOT, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -656,12 +658,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 3, 1, 0, 0, 2, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				splrNames, splrSlots, counts, nullptr, // Samplers
+				splrNames, splrSlots, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -697,9 +699,6 @@ namespace ZE::GFX::External::FFX
 		static const char* cbvNamesReflections[] = { "cbDenoiserReflections" };
 		static const char* shadowsSamplerNames[] = { "s_trilinerClamp" };
 		static const char* reflectionsSamplerNames[] = { "s_LinearSampler" };
-		static const U32 slots[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-		static constexpr const U32* SAMPLER_SLOT = slots;
 
 		const bool fp16 = permutationOptions & DENOISER_SHADER_PERMUTATION_ALLOW_FP16;
 		const bool wave64 = permutationOptions & DENOISER_SHADER_PERMUTATION_FORCE_WAVE64;
@@ -715,11 +714,11 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 0, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvName0, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
+				cbvName0, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
 				nullptr, nullptr, nullptr, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavNames, slots, counts, nullptr, // UAV buff
+				uavNames, SLOTS, COUNTS, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
@@ -739,12 +738,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 2, 0, 2, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvName1, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 2, counts, nullptr, // UAV tex
+				cbvName1, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 2, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				shadowsSamplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				shadowsSamplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -765,11 +764,11 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 2U + fp16, 1, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReflections, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				pass == FFX_DENOISER_PASS_FILTER_SOFT_SHADOWS_2 ? uavTexNamesLastPass : uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				cbvNamesReflections, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				pass == FFX_DENOISER_PASS_FILTER_SOFT_SHADOWS_2 ? uavTexNamesLastPass : uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
@@ -805,12 +804,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 11, 4, 0, 1, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReflections, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				cbvNamesReflections, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				reflectionsSamplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				reflectionsSamplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -828,12 +827,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 2, 0, 1, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReflections, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				cbvNamesReflections, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				reflectionsSamplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				reflectionsSamplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -851,12 +850,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 2, 0, 1, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReflections, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				cbvNamesReflections, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				reflectionsSamplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				reflectionsSamplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -879,8 +878,6 @@ namespace ZE::GFX::External::FFX
 		static const char* cbvNames[] = { "cbDOF" };
 		static const char* uavBuffNames[] = { "rw_internal_globals" };
 		static const char* samplerNames[] = { "LinearSampler", "PointSampler" };
-		static const U32 slots[] = { 0, 1, 2, 4 };
-		static const U32 counts[] = { 1, 1, 1, 1 };
 
 		const bool depthReverse = permutationOptions & DOF_SHADER_PERMUTATION_REVERSE_DEPTH;
 		const bool combinePlace = permutationOptions & DOF_SHADER_PERMUTATION_COMBINE_IN_PLACE;
@@ -888,10 +885,10 @@ namespace ZE::GFX::External::FFX
 		const bool fp16 = permutationOptions & DOF_SHADER_PERMUTATION_USE_FP16;
 		const bool wave64 = permutationOptions & DOF_SHADER_PERMUTATION_FORCE_WAVE64;
 
-		auto getPermutation = [](bool combinePlace, bool ringsMerge, bool fp16, bool wave64) -> std::string
+		auto getPermutation = [](bool combinePlace, bool ringsMerge, bool fp16, bool wave64, bool hwExt) -> std::string
 			{
 				std::string suffix = "";
-				if (combinePlace || ringsMerge || fp16 || wave64)
+				if (combinePlace || ringsMerge || fp16 || wave64 || hwExt)
 				{
 					suffix = '_';
 					if (combinePlace)
@@ -902,6 +899,20 @@ namespace ZE::GFX::External::FFX
 						suffix += 'H';
 					if (wave64)
 						suffix += 'W';
+					if (hwExt && Settings::GetGfxApi() == GfxApiType::DX11)
+					{
+						switch (Settings::GpuVendor)
+						{
+						case VendorGPU::AMD:
+							suffix += 'A';
+							break;
+						case VendorGPU::Nvidia:
+							suffix += 'V';
+							break;
+						default:
+							break;
+						}
+					}
 				}
 				return suffix;
 			};
@@ -915,12 +926,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				samplerNames, slots, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -938,9 +949,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, uavCounts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, uavCounts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -959,11 +970,11 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 0, 2, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
 				nullptr, nullptr, nullptr, nullptr, // SRV tex
-				uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
@@ -981,18 +992,18 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 2, 2, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 1, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 1, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				samplerNames, slots, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFBlurCS" + getPermutation(false, ringsMerge, fp16, wave64));
+				return InitShader(*shader, dev, "DOFBlurCS" + getPermutation(false, ringsMerge, fp16, wave64, true));
 			break;
 		}
 		case FFX_DOF_PASS_COMPOSITE:
@@ -1003,9 +1014,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 3U + !combinePlace, 3, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1014,7 +1025,7 @@ namespace ZE::GFX::External::FFX
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
 
 			if (shader)
-				return InitShader(*shader, dev, "DOFCompositeCS" + getPermutation(combinePlace, false, fp16, false));
+				return InitShader(*shader, dev, "DOFCompositeCS" + getPermutation(combinePlace, false, fp16, false, true));
 			break;
 		}
 		default:
@@ -1030,9 +1041,6 @@ namespace ZE::GFX::External::FFX
 	{
 		static const char* cbvNames[] = { "cbFSR1" };
 		static const char* samplerNames[] = { "s_LinearClamp" };
-		static const U32 slots[] = { 0, 1 };
-		static const U32 counts[] = { 1 };
-		static constexpr const U32* SAMPLER_SLOT = slots;
 
 		const bool passAlpha = permutationOptions & FSR1_SHADER_PERMUTATION_RCAS_PASSTHROUGH_ALPHA;
 		const bool srgbConversion = permutationOptions & FSR1_SHADER_PERMUTATION_SRGB_CONVERSIONS;
@@ -1074,12 +1082,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				sharpen ? uavNamesSharpen : uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				sharpen ? uavNamesSharpen : uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -1096,9 +1104,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1123,9 +1131,6 @@ namespace ZE::GFX::External::FFX
 	{
 		static const char* samplerNames[] = { "s_LinearClamp" };
 		static const char* cbvNamesReactive[] = { "cbFSR2", "cbGenerateReactive" };
-		static const U32 slots[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-		static constexpr const U32* SAMPLER_SLOT = slots;
 
 		const bool depthInverted = permutationOptions & FSR2_SHADER_PERMUTATION_DEPTH_INVERTED;
 		const bool lut = permutationOptions & FSR2_SHADER_PERMUTATION_USE_LANCZOS_TYPE;
@@ -1173,12 +1178,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 10, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReactive, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesReactive, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1195,9 +1200,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 4, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReactive, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesReactive, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1217,9 +1222,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 2, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReactive, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesReactive, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1245,12 +1250,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 8 + static_cast<U32>(lut), 4 + static_cast<U32>(!sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReactive, slots, counts, nullptr, // CBV
-				lut ? (lowResMotionVectors ? srvNamesLowResLut : srvNamesLut) : (lowResMotionVectors ? srvNamesLowRes : srvNames), slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesReactive, SLOTS, COUNTS, nullptr, // CBV
+				lut ? (lowResMotionVectors ? srvNamesLowResLut : srvNamesLut) : (lowResMotionVectors ? srvNamesLowRes : srvNames), SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -1268,9 +1273,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1291,12 +1296,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				2, 1, 4, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1313,9 +1318,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReactive, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesReactive, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1335,9 +1340,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				2, 7, 4, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNamesReactive, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesReactive, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1360,10 +1365,8 @@ namespace ZE::GFX::External::FFX
 
 	FfxErrorCode GetShaderInfoFSR3(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
+		static const char* cbvNamesSpd[] = { "cbFSR3Upscaler", "cbSPD" };
 		static const char* samplerNames[] = { "s_LinearClamp" };
-		static const U32 slots[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-		static constexpr const U32* SAMPLER_SLOT = slots;
 
 		const bool depthInverted = permutationOptions & FSR3UPSCALER_SHADER_PERMUTATION_DEPTH_INVERTED;
 		const bool lut = permutationOptions & FSR3UPSCALER_SHADER_PERMUTATION_USE_LANCZOS_TYPE;
@@ -1405,16 +1408,15 @@ namespace ZE::GFX::External::FFX
 		{
 		case FFX_FSR3UPSCALER_PASS_PREPARE_INPUTS:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_input_depth", "r_input_color_jittered", "r_input_motion_vectors" };
 			static const char* uavNames[] = { "rw_farthest_depth", "rw_current_luma", "rw_reconstructed_previous_nearest_depth", "rw_dilated_depth", "rw_dilated_motion_vectors" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 3, 5, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1428,16 +1430,15 @@ namespace ZE::GFX::External::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_LUMA_PYRAMID:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler", "cbSPD" };
 			static const char* srvNames[] = { "r_farthest_depth", "r_current_luma" };
 			static const char* uavNames[] = { "rw_farthest_depth_mip1", "rw_frame_info", "rw_spd_mip0", "rw_spd_mip1", "rw_spd_mip2", "rw_spd_mip3", "rw_spd_mip4", "rw_spd_mip5", "rw_spd_global_atomic" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 9, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1451,16 +1452,15 @@ namespace ZE::GFX::External::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_SHADING_CHANGE_PYRAMID:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler", "cbSPD" };
 			static const char* srvNames[] = { "r_current_luma", "r_previous_luma", "r_dilated_motion_vectors", "r_input_exposure" };
 			static const char* uavNames[] = { "rw_spd_mip0", "rw_spd_mip1", "rw_spd_mip2", "rw_spd_mip3", "rw_spd_mip4", "rw_spd_mip5", "rw_spd_global_atomic" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				2, 4, 7, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1474,19 +1474,18 @@ namespace ZE::GFX::External::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_SHADING_CHANGE:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_spd_mips" };
 			static const char* uavNames[] = { "rw_shading_change" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, SAMPLER_SLOT, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1497,19 +1496,18 @@ namespace ZE::GFX::External::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_PREPARE_REACTIVITY:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_reactive_mask", "r_transparency_and_composition_mask", "r_accumulation", "r_shading_change", "r_current_luma", "r_reconstructed_previous_nearest_depth", "r_dilated_motion_vectors", "r_dilated_depth", "r_input_exposure" };
 			static const char* uavNames[] = { "rw_accumulation", "rw_new_locks", "rw_dilated_reactive_masks" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 9, 3, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, SAMPLER_SLOT, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1520,19 +1518,18 @@ namespace ZE::GFX::External::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_LUMA_INSTABILITY:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_luma_history", "r_current_luma", "r_dilated_motion_vectors", "r_input_exposure", "r_dilated_reactive_masks", "r_farthest_depth_mip1" };
 			static const char* uavNames[] = { "rw_luma_history", "rw_luma_instability" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 2, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, SAMPLER_SLOT, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1546,7 +1543,6 @@ namespace ZE::GFX::External::FFX
 			[[fallthrough]];
 		case FFX_FSR3UPSCALER_PASS_ACCUMULATE:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_input_color_jittered", "r_input_motion_vectors", "r_internal_upscaled_color", "r_farthest_depth_mip1", "r_luma_instability", "r_input_exposure", "r_dilated_reactive_masks" };
 			static const char* srvNamesLut[] = { "r_input_color_jittered", "r_input_motion_vectors", "r_internal_upscaled_color", "r_farthest_depth_mip1", "r_luma_instability", "r_input_exposure", "r_lanczos_lut", "r_dilated_reactive_masks" };
 			static const char* srvNamesLowRes[] = { "r_input_color_jittered", "r_internal_upscaled_color", "r_farthest_depth_mip1", "r_luma_instability", "r_dilated_motion_vectors", "r_input_exposure", "r_dilated_reactive_masks" };
@@ -1557,12 +1553,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, lut ? 8U : 7U, 3U - static_cast<U32>(sharpen), 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				lowResMotionVectors ? (lut ? srvNamesLowResLut : srvNamesLowRes) : (lut ? srvNamesLut : srvNames), slots, counts, nullptr, // SRV tex
-				sharpen ? uavNamesSharpen : uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				lowResMotionVectors ? (lut ? srvNamesLowResLut : srvNamesLowRes) : (lut ? srvNamesLut : srvNames), SLOTS, COUNTS, nullptr, // SRV tex
+				sharpen ? uavNamesSharpen : uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, SAMPLER_SLOT, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &blob, sizeof(FfxShaderBlob));
@@ -1580,9 +1576,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1596,19 +1592,18 @@ namespace ZE::GFX::External::FFX
 		}
 		case FFX_FSR3UPSCALER_PASS_DEBUG_VIEW:
 		{
-			static const char* cbvNames[] = { "cbFSR3Upscaler" };
 			static const char* srvNames[] = { "r_internal_upscaled_color", "r_dilated_motion_vectors", "r_dilated_depth", "r_dilated_reactive_masks" };
 			static const char* uavNames[] = { "rw_upscaled_output" };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				1, 4, 1, 0, 0, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNamesSpd, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, SAMPLER_SLOT, nullptr, // Samplers
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1626,9 +1621,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				2, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1653,8 +1648,6 @@ namespace ZE::GFX::External::FFX
 	FfxErrorCode GetShaderInfoLPM(Device* dev, FfxPass pass, U32 permutationOptions, FfxShaderBlob& shaderBlob, Resource::Shader* shader) noexcept
 	{
 		static const char* cbvNames[] = { "cbLPM" };
-		static const U32 slots[] = { 0 };
-		static const U32 counts[] = { 1 };
 
 		const bool fp16 = permutationOptions & LPM_SHADER_PERMUTATION_ALLOW_FP16;
 		const bool wave64 = permutationOptions & LPM_SHADER_PERMUTATION_FORCE_WAVE64;
@@ -1669,9 +1662,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 1, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1696,10 +1689,6 @@ namespace ZE::GFX::External::FFX
 	{
 		static const char* cbvNames[] = { "cbSSSR" };
 		static const char* samplerNames[] = { "s_EnvironmentMapSampler" };
-		static const U32 slots[] = { 0, 1, 2, 3, 4, 5 };
-		static const U32 counts[] = { 1, 1, 1, 1, 1, 1, 7 };
-		static constexpr const U32* SAMPLER_SLOT = slots;
-		static constexpr const U32* DEPTH_DOWNSAMPLE_UAV_COUNTS = counts + 6;
 
 		const bool fp16 = permutationOptions & SSSR_SHADER_PERMUTATION_ALLOW_FP16;
 		const bool wave64 = permutationOptions & SSSR_SHADER_PERMUTATION_FORCE_WAVE64;
@@ -1711,15 +1700,16 @@ namespace ZE::GFX::External::FFX
 			static const char* srvNames[] = { "r_input_depth" };
 			static const char* uavTexNames[] = { "rw_depth_hierarchy" };
 			static const char* uavBuffNames[] = { "rw_spd_global_atomic" };
+			static const U32 uavCounts[] = { 7 };
 			constexpr FfxShaderBlob BLOB =
 			{
 				nullptr, 0, // Blob, data
 				0, 1, 1, 0, 1, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
 				nullptr, nullptr, nullptr, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 1, DEPTH_DOWNSAMPLE_UAV_COUNTS, nullptr, // UAV tex
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 1, uavCounts, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
@@ -1738,12 +1728,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 5, 2, 0, 3, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 3, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 3, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
@@ -1760,9 +1750,9 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 2, 1, 0, 0, 0, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavNames, slots, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavNames, SLOTS, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
 				nullptr, nullptr, nullptr, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
@@ -1785,7 +1775,7 @@ namespace ZE::GFX::External::FFX
 				nullptr, nullptr, nullptr, nullptr, // SRV tex
 				nullptr, nullptr, nullptr, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavNames, slots, counts, nullptr, // UAV buff
+				uavNames, SLOTS, COUNTS, nullptr, // UAV buff
 				nullptr, nullptr, nullptr, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
@@ -1804,12 +1794,12 @@ namespace ZE::GFX::External::FFX
 			{
 				nullptr, 0, // Blob, data
 				1, 6, 1, 0, 2, 1, 0, // CBV, SRV tex, UAV tex, SRV buff, UAV buff, samplers, RT
-				cbvNames, slots, counts, nullptr, // CBV
-				srvNames, slots, counts, nullptr, // SRV tex
-				uavTexNames, slots + 2, counts, nullptr, // UAV tex
+				cbvNames, SLOTS, COUNTS, nullptr, // CBV
+				srvNames, SLOTS, COUNTS, nullptr, // SRV tex
+				uavTexNames, SLOTS + 2, COUNTS, nullptr, // UAV tex
 				nullptr, nullptr, nullptr, nullptr, // SRV buff
-				uavBuffNames, slots, counts, nullptr, // UAV buff
-				samplerNames, SAMPLER_SLOT, counts, nullptr, // Samplers
+				uavBuffNames, SLOTS, COUNTS, nullptr, // UAV buff
+				samplerNames, SLOTS, COUNTS, nullptr, // Samplers
 				nullptr, nullptr, nullptr, nullptr, // RT acc
 			};
 			std::memcpy(&shaderBlob, &BLOB, sizeof(FfxShaderBlob));
