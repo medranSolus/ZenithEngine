@@ -67,9 +67,11 @@ add_shader_permutation("DenoiserShadowsPrepareMaskCS" "_ZE_PREFER_WAVE64:W")
 add_shader_permutation("DOFBlurCS" "FFX_DOF_OPTION_MAX_RING_MERGE_LOG=1:M")
 add_shader_permutation("DOFBlurCS" "_ZE_HALF_PRECISION:H")
 add_shader_permutation("DOFBlurCS" "_ZE_PREFER_WAVE64:W")
+add_shader_permutation_rhi("DOFBlurCS" "_ZE_GPU_AMD:A|_ZE_GPU_NV:V" "DX11")
 
 add_shader_permutation("DOFCompositeCS" "FFX_DOF_OPTION_COMBINE_IN_PLACE=1:C")
 add_shader_permutation("DOFCompositeCS" "_ZE_HALF_PRECISION:H")
+add_shader_permutation_rhi("DOFCompositeCS" "_ZE_GPU_AMD:A|_ZE_GPU_NV:V" "DX11")
 
 add_shader_permutation("DOFDilateCS" "_ZE_PREFER_WAVE64:W")
 

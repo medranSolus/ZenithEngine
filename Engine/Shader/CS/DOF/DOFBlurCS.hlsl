@@ -1,7 +1,6 @@
 #define ZE_DOF_CB_RANGE 5
-#define _ZE_ENABLE_WAVE_EMULATION
-#define ZE_EMULATED_WAVE_GTID_NAME id
 #include "CB/ConstantsDOF.hlsli"
+#include "WaveOpsEmulation.hlsli"
 
 UAV_EX(globals, globallycoherent RWStructuredBuffer<DofGlobalVars>, 0, 0);
 UAV2D(near, FfxHalfOpt4, 1, 1);

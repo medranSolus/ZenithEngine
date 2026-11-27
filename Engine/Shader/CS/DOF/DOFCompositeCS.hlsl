@@ -4,6 +4,7 @@
 #	define ZE_DOF_CB_RANGE 7
 #endif
 #include "CB/ConstantsDOF.hlsli"
+#include "WaveOpsEmulation.hlsli"
 
 UAV2D(colorOutput, float4, 0, 0);
 UAV2D(near, FfxHalfOpt4, 1, 1);
@@ -58,24 +59,6 @@ FfxFloat32 FfxDofLoadFullDepth(const in FfxUInt32x2 coord)
 {
 	return tx_depthInput[coord];
 }
-
-// Disable optimized path with wave intrinsic
-#ifdef _ZE_COMPILER_FXC
-uint WaveGetLaneCount()
-{
-	return 0;
-}
-
-uint WaveGetLaneIndex()
-{
-	return 0;
-}
-
-uint2 WaveReadLaneAt(const in uint2 val, const in uint laneIndex)
-{
-	return val;
-}
-#endif
 
 #ifndef FFX_DOF_OPTION_COMBINE_IN_PLACE
 #	define FFX_DOF_OPTION_COMBINE_IN_PLACE 0

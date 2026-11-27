@@ -65,7 +65,6 @@ FfxFloat32 FfxDofGetCoc(const in FfxFloat32 depth)
 	return clamp(CocScale() * depth + CocBias(), -CocLimit(), CocLimit());
 }
 
-#include "DOF/WaveEmulation.hlsli"
 #include "dof/ffx_dof_common.h"
 #include "dof/ffx_dof_resources.h"
 
