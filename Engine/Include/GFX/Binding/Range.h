@@ -33,6 +33,8 @@ namespace ZE::GFX::Binding
 		// Cannot be used with 'StaticData'.
 		// Warning: Schema does not perform checks on this flag as it's impossible to determine if current range is using FrameBuffer data!
 		RangeSourceDynamic = 0x100,
+		// Mark BufferPack entry to force binding all the mips in the chain for given resources, supported only for UAV bindings
+		BufferPackBindAllMips = 0x200,
 	};
 
 	// Single range of shader registers to use

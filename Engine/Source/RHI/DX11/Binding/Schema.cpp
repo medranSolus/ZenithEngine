@@ -76,16 +76,14 @@ namespace ZE::RHI::DX11::Binding
 				ZE_ASSERT(entry.StartSlot + entry.Count < D3D11_COMMONSHADER_INPUT_RESOURCE_REGISTER_COUNT,
 					"Too much shader slots!");
 
+				bool bindMips = entry.Flags & GFX::Binding::RangeFlag::BufferPackBindAllMips;
 				if (entry.Flags & GFX::Binding::RangeFlag::BufferPack)
 				{
 					schema.slots[i++] = { j, 1 };
-					schema.slotsData[j++] = { entry.Shaders, entry.StartSlot, entry.Count };
+					schema.slotsData[j++] = { entry.Shaders, entry.StartSlot, entry.Count, bindMips };
 				}
 				else if (entry.Flags & GFX::Binding::RangeFlag::BufferPackAppend)
-				{
 					++schema.slots[i - 1].SlotsCount;
-					schema.slotsData[j - 1] = { entry.Shaders, entry.StartSlot, entry.Count };
-				}
 				else
 				{
 					for (U32 k = 0; k < entry.Count; ++k)

@@ -10,14 +10,15 @@ namespace ZE::RHI::DX11::Binding
 	public:
 		struct SlotInfo
 		{
-			U32 DataStart;
-			U32 SlotsCount;
+			U32 DataStart = 0;
+			U32 SlotsCount = 0;
 		};
 		struct SlotData
 		{
-			GFX::Resource::ShaderTypes Shaders;
-			U32 BindStart;
-			U32 Count;
+			GFX::Resource::ShaderTypes Shaders = GFX::Resource::ShaderType::All;
+			U32 BindStart = 0;
+			U32 Count = 0;
+			bool BindMips = false;
 		};
 
 	private:

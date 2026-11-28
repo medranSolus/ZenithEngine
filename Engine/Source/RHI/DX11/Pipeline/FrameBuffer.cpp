@@ -877,10 +877,12 @@ namespace ZE::RHI::DX11::Pipeline
 		{
 			auto slotData = schema.GetSlotData(slotInfo.DataStart + i);
 			currentSlots.emplace_back(false, slotData);
+			U16 mipLevel = 0;
 			for (U32 j = 0, count = adjacentCount ? adjacentCount : slotData.Count; j < count; ++j, ++slotData.BindStart)
 			{
+				IUnorderedAccessView** view = slotData.BindMips ? uavMips[uav][mipLevel++].GetAddressOf() : uavs[uav++].GetAddressOf();
 				if (slotData.Shaders & GFX::Resource::ShaderType::Compute)
-					ctx->CSSetUnorderedAccessViews(slotData.BindStart, 1, reinterpret_cast<ID3D11UnorderedAccessView* const*>(uavs[uav++].GetAddressOf()), nullptr);
+					ctx->CSSetUnorderedAccessViews(slotData.BindStart, 1, reinterpret_cast<ID3D11UnorderedAccessView* const*>(view), nullptr);
 				else
 				{
 					ZE_FAIL("Cannot use UAV outside compute shader!");
