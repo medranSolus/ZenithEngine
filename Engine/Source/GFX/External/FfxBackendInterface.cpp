@@ -679,6 +679,9 @@ namespace ZE::GFX::External::FFX
 			{
 				schemaDesc.AddRange({ shaderBlob.boundUAVTextureCounts[i], shaderBlob.boundUAVTextures[i], rangeOffset,
 					Resource::ShaderType::Compute, Binding::RangeFlag::UAV | Binding::RangeFlag::BufferPack });
+				// To avoid situations for multiple resources in the given mip chain to not be bound in given RHI
+				if (shaderBlob.boundUAVTextureCounts[i] > 1)
+					schemaDesc.Ranges.back().Flags |= Binding::RangeFlag::BufferPackBindAllMips;
 				++rangeOffset;
 			}
 
